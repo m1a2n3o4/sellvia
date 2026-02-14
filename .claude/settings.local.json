@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma generate:*)",
+      "Bash(node test-db.js:*)",
+      "Bash(nc:*)",
+      "Bash(nslookup:*)",
+      "Bash(curl:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma studio)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run build:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}
