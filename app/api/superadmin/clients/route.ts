@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { prisma } from '@/lib/db/prisma';
 import { getSuperAdminId } from '@/lib/auth/middleware';
-
-const prisma = new PrismaClient();
 
 // GET - List all clients/tenants
 export async function GET(request: NextRequest) {
