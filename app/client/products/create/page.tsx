@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ImageUpload, AIAnalysisResult } from '@/components/products/image-upload';
 
 interface SpecRow {
   key: string;
@@ -39,6 +40,27 @@ export default function CreateProductPage() {
   });
 
   const [specs, setSpecs] = useState<SpecRow[]>([]);
+  const [imageUrl, setImageUrl] = useState('');
+
+  const handleAIResult = (result: AIAnalysisResult) => {
+    setImageUrl(result.imageUrl);
+    if (result.prediction) {
+      const p = result.prediction;
+      setForm(prev => ({
+        ...prev,
+        name: p.name || prev.name,
+        brand: p.brand || prev.brand,
+        category: p.category || prev.category,
+        description: p.description || prev.description,
+        basePrice: p.basePrice ? String(p.basePrice) : prev.basePrice,
+      }));
+      const newSpecs: SpecRow[] = [];
+      if (p.color) newSpecs.push({ key: 'Color', value: p.color, price: '' });
+      if (p.gender) newSpecs.push({ key: 'Gender', value: p.gender, price: '' });
+      if (p.material) newSpecs.push({ key: 'Material', value: p.material, price: '' });
+      if (newSpecs.length > 0) setSpecs(newSpecs);
+    }
+  };
 
   const addSpec = () => {
     setSpecs([...specs, { key: '', value: '', price: '' }]);
@@ -77,6 +99,7 @@ export default function CreateProductPage() {
           basePrice: parseFloat(form.basePrice) || 0,
           stockQuantity: parseInt(form.stockQuantity) || 0,
           lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+          images: imageUrl ? [imageUrl] : [],
           variants,
         }),
       });
@@ -115,6 +138,33 @@ export default function CreateProductPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* AI Image Upload */}
+        <div>
+          <Label>Product Image (AI auto-fill)</Label>
+          {imageUrl ? (
+            <div className="mt-1 flex items-start gap-3">
+              <img
+                src={imageUrl}
+                alt="Product"
+                className="w-24 h-24 object-cover rounded-lg border border-gray-200 dark:border-neutral-700"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setImageUrl('')}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-1">
+              <ImageUpload onAnalyzed={handleAIResult} maxFiles={1} compact />
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Label htmlFor="name">Product Name *</Label>

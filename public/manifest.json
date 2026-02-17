@@ -1,11 +1,11 @@
 {
-  "name": "BizManager - Business Management Platform",
-  "short_name": "BizManager",
-  "description": "Manage your inventory, orders, and customers",
+  "name": "SatyaSell - AI-Powered Business Management",
+  "short_name": "SatyaSell",
+  "description": "Manage your products, orders, customers, and WhatsApp communications with AI",
   "start_url": "/client",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7c3aed",
   "orientation": "portrait",
   "icons": [
     {

@@ -43,6 +43,9 @@ model Tenant {
   customers        Customer[]
   orders           Order[]
   orderItems       OrderItem[]
+  whatsappChats    WhatsAppChat[]
+  whatsappMessages WhatsAppMessage[]
+  businessInfo     BusinessInfo?
 
   @@index([status])
   @@index([createdAt])
@@ -232,4 +235,108 @@ model OrderItem {
   @@index([productId])
   @@index([tenantId, orderId])
   @@map("order_items")
+}
+
+// ============================================
+// WHATSAPP AI COMMERCE TABLES
+// ============================================
+
+model WhatsAppChat {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  customerPhone   String   @map("customer_phone")
+  customerName    String?  @map("customer_name")
+  lastMessage     String?  @map("last_message")
+  lastMessageAt   DateTime? @map("last_message_at")
+  unreadCount     Int      @default(0) @map("unread_count")
+  status          ChatStatus @default(active)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages WhatsAppMessage[]
+
+  @@unique([tenantId, customerPhone])
+  @@index([tenantId])
+  @@index([tenantId, lastMessageAt(sort: Desc)])
+  @@index([tenantId, status])
+  @@map("whatsapp_chats")
+}
+
+enum ChatStatus {
+  active
+  archived
+}
+
+model WhatsAppMessage {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  chatId      String   @map("chat_id")
+  waMessageId String?  @map("wa_message_id")
+  sender      MessageSender
+  senderPhone String?  @map("sender_phone")
+  content     String
+  messageType MessageType @default(text) @map("message_type")
+  mediaUrl    String?  @map("media_url")
+  status      MessageStatus @default(sent)
+  isAiGenerated Boolean @default(false) @map("is_ai_generated")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  chat   WhatsAppChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([chatId])
+  @@index([chatId, createdAt])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("whatsapp_messages")
+}
+
+enum MessageSender {
+  customer
+  business
+  ai
+}
+
+enum MessageType {
+  text
+  image
+  document
+  audio
+  video
+  location
+  interactive
+}
+
+enum MessageStatus {
+  sent
+  delivered
+  read
+  failed
+}
+
+model BusinessInfo {
+  id           String   @id @default(uuid())
+  tenantId     String   @unique @map("tenant_id")
+  storeName    String?  @map("store_name")
+  description  String?
+  storeHours   String?  @map("store_hours")
+  location     String?
+  locationUrl  String?  @map("location_url")
+  policies     String?
+  greeting     String?
+  whatsappPhoneNumberId String? @map("whatsapp_phone_number_id")
+  whatsappBusinessId    String? @map("whatsapp_business_id")
+  whatsappToken         String? @map("whatsapp_token")
+  openaiKey             String? @map("openai_key")
+  aiEnabled    Boolean  @default(true) @map("ai_enabled")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("business_info")
 }

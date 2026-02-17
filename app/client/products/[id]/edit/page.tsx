@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { Product } from '@/types';
+import { ImageUpload, AIAnalysisResult } from '@/components/products/image-upload';
 
 interface SpecRow {
   key: string;
@@ -42,6 +43,15 @@ export default function EditProductPage() {
   });
 
   const [specs, setSpecs] = useState<SpecRow[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+
+  const handleImageUploaded = (result: AIAnalysisResult) => {
+    setImages([result.imageUrl]);
+  };
+
+  const removeImage = () => {
+    setImages([]);
+  };
 
   useEffect(() => {
     async function loadProduct() {
@@ -60,6 +70,9 @@ export default function EditProductPage() {
           lowStockThreshold: String(p.lowStockThreshold || 10),
           status: p.status,
         });
+        if (p.images && p.images.length > 0) {
+          setImages(p.images);
+        }
         if (p.variants && p.variants.length > 0) {
           setSpecs(
             p.variants.map((v) => {
@@ -115,6 +128,7 @@ export default function EditProductPage() {
           basePrice: parseFloat(form.basePrice) || 0,
           stockQuantity: parseInt(form.stockQuantity) || 0,
           lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
+          images,
           variants,
         }),
       });
@@ -162,6 +176,38 @@ export default function EditProductPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Product Image */}
+        <div>
+          <Label>Product Image</Label>
+          {images.length > 0 ? (
+            <div className="mt-1 flex items-start gap-3">
+              <img
+                src={images[0]}
+                alt="Product"
+                className="w-24 h-24 object-cover rounded-lg border border-gray-200 dark:border-neutral-700"
+              />
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={removeImage}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                  Remove to upload a new image
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1">
+              <ImageUpload onAnalyzed={handleImageUploaded} maxFiles={1} compact />
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Label htmlFor="name">Product Name *</Label>

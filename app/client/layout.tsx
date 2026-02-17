@@ -16,6 +16,7 @@ import {
   Package,
   ShoppingCart,
   Users,
+  Settings,
   LogOut,
 } from 'lucide-react';
 
@@ -60,10 +61,15 @@ export default function ClientLayout({
     },
     {
       label: 'Live Chat',
-      href: '#',
+      href: '/client/chats',
       icon: (
         <MessageCircle
-          className="h-5 w-5 flex-shrink-0 text-neutral-300 dark:text-neutral-600"
+          className={cn(
+            'h-5 w-5 flex-shrink-0',
+            pathname?.startsWith('/client/chats')
+              ? 'text-black dark:text-white'
+              : 'text-neutral-500 dark:text-neutral-400'
+          )}
         />
       ),
     },
@@ -109,6 +115,20 @@ export default function ClientLayout({
         />
       ),
     },
+    {
+      label: 'Settings',
+      href: '/client/settings',
+      icon: (
+        <Settings
+          className={cn(
+            'h-5 w-5 flex-shrink-0',
+            pathname?.startsWith('/client/settings')
+              ? 'text-black dark:text-white'
+              : 'text-neutral-500 dark:text-neutral-400'
+          )}
+        />
+      ),
+    },
   ];
 
   return (
@@ -124,27 +144,7 @@ export default function ClientLayout({
             {open ? <Logo /> : <LogoIcon />}
             <div className="mt-8 flex flex-col gap-2">
               {links.map((link, idx) => (
-                <div key={idx}>
-                  {link.label === 'Live Chat' ? (
-                    <div className="flex items-center gap-2 py-2 px-2 opacity-50 cursor-not-allowed">
-                      {link.icon}
-                      <motion.span
-                        animate={{
-                          display: open ? 'inline-block' : 'none',
-                          opacity: open ? 1 : 0,
-                        }}
-                        className="text-neutral-400 dark:text-neutral-500 text-sm whitespace-pre inline-block !p-0 !m-0"
-                      >
-                        Live Chat
-                        <span className="ml-1 text-[10px] bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 rounded-full">
-                          Soon
-                        </span>
-                      </motion.span>
-                    </div>
-                  ) : (
-                    <SidebarLink link={link} />
-                  )}
-                </div>
+                <SidebarLink key={idx} link={link} />
               ))}
             </div>
           </div>

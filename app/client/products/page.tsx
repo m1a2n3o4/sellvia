@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package } from 'lucide-react';
 import { Product } from '@/types';
 
 export default function ProductsPage() {
@@ -68,9 +68,22 @@ export default function ProductsPage() {
       key: 'name',
       header: 'Product',
       render: (p: Product) => (
-        <div>
-          <p className="font-medium">{p.name}</p>
-          {p.brand && <p className="text-xs text-gray-500">{p.brand}</p>}
+        <div className="flex items-center gap-3">
+          {p.images && p.images.length > 0 ? (
+            <img
+              src={p.images[0]}
+              alt={p.name}
+              className="w-10 h-10 rounded-md object-cover border border-gray-200 dark:border-neutral-700 flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 flex items-center justify-center flex-shrink-0">
+              <Package className="h-5 w-5 text-gray-400 dark:text-neutral-500" />
+            </div>
+          )}
+          <div>
+            <p className="font-medium">{p.name}</p>
+            {p.brand && <p className="text-xs text-gray-500">{p.brand}</p>}
+          </div>
         </div>
       ),
     },
@@ -146,10 +159,16 @@ export default function ProductsPage() {
             Manage your product inventory
           </p>
         </div>
-        <Button onClick={() => router.push('/client/products/create')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => router.push('/client/products/ai-create')}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Image
+          </Button>
+          <Button onClick={() => router.push('/client/products/create')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

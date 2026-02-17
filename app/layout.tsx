@@ -5,18 +5,26 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'BizManager - Business Management Platform',
-  description: 'Manage your inventory, orders, and customers efficiently',
+  title: 'SatyaSell - AI-Powered Business Management Platform',
+  description: 'Manage your products, orders, customers, and WhatsApp communications — supercharged with AI. The all-in-one SaaS platform for modern businesses.',
+  keywords: ['business management', 'inventory', 'orders', 'AI', 'WhatsApp', 'SaaS', 'SatyaSell'],
   manifest: '/manifest.json',
+  openGraph: {
+    title: 'SatyaSell - AI-Powered Business Management',
+    description: 'The all-in-one platform to manage products, orders, customers, and WhatsApp — powered by AI.',
+    url: 'https://www.satyasell.com',
+    siteName: 'SatyaSell',
+    type: 'website',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'BizManager',
+    title: 'SatyaSell',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#2563eb',
+  themeColor: '#7c3aed',
 };
 
 export default function RootLayout({

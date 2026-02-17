@@ -1,5 +1,5 @@
 {
-  "name": "sellvia",
+  "name": "satyasell",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -21,6 +21,7 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@remixicon/react": "^4.9.0",
     "@supabase/supabase-js": "^2.39.0",
     "@types/bcryptjs": "^2.4.6",
@@ -38,6 +39,7 @@
     "lucide-react": "^0.316.0",
     "next": "^14.2.0",
     "next-pwa": "^5.6.0",
+    "openai": "^6.22.0",
     "postcss": "^8.4.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

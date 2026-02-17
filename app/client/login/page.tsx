@@ -46,16 +46,24 @@ export default function ClientLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white shadow-lg rounded-lg p-8">
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-900">
-            Client Login
+        <div className="bg-white/5 border border-white/10 shadow-2xl rounded-2xl p-8">
+          <div className="flex items-center justify-center gap-2.5 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-white tracking-tight">SatyaSell</span>
+          </div>
+          <h1 className="text-lg font-semibold text-center mb-6 text-gray-300">
+            Login to your account
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="mobile" className="block text-sm font-medium text-gray-400 mb-1">
                 Mobile Number
               </label>
               <input
@@ -64,13 +72,13 @@ export default function ClientLoginPage() {
                 placeholder="9876543210"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">
                 Password
               </label>
               <input
@@ -79,13 +87,13 @@ export default function ClientLoginPage() {
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
                 required
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded text-sm">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
@@ -93,14 +101,14 @@ export default function ClientLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg shadow-purple-500/20"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Default password: <span className="font-mono font-semibold">client</span>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Default password: <span className="font-mono font-semibold text-gray-400">client</span>
           </p>
         </div>
       </div>
