@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
 import { processMessageWithAI } from '@/lib/whatsapp/ai';
 
+export const dynamic = 'force-dynamic';
+
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'bizmanager_webhook_verify';
 
 // GET - Meta webhook verification

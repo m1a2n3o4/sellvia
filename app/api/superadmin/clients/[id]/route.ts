@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { getSuperAdminId } from '@/lib/auth/middleware';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Get single client by ID
 export async function GET(
   request: NextRequest,

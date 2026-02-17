@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
 import { createOrderSchema } from '@/lib/validations/order';
 
+export const dynamic = 'force-dynamic';
+
 function generateOrderNumber(): string {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);

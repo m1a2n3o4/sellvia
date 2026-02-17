@@ -3,6 +3,8 @@ import { getTenantId } from '@/lib/auth/middleware';
 import { uploadProductImage, validateImageFile } from '@/lib/supabase/storage';
 import { analyzeProductImage } from '@/lib/ai/product-vision';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const tenantId = await getTenantId(request);

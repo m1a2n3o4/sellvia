@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
 import { updateOrderSchema } from '@/lib/validations/order';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

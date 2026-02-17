@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
 import { sendWhatsAppMessage } from '@/lib/whatsapp/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
