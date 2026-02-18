@@ -342,6 +342,8 @@ model BusinessInfo {
   razorpayKeyId         String?  @map("razorpay_key_id")
   razorpayKeySecret     String?  @map("razorpay_key_secret")
   whatsappAppSecret     String?  @map("whatsapp_app_secret")
+  ownerPhone            String?  @map("owner_phone")
+  aiCustomInstructions  String?  @map("ai_custom_instructions")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 

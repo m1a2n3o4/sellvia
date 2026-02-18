@@ -7,7 +7,8 @@ type CommerceAction =
   | 'initiate_order'
   | 'collect_address'
   | 'confirm_order'
-  | 'track_order';
+  | 'track_order'
+  | 'escalate_to_owner';
 
 interface AIContext {
   tenantId: string;
@@ -30,6 +31,7 @@ interface AIResponse {
     address?: string;
     orderId?: string;
     searchQuery?: string;
+    escalationReason?: string;
   };
 }
 
@@ -57,14 +59,16 @@ const commerceFunctions: OpenAI.ChatCompletionTool[] = [
               'collect_address',
               'confirm_order',
               'track_order',
+              'escalate_to_owner',
             ],
             description: `The commerce action to perform:
 - none: General conversation, greeting, or info query. No commerce action needed.
-- search_products: Customer is asking about products, availability, or wants to browse. Extract searchQuery.
+- search_products: Customer is asking about products, availability, wants to browse, or asks to see/show/view product images. Extract searchQuery. Product images are sent automatically.
 - initiate_order: Customer wants to buy a specific product. Extract productId (or productName) and quantity if mentioned.
 - collect_address: Customer has provided their delivery address. Extract the address.
 - confirm_order: Customer confirms they want to proceed with the order.
-- track_order: Customer wants to track their order. Extract orderId if mentioned.`,
+- track_order: Customer wants to track their order. Extract orderId if mentioned.
+- escalate_to_owner: Customer is angry, frustrated, has a complaint about a defective/broken product, or explicitly asks to speak with the owner/manager. Extract escalationReason.`,
           },
           productId: {
             type: 'string',
@@ -93,6 +97,10 @@ const commerceFunctions: OpenAI.ChatCompletionTool[] = [
           searchQuery: {
             type: 'string',
             description: 'Search keywords for product search.',
+          },
+          escalationReason: {
+            type: 'string',
+            description: 'The reason for escalating to the business owner (customer complaint, issue description).',
           },
         },
         required: ['reply', 'action'],
@@ -235,19 +243,21 @@ CRITICAL RULES:
 INSTRUCTIONS:
 1. Be friendly, concise, and helpful. Use simple language.
 2. When customer asks about products, use action "search_products" with the relevant searchQuery. Include product details with prices in your reply.
-3. If a product is out of stock (Stock: 0), tell the customer it's currently unavailable.
-4. When customer wants to buy something, use action "initiate_order" with the productId and quantity.
-5. When the conversation state is "awaiting_quantity", parse the quantity from the customer's message and use action "initiate_order" with quantity.
-6. When the conversation state is "awaiting_address", the customer is providing their delivery address. Use action "collect_address" with the address. If they have NOT yet provided an address, ask for it.
-7. When the customer says "confirm" or agrees to proceed, use action "confirm_order" ONLY if delivery address has already been collected. Otherwise, ask for the address first.
-8. For order tracking queries, use action "track_order".
-9. If the customer says "cancel", "nevermind", or wants to stop ordering, use action "none" and acknowledge the cancellation.
-10. Always mention prices in ₹ (Indian Rupees).
-11. Keep responses under 300 words. WhatsApp messages should be short and readable.
-12. Use line breaks for readability. Don't use markdown formatting (no **, no ##).
-13. NEVER make up product information. Only share what's in the catalog.
-14. Always use the commerce_action function to structure your response.
-15. Include ProductID/VariantID in the function call when referencing specific products.`;
+3. When customer asks to see, show, or view a product image, use action "search_products" with the product name as searchQuery. You CAN show product images — they are sent automatically when you use "search_products". NEVER say you cannot show images.
+4. If a product is out of stock (Stock: 0), tell the customer it's currently unavailable.
+5. When customer wants to buy something, use action "initiate_order" with the productId and quantity.
+6. When the conversation state is "awaiting_quantity", parse the quantity from the customer's message and use action "initiate_order" with quantity.
+7. When the conversation state is "awaiting_address", the customer is providing their delivery address. Use action "collect_address" with the address. If they have NOT yet provided an address, ask for it.
+8. When the customer says "confirm" or agrees to proceed, use action "confirm_order" ONLY if delivery address has already been collected. Otherwise, ask for the address first.
+9. For order tracking queries, use action "track_order".
+10. If the customer is angry, frustrated, complaining about a broken/defective product, or asks to speak with the owner/manager/someone in charge, use action "escalate_to_owner" with the escalationReason. Tell the customer their concern has been noted and someone will contact them shortly.
+11. If the customer says "cancel", "nevermind", or wants to stop ordering, use action "none" and acknowledge the cancellation.
+12. Always mention prices in ₹ (Indian Rupees).
+13. Keep responses under 300 words. WhatsApp messages should be short and readable.
+14. Use line breaks for readability. Don't use markdown formatting (no **, no ##).
+15. NEVER make up product information. Only share what's in the catalog.
+16. Always use the commerce_action function to structure your response.
+17. Include ProductID/VariantID in the function call when referencing specific products.${businessInfo?.aiCustomInstructions ? `\n\nCUSTOM STORE RULES:\n${businessInfo.aiCustomInstructions}` : ''}`;
 
   try {
     const messages: OpenAI.ChatCompletionMessageParam[] = [
@@ -282,6 +292,7 @@ INSTRUCTIONS:
           address: parsed.address,
           orderId: parsed.orderId,
           searchQuery: parsed.searchQuery,
+          escalationReason: parsed.escalationReason,
         },
       };
     }

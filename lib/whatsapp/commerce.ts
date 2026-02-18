@@ -54,6 +54,9 @@ export async function handleCommerceFlow(ctx: CommerceContext) {
     case 'track_order':
       // Track order is handled by the AI reply itself
       break;
+    case 'escalate_to_owner':
+      await handleEscalation(ctx);
+      break;
   }
 }
 
@@ -350,6 +353,51 @@ async function handleOrderConfirmation(ctx: CommerceContext) {
       },
     });
   }
+}
+
+async function handleEscalation(ctx: CommerceContext) {
+  const { tenantId, customerPhone, customerName, chatId, phoneNumberId, accessToken, aiResult } = ctx;
+  const reason = aiResult.actionData?.escalationReason || 'Customer requested to speak with the owner';
+
+  // Get owner phone from business info
+  const businessInfo = await prisma.businessInfo.findUnique({
+    where: { tenantId },
+    select: { ownerPhone: true, storeName: true },
+  });
+
+  if (!businessInfo?.ownerPhone) {
+    console.warn('[Commerce] Escalation requested but no owner phone configured for tenant:', tenantId);
+    return;
+  }
+
+  // Send alert to business owner
+  try {
+    await sendWhatsAppMessage({
+      phoneNumberId,
+      accessToken,
+      to: businessInfo.ownerPhone,
+      message: `CUSTOMER ALERT\n\nCustomer: ${customerName || 'Unknown'} (${customerPhone})\nIssue: ${reason}\n\nPlease follow up with this customer.`,
+    });
+  } catch (error) {
+    console.error('[Commerce] Failed to send escalation to owner:', error);
+  }
+
+  // Save escalation record in chat
+  await prisma.whatsAppMessage.create({
+    data: {
+      tenantId,
+      chatId,
+      sender: 'ai',
+      content: `[Escalated to owner] Reason: ${reason}`,
+      messageType: 'text',
+      isAiGenerated: true,
+      status: 'sent',
+      metadata: { escalated: true, escalationReason: reason },
+    },
+  });
+
+  // Reset conversation state so next message starts fresh
+  await resetConversationState(chatId);
 }
 
 /**

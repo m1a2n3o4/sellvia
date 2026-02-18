@@ -26,6 +26,8 @@ interface BusinessInfoData {
   aiEnabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  ownerPhone: string;
+  aiCustomInstructions: string;
 }
 
 export default function SettingsPage() {
@@ -50,6 +52,8 @@ export default function SettingsPage() {
     aiEnabled: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
+    ownerPhone: '',
+    aiCustomInstructions: '',
   });
 
   useEffect(() => {
@@ -74,6 +78,8 @@ export default function SettingsPage() {
             aiEnabled: data.aiEnabled ?? true,
             razorpayKeyId: data.razorpayKeyId || '',
             razorpayKeySecret: data.razorpayKeySecret || '',
+            ownerPhone: data.ownerPhone || '',
+            aiCustomInstructions: data.aiCustomInstructions || '',
           });
         }
       } catch {
@@ -230,6 +236,19 @@ export default function SettingsPage() {
                 className="mt-1"
               />
             </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="ownerPhone">Owner WhatsApp Number</Label>
+              <Input
+                id="ownerPhone"
+                value={form.ownerPhone}
+                onChange={(e) => setForm({ ...form, ownerPhone: e.target.value })}
+                placeholder="e.g. 919876543210 (with country code, no +)"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                AI will notify you here when a customer needs personal attention (angry customer, complaints, escalations)
+              </p>
+            </div>
           </div>
         </div>
 
@@ -350,6 +369,20 @@ export default function SettingsPage() {
                 placeholder="sk-..."
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label htmlFor="aiCustomInstructions">Custom AI Instructions</Label>
+              <Textarea
+                id="aiCustomInstructions"
+                value={form.aiCustomInstructions}
+                onChange={(e) => setForm({ ...form, aiCustomInstructions: e.target.value })}
+                placeholder="e.g. Always recommend our bestseller Puma bags. Never offer discounts over 10%. Always greet customers in Hindi first."
+                rows={3}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Custom rules and instructions for the AI assistant. These will be followed in every conversation.
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Label htmlFor="aiEnabled">AI Auto-Reply</Label>

@@ -55,6 +55,8 @@ export async function PUT(request: NextRequest) {
       razorpayKeyId,
       razorpayKeySecret,
       whatsappAppSecret,
+      ownerPhone,
+      aiCustomInstructions,
     } = body;
 
     const businessInfo = await prisma.businessInfo.upsert({
@@ -75,6 +77,8 @@ export async function PUT(request: NextRequest) {
         ...(razorpayKeyId !== undefined && { razorpayKeyId }),
         ...(razorpayKeySecret !== undefined && { razorpayKeySecret }),
         ...(whatsappAppSecret !== undefined && { whatsappAppSecret }),
+        ...(ownerPhone !== undefined && { ownerPhone }),
+        ...(aiCustomInstructions !== undefined && { aiCustomInstructions }),
       },
       create: {
         tenantId,
@@ -93,6 +97,8 @@ export async function PUT(request: NextRequest) {
         razorpayKeyId,
         razorpayKeySecret,
         whatsappAppSecret,
+        ownerPhone,
+        aiCustomInstructions,
       },
     });
 
