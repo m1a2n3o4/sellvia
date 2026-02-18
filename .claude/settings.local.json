@@ -23,7 +23,8 @@
       "Bash(git push:*)",
       "Bash(node -e:*)",
       "Bash(export NEXT_PUBLIC_SUPABASE_URL=\"https://oaihzgdukxmublduqseb.supabase.co\")",
-      "Bash(export:*)"
+      "Bash(export:*)",
+      "Bash(vercel env ls:*)"
     ]
   }
 }
