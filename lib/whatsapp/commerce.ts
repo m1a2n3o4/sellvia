@@ -304,12 +304,41 @@ async function handleAddressReceived(ctx: CommerceContext) {
 }
 
 async function handleOrderConfirmation(ctx: CommerceContext) {
-  // Confirmation is mainly handled by the AI reply already.
-  // If we're in awaiting_address state, the AI would have asked for address.
-  // This is a catch-all for confirm actions.
-  const state = await getConversationState(ctx.chatId);
+  const { phoneNumberId, accessToken, customerPhone, chatId } = ctx;
+  const state = await getConversationState(chatId);
 
   if (!state) return;
+
+  // Safety guardrail: if we have product + quantity but NO address, force awaiting_address
+  if (state.productId && state.quantity && !state.deliveryAddress) {
+    await upsertConversationState(chatId, {
+      step: 'awaiting_address',
+      productId: state.productId,
+      variantId: state.variantId,
+      quantity: state.quantity,
+    });
+
+    await sendWhatsAppMessage({
+      phoneNumberId,
+      accessToken,
+      to: customerPhone,
+      message: 'Please share your delivery address so we can place your order.',
+    });
+
+    // Save the message
+    await prisma.whatsAppMessage.create({
+      data: {
+        tenantId: ctx.tenantId,
+        chatId,
+        sender: 'ai',
+        content: 'Please share your delivery address so we can place your order.',
+        messageType: 'text',
+        isAiGenerated: true,
+        status: 'sent',
+      },
+    });
+    return;
+  }
 
   // If we have all info needed (product + quantity + address), create order
   if (state.productId && state.quantity && state.deliveryAddress) {
