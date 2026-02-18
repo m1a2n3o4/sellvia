@@ -2,16 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
 import { createOrderSchema } from '@/lib/validations/order';
+import { createOrderFromWhatsApp } from '@/lib/whatsapp/order-service';
 
 export const dynamic = 'force-dynamic';
-
-function generateOrderNumber(): string {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  return `ORD-${yy}${mm}${dd}`;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -115,95 +108,23 @@ export async function POST(request: NextRequest) {
 
     const { items, customerName, customerMobile, customerId, ...orderData } = parsed.data;
 
-    const order = await prisma.$transaction(async (tx) => {
-      // Find or create customer
-      let customer;
-      if (customerId) {
-        customer = await tx.customer.findFirst({ where: { id: customerId, tenantId } });
-      }
-      if (!customer) {
-        customer = await tx.customer.findUnique({
-          where: { tenantId_mobile: { tenantId, mobile: customerMobile } },
-        });
-      }
-      if (!customer) {
-        customer = await tx.customer.create({
-          data: { tenantId, name: customerName, mobile: customerMobile },
-        });
-      }
-
-      // Generate order number
-      const prefix = generateOrderNumber();
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const countToday = await tx.order.count({
-        where: {
-          tenantId,
-          orderNumber: { startsWith: prefix },
-        },
-      });
-      const orderNumber = `${prefix}-${String(countToday + 1).padStart(3, '0')}`;
-
-      // Calculate totals
-      const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const total = subtotal - (orderData.discount || 0) + (orderData.shippingFee || 0) + (orderData.tax || 0);
-
-      // Create order
-      const newOrder = await tx.order.create({
-        data: {
-          tenantId,
-          orderNumber,
-          customerId: customer.id,
-          orderType: orderData.orderType,
-          paymentMethod: orderData.paymentMethod,
-          paymentStatus: orderData.paymentStatus,
-          deliveryAddress: orderData.deliveryAddress,
-          discount: orderData.discount || 0,
-          shippingFee: orderData.shippingFee || 0,
-          tax: orderData.tax || 0,
-          subtotal,
-          total,
-          notes: orderData.notes,
-          orderItems: {
-            create: items.map((item) => ({
-              tenantId,
-              productId: item.productId,
-              variantId: item.variantId || null,
-              productName: item.productName,
-              variantName: item.variantName,
-              price: item.price,
-              quantity: item.quantity,
-              subtotal: item.price * item.quantity,
-            })),
-          },
-        },
-        include: { customer: true, orderItems: true },
-      });
-
-      // Decrement stock for each item
-      for (const item of items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stockQuantity: { decrement: item.quantity } },
-        });
-        if (item.variantId) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { stockQuantity: { decrement: item.quantity } },
-          });
-        }
-      }
-
-      // Update customer stats
-      await tx.customer.update({
-        where: { id: customer.id },
-        data: {
-          totalOrders: { increment: 1 },
-          totalSpent: { increment: total },
-        },
-      });
-
-      return newOrder;
+    // Use shared order service
+    const order = await createOrderFromWhatsApp({
+      tenantId,
+      customerPhone: customerMobile,
+      customerName,
+      deliveryAddress: orderData.deliveryAddress || '',
+      items: items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        productName: item.productName,
+        variantName: item.variantName,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: orderData.paymentStatus as 'paid' | 'unpaid' | 'pending' | undefined,
+      notes: orderData.notes,
     });
 
     return NextResponse.json(order, { status: 201 });

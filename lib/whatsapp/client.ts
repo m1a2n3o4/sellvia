@@ -88,6 +88,77 @@ export async function sendWhatsAppImage({
   }
 }
 
+interface InteractiveButton {
+  id: string;
+  title: string;
+}
+
+interface SendInteractiveOptions {
+  phoneNumberId: string;
+  accessToken: string;
+  to: string;
+  bodyText: string;
+  buttons: InteractiveButton[];
+  headerText?: string;
+  footerText?: string;
+}
+
+export async function sendWhatsAppInteractiveMessage({
+  phoneNumberId,
+  accessToken,
+  to,
+  bodyText,
+  buttons,
+  headerText,
+  footerText,
+}: SendInteractiveOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const interactive: Record<string, unknown> = {
+      type: 'button',
+      body: { text: bodyText },
+      action: {
+        buttons: buttons.map((btn) => ({
+          type: 'reply',
+          reply: { id: btn.id, title: btn.title },
+        })),
+      },
+    };
+
+    if (headerText) {
+      interactive.header = { type: 'text', text: headerText };
+    }
+    if (footerText) {
+      interactive.footer = { text: footerText };
+    }
+
+    const res = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'interactive',
+        interactive,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('[WhatsApp] Interactive send failed:', data);
+      return { success: false, error: data.error?.message || 'Send failed' };
+    }
+
+    return { success: true, messageId: data.messages?.[0]?.id };
+  } catch (error) {
+    console.error('[WhatsApp] Interactive send error:', error);
+    return { success: false, error: 'Network error' };
+  }
+}
+
 export async function markMessageAsRead({
   phoneNumberId,
   accessToken,

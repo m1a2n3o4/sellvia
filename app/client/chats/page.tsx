@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Send, Bot, User, Building2, RefreshCw } from 'lucide-react';
+import { Search, Send, Bot, User, Building2, RefreshCw, Check, CheckCheck, Image as ImageIcon, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Chat {
@@ -17,14 +17,24 @@ interface Chat {
   status: string;
 }
 
+interface MessageMetadata {
+  orderId?: string;
+  orderNumber?: string;
+  paymentLinkUrl?: string;
+  paymentStatus?: string;
+  productId?: string;
+}
+
 interface Message {
   id: string;
   sender: 'customer' | 'business' | 'ai';
   content: string;
   messageType: string;
+  mediaUrl?: string | null;
   isAiGenerated: boolean;
   status: string;
   createdAt: string;
+  metadata?: MessageMetadata | null;
 }
 
 interface ChatWithMessages extends Chat {
@@ -152,6 +162,22 @@ export default function ChatsPage() {
     }
   };
 
+  const getStatusTicks = (status: string, sender: string) => {
+    if (sender === 'customer') return null;
+    switch (status) {
+      case 'sent':
+        return <Check className="h-3 w-3 text-gray-400" />;
+      case 'delivered':
+        return <CheckCheck className="h-3 w-3 text-gray-400" />;
+      case 'read':
+        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+      case 'failed':
+        return <span className="text-[9px] text-red-500">Failed</span>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-6rem)] -m-4 md:-m-8">
       {/* Chat List Sidebar */}
@@ -247,7 +273,9 @@ export default function ChatsPage() {
                 </p>
                 <p className="text-xs text-gray-500">{formatPhone(selectedChat.customerPhone)}</p>
               </div>
-              <Badge variant="outline" className="text-xs">WhatsApp</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">WhatsApp</Badge>
+              </div>
             </div>
 
             {/* Messages */}
@@ -263,6 +291,7 @@ export default function ChatsPage() {
               ) : (
                 selectedChat.messages.map((msg) => {
                   const isCustomer = msg.sender === 'customer';
+                  const meta = msg.metadata as MessageMetadata | null;
                   return (
                     <div
                       key={msg.id}
@@ -292,15 +321,63 @@ export default function ChatsPage() {
                             {msg.sender === 'ai' ? 'AI Bot' : msg.sender === 'business' ? 'You' : 'Customer'}
                           </span>
                         </div>
+
+                        {/* Image message */}
+                        {msg.messageType === 'image' && msg.mediaUrl && (
+                          <div className="mb-2">
+                            <img
+                              src={msg.mediaUrl}
+                              alt="Product"
+                              className="rounded-md max-w-full max-h-48 object-cover"
+                            />
+                          </div>
+                        )}
+
+                        {/* Image indicator when no URL */}
+                        {msg.messageType === 'image' && !msg.mediaUrl && (
+                          <div className="mb-2 flex items-center gap-1 text-gray-400">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="text-xs">Image</span>
+                          </div>
+                        )}
+
+                        {/* Order card */}
+                        {meta?.orderId && meta?.orderNumber && (
+                          <div className="mb-2 bg-white/60 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-600 rounded-md p-2.5">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Package className="h-3.5 w-3.5 text-orange-500" />
+                              <span className="text-xs font-semibold text-gray-700 dark:text-neutral-300">
+                                {meta.orderNumber}
+                              </span>
+                              {meta.paymentStatus === 'paid' && (
+                                <Badge className="text-[9px] h-4 bg-green-500">Paid</Badge>
+                              )}
+                            </div>
+                            {meta.paymentLinkUrl && (
+                              <a
+                                href={meta.paymentLinkUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-blue-500 hover:underline break-all"
+                              >
+                                Payment Link
+                              </a>
+                            )}
+                          </div>
+                        )}
+
                         <p className="text-sm text-gray-800 dark:text-neutral-200 whitespace-pre-wrap">
                           {msg.content}
                         </p>
-                        <p className="text-[10px] text-gray-400 mt-1 text-right">
-                          {new Date(msg.createdAt).toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <p className="text-[10px] text-gray-400">
+                            {new Date(msg.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                          {getStatusTicks(msg.status, msg.sender)}
+                        </div>
                       </div>
                     </div>
                   );

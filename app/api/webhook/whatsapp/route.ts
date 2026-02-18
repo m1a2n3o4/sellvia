@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
 import { processMessageWithAI } from '@/lib/whatsapp/ai';
+import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
+import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +27,23 @@ export async function GET(request: NextRequest) {
 // POST - Incoming WhatsApp messages
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Read body as text first (needed for signature verification), then parse
+    const rawBody = await request.text();
+    const body = JSON.parse(rawBody);
 
     // Meta sends webhook events in this structure
     const entry = body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
 
+    // Handle message status updates (sent/delivered/read)
+    if (value?.statuses?.[0]) {
+      await handleStatusUpdate(value.statuses[0], value.metadata?.phone_number_id);
+      return NextResponse.json({ status: 'ok' });
+    }
+
     if (!value?.messages?.[0]) {
-      // Status update or other non-message event - acknowledge
+      // Other non-message event — acknowledge
       return NextResponse.json({ status: 'ok' });
     }
 
@@ -48,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Extract message content based on type
     let messageContent = '';
-    let messageType: 'text' | 'image' | 'audio' | 'video' | 'document' | 'location' = 'text';
+    let messageType: 'text' | 'image' | 'audio' | 'video' | 'document' | 'location' | 'interactive' = 'text';
 
     switch (message.type) {
       case 'text':
@@ -75,6 +85,14 @@ export async function POST(request: NextRequest) {
         messageContent = `[Location: ${message.location?.latitude}, ${message.location?.longitude}]`;
         messageType = 'location';
         break;
+      case 'interactive':
+        // Button reply or list reply
+        messageContent =
+          message.interactive?.button_reply?.title ||
+          message.interactive?.list_reply?.title ||
+          '[Interactive reply]';
+        messageType = 'interactive';
+        break;
       default:
         messageContent = '[Unsupported message type]';
     }
@@ -94,6 +112,16 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantId = businessInfo.tenantId;
+
+    // Verify Meta webhook signature if app secret is configured
+    if (businessInfo.whatsappAppSecret) {
+      const signature = request.headers.get('x-hub-signature-256');
+      const isValid = verifyMetaWebhookSignature(rawBody, signature, businessInfo.whatsappAppSecret);
+      if (!isValid) {
+        console.error('[Webhook] Invalid Meta signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    }
 
     // Find or create chat
     let chat = await prisma.whatsAppChat.findUnique({
@@ -134,7 +162,7 @@ export async function POST(request: NextRequest) {
         sender: 'customer',
         senderPhone: customerPhone,
         content: messageContent,
-        messageType,
+        messageType: messageType as any,
         status: 'delivered',
       },
     });
@@ -148,16 +176,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Process with AI if enabled and it's a text message
-    if (businessInfo.aiEnabled && businessInfo.openaiKey && messageType === 'text') {
+    // Process with AI if enabled and it's a text/interactive message
+    if (
+      businessInfo.aiEnabled &&
+      businessInfo.openaiKey &&
+      (messageType === 'text' || messageType === 'interactive')
+    ) {
+      // Get conversation state for context
+      const conversationState = await getOrCreateConversationState(chat.id);
+
       const aiResult = await processMessageWithAI({
         tenantId,
         customerPhone,
         customerMessage: messageContent,
         openaiKey: businessInfo.openaiKey,
+        conversationStep: conversationState.step,
+        conversationProductId: conversationState.productId || undefined,
+        conversationQuantity: conversationState.quantity || undefined,
       });
 
-      // Send AI reply via WhatsApp
+      // Send AI text reply via WhatsApp
       if (businessInfo.whatsappToken) {
         const sendResult = await sendWhatsAppMessage({
           phoneNumberId,
@@ -188,6 +226,21 @@ export async function POST(request: NextRequest) {
             lastMessageAt: new Date(),
           },
         });
+
+        // Execute commerce flow actions (send images, create orders, etc.)
+        if (aiResult.action !== 'none') {
+          await handleCommerceFlow({
+            tenantId,
+            chatId: chat.id,
+            customerPhone,
+            customerName,
+            phoneNumberId,
+            accessToken: businessInfo.whatsappToken,
+            aiResult,
+            razorpayKeyId: businessInfo.razorpayKeyId,
+            razorpayKeySecret: businessInfo.razorpayKeySecret,
+          });
+        }
       }
     }
 
@@ -196,5 +249,30 @@ export async function POST(request: NextRequest) {
     console.error('[Webhook] Error processing message:', error);
     // Always return 200 to Meta so they don't retry
     return NextResponse.json({ status: 'error' }, { status: 200 });
+  }
+}
+
+/**
+ * Handle message status updates from WhatsApp (sent/delivered/read).
+ */
+async function handleStatusUpdate(
+  status: { id: string; status: string; timestamp: string },
+  phoneNumberId: string | undefined
+) {
+  try {
+    const waMessageId = status.id;
+    const newStatus = status.status; // 'sent' | 'delivered' | 'read' | 'failed'
+
+    if (!waMessageId || !['sent', 'delivered', 'read', 'failed'].includes(newStatus)) {
+      return;
+    }
+
+    // Update message status in database
+    await prisma.whatsAppMessage.updateMany({
+      where: { waMessageId },
+      data: { status: newStatus as any },
+    });
+  } catch (error) {
+    console.error('[Webhook] Status update error:', error);
   }
 }

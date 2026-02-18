@@ -1,17 +1,105 @@
 import OpenAI from 'openai';
 import { prisma } from '@/lib/db/prisma';
 
+type CommerceAction =
+  | 'none'
+  | 'search_products'
+  | 'initiate_order'
+  | 'collect_address'
+  | 'confirm_order'
+  | 'track_order';
+
 interface AIContext {
   tenantId: string;
   customerPhone: string;
   customerMessage: string;
   openaiKey: string;
+  conversationStep?: string;
+  conversationProductId?: string;
+  conversationQuantity?: number;
 }
 
 interface AIResponse {
   reply: string;
-  intent: 'general_enquiry' | 'product_search' | 'order_placement' | 'order_tracking' | 'greeting' | 'unknown';
+  action: CommerceAction;
+  actionData?: {
+    productId?: string;
+    productName?: string;
+    variantId?: string;
+    quantity?: number;
+    address?: string;
+    orderId?: string;
+    searchQuery?: string;
+  };
 }
+
+const commerceFunctions: OpenAI.ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'commerce_action',
+      description:
+        'Determine the commerce action to take based on the customer message. Always call this function.',
+      parameters: {
+        type: 'object',
+        properties: {
+          reply: {
+            type: 'string',
+            description:
+              'The text reply to send to the customer via WhatsApp. Keep it under 300 words, friendly, and use line breaks. No markdown.',
+          },
+          action: {
+            type: 'string',
+            enum: [
+              'none',
+              'search_products',
+              'initiate_order',
+              'collect_address',
+              'confirm_order',
+              'track_order',
+            ],
+            description: `The commerce action to perform:
+- none: General conversation, greeting, or info query. No commerce action needed.
+- search_products: Customer is asking about products, availability, or wants to browse. Extract searchQuery.
+- initiate_order: Customer wants to buy a specific product. Extract productId (or productName) and quantity if mentioned.
+- collect_address: Customer has provided their delivery address. Extract the address.
+- confirm_order: Customer confirms they want to proceed with the order.
+- track_order: Customer wants to track their order. Extract orderId if mentioned.`,
+          },
+          productId: {
+            type: 'string',
+            description: 'The product ID if the customer references a specific product.',
+          },
+          productName: {
+            type: 'string',
+            description: 'The product name if customer mentions a product by name.',
+          },
+          variantId: {
+            type: 'string',
+            description: 'The variant ID if a specific variant is referenced.',
+          },
+          quantity: {
+            type: 'number',
+            description: 'The quantity the customer wants to order.',
+          },
+          address: {
+            type: 'string',
+            description: 'The delivery address provided by the customer.',
+          },
+          orderId: {
+            type: 'string',
+            description: 'The order ID or order number for tracking.',
+          },
+          searchQuery: {
+            type: 'string',
+            description: 'Search keywords for product search.',
+          },
+        },
+        required: ['reply', 'action'],
+      },
+    },
+  },
+];
 
 export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> {
   const openai = new OpenAI({ apiKey: ctx.openaiKey });
@@ -61,31 +149,56 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
 
   const recentMessages = (chat?.messages || []).reverse();
 
-  // Build product catalog string
-  const productCatalog = products.map((p) => {
-    const variantInfo = p.variants.length > 0
-      ? p.variants.map((v) => {
-          const attrs = Object.entries(v.attributes as Record<string, string>)
-            .map(([k, val]) => `${k}: ${val}`)
-            .join(', ');
-          return `  - ${v.variantName} (${attrs}) - ₹${v.price} (Stock: ${v.stockQuantity})`;
-        }).join('\n')
-      : '';
+  // Build product catalog string with IDs so GPT can reference specific products
+  const productCatalog = products
+    .map((p) => {
+      const images = (p.images as string[]) || [];
+      const hasImage = images.length > 0;
+      const variantInfo =
+        p.variants.length > 0
+          ? p.variants
+              .map((v) => {
+                const attrs = Object.entries(v.attributes as Record<string, string>)
+                  .map(([k, val]) => `${k}: ${val}`)
+                  .join(', ');
+                return `  - [VariantID: ${v.id}] ${v.variantName} (${attrs}) - ₹${v.price} (Stock: ${v.stockQuantity})`;
+              })
+              .join('\n')
+          : '';
 
-    return `• ${p.name}${p.brand ? ` (${p.brand})` : ''} - ₹${p.basePrice} (Stock: ${p.stockQuantity})${p.description ? ` - ${p.description}` : ''}${variantInfo ? '\n' + variantInfo : ''}`;
-  }).join('\n');
+      return `• [ProductID: ${p.id}] ${p.name}${p.brand ? ` (${p.brand})` : ''} - ₹${p.basePrice} (Stock: ${p.stockQuantity})${hasImage ? ' [has image]' : ''}${p.description ? ` - ${p.description}` : ''}${variantInfo ? '\n' + variantInfo : ''}`;
+    })
+    .join('\n');
 
   // Build order history
-  const orderHistory = customer?.orders?.map((o) => {
-    const items = o.orderItems.map((i) => `${i.productName} x${i.quantity}`).join(', ');
-    return `Order ${o.orderNumber}: ${items} | Total: ₹${o.total} | Status: ${o.status} | Delivery: ${o.deliveryStatus}`;
-  }).join('\n') || 'No previous orders';
+  const orderHistory =
+    customer?.orders
+      ?.map((o) => {
+        const items = o.orderItems.map((i) => `${i.productName} x${i.quantity}`).join(', ');
+        return `Order ${o.orderNumber}: ${items} | Total: ₹${o.total} | Status: ${o.status} | Delivery: ${o.deliveryStatus}`;
+      })
+      .join('\n') || 'No previous orders';
 
   // Build conversation history
   const conversationHistory = recentMessages.map((m) => ({
     role: (m.sender === 'customer' ? 'user' : 'assistant') as 'user' | 'assistant',
     content: m.content,
   }));
+
+  // Build conversation state context
+  let stateContext = '';
+  if (ctx.conversationStep && ctx.conversationStep !== 'idle') {
+    stateContext = `\nCURRENT CONVERSATION STATE: ${ctx.conversationStep}`;
+    if (ctx.conversationProductId) {
+      const product = products.find((p) => p.id === ctx.conversationProductId);
+      if (product) {
+        stateContext += `\nSelected Product: ${product.name} - ₹${product.basePrice}`;
+      }
+    }
+    if (ctx.conversationQuantity) {
+      stateContext += `\nSelected Quantity: ${ctx.conversationQuantity}`;
+    }
+  }
 
   const systemPrompt = `You are a helpful WhatsApp sales assistant for "${businessInfo?.storeName || 'our store'}".
 
@@ -105,20 +218,24 @@ CUSTOMER INFO:
 - Name: ${customer?.name || 'Unknown'}
 - Previous Orders: ${customer?.totalOrders || 0}
 ${orderHistory !== 'No previous orders' ? `\nORDER HISTORY:\n${orderHistory}` : ''}
+${stateContext}
 
 INSTRUCTIONS:
 1. Be friendly, concise, and helpful. Use simple language.
-2. When customer asks about products, search the catalog above and provide accurate info with prices.
+2. When customer asks about products, use action "search_products" with the relevant searchQuery. Include product details with prices in your reply.
 3. If a product is out of stock (Stock: 0), tell the customer it's currently unavailable.
-4. If customer wants to place an order, confirm the product, quantity, and ask for delivery address.
-5. For order tracking queries, use the order history above.
-6. If you don't know something or it's not in your data, say so honestly.
-7. Always mention prices in ₹ (Indian Rupees).
-8. Keep responses under 300 words. WhatsApp messages should be short and readable.
-9. Use line breaks for readability. Don't use markdown formatting (no **, no ##).
-10. If greeting, include the store name.
-11. NEVER make up product information. Only share what's in the catalog.
-12. If the customer wants to order, list what they want with prices and say "Please confirm to place the order and share your delivery address."`;
+4. When customer wants to buy something, use action "initiate_order" with the productId and quantity.
+5. When the conversation state is "awaiting_quantity", parse the quantity from the customer's message and use action "initiate_order" with quantity.
+6. When the conversation state is "awaiting_address", the customer is providing their delivery address. Use action "collect_address" with the address.
+7. When the customer says "confirm" or agrees to proceed, use action "confirm_order".
+8. For order tracking queries, use action "track_order".
+9. If the customer says "cancel", "nevermind", or wants to stop ordering, use action "none" and acknowledge the cancellation.
+10. Always mention prices in ₹ (Indian Rupees).
+11. Keep responses under 300 words. WhatsApp messages should be short and readable.
+12. Use line breaks for readability. Don't use markdown formatting (no **, no ##).
+13. NEVER make up product information. Only share what's in the catalog.
+14. Always use the commerce_action function to structure your response.
+15. Include ProductID/VariantID in the function call when referencing specific products.`;
 
   try {
     const messages: OpenAI.ChatCompletionMessageParam[] = [
@@ -130,39 +247,45 @@ INSTRUCTIONS:
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages,
-      max_tokens: 500,
+      tools: commerceFunctions,
+      tool_choice: { type: 'function', function: { name: 'commerce_action' } },
+      max_tokens: 800,
       temperature: 0.7,
     });
 
-    const reply = completion.choices[0]?.message?.content || "Sorry, I couldn't process your message. Please try again.";
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0] as
+      | { function: { arguments: string } }
+      | undefined;
 
-    // Detect intent
-    const intent = detectIntent(ctx.customerMessage);
+    if (toolCall?.function?.arguments) {
+      const parsed = JSON.parse(toolCall.function.arguments);
+      return {
+        reply: parsed.reply || "Sorry, I couldn't process your message. Please try again.",
+        action: parsed.action || 'none',
+        actionData: {
+          productId: parsed.productId,
+          productName: parsed.productName,
+          variantId: parsed.variantId,
+          quantity: parsed.quantity,
+          address: parsed.address,
+          orderId: parsed.orderId,
+          searchQuery: parsed.searchQuery,
+        },
+      };
+    }
 
-    return { reply, intent };
+    // Fallback: if no tool call, use the text response
+    const reply =
+      completion.choices[0]?.message?.content ||
+      "Sorry, I couldn't process your message. Please try again.";
+    return { reply, action: 'none' };
   } catch (error) {
     console.error('[AI] OpenAI error:', error);
     return {
       reply: "Sorry, I'm having trouble right now. Please try again in a moment or contact us directly.",
-      intent: 'unknown',
+      action: 'none',
     };
   }
 }
 
-function detectIntent(message: string): AIResponse['intent'] {
-  const lower = message.toLowerCase();
-
-  if (/\b(hi|hello|hey|namaste|good morning|good evening)\b/.test(lower)) {
-    return 'greeting';
-  }
-  if (/\b(order|buy|purchase|want to buy|i want|i need|add to cart)\b/.test(lower)) {
-    return 'order_placement';
-  }
-  if (/\b(where is my order|order status|track|tracking|delivery status|when will i get)\b/.test(lower)) {
-    return 'order_tracking';
-  }
-  if (/\b(do you have|available|stock|price|cost|how much|show me|any new|catalog)\b/.test(lower)) {
-    return 'product_search';
-  }
-  return 'general_enquiry';
-}
+export type { AIContext, AIResponse, CommerceAction };

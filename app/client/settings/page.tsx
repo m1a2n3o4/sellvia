@@ -21,8 +21,11 @@ interface BusinessInfoData {
   whatsappPhoneNumberId: string;
   whatsappBusinessId: string;
   whatsappToken: string;
+  whatsappAppSecret: string;
   openaiKey: string;
   aiEnabled: boolean;
+  razorpayKeyId: string;
+  razorpayKeySecret: string;
 }
 
 export default function SettingsPage() {
@@ -42,8 +45,11 @@ export default function SettingsPage() {
     whatsappPhoneNumberId: '',
     whatsappBusinessId: '',
     whatsappToken: '',
+    whatsappAppSecret: '',
     openaiKey: '',
     aiEnabled: true,
+    razorpayKeyId: '',
+    razorpayKeySecret: '',
   });
 
   useEffect(() => {
@@ -63,8 +69,11 @@ export default function SettingsPage() {
             whatsappPhoneNumberId: data.whatsappPhoneNumberId || '',
             whatsappBusinessId: data.whatsappBusinessId || '',
             whatsappToken: data.whatsappToken || '',
+            whatsappAppSecret: data.whatsappAppSecret || '',
             openaiKey: data.openaiKey || '',
             aiEnabled: data.aiEnabled ?? true,
+            razorpayKeyId: data.razorpayKeyId || '',
+            razorpayKeySecret: data.razorpayKeySecret || '',
           });
         }
       } catch {
@@ -262,6 +271,63 @@ export default function SettingsPage() {
                 placeholder="Your WhatsApp API token"
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label htmlFor="whatsappAppSecret">App Secret (for webhook verification)</Label>
+              <Input
+                id="whatsappAppSecret"
+                type="password"
+                value={form.whatsappAppSecret}
+                onChange={(e) => setForm({ ...form, whatsappAppSecret: e.target.value })}
+                placeholder="Meta App Secret"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Found in Meta Developer Dashboard → App Settings → Basic → App Secret
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Razorpay Config */}
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Razorpay Payment Gateway</h2>
+          <p className="text-sm text-gray-500 dark:text-neutral-400">
+            Configure Razorpay to accept payments via WhatsApp payment links
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="razorpayKeyId">Razorpay Key ID</Label>
+              <Input
+                id="razorpayKeyId"
+                value={form.razorpayKeyId}
+                onChange={(e) => setForm({ ...form, razorpayKeyId: e.target.value })}
+                placeholder="rzp_live_..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="razorpayKeySecret">Razorpay Key Secret</Label>
+              <Input
+                id="razorpayKeySecret"
+                type="password"
+                value={form.razorpayKeySecret}
+                onChange={(e) => setForm({ ...form, razorpayKeySecret: e.target.value })}
+                placeholder="Your Razorpay Key Secret"
+                className="mt-1"
+              />
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                <strong>Razorpay Webhook URL</strong> (set in Razorpay Dashboard → Webhooks):
+              </p>
+              <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-2 py-1 rounded block mt-1 text-amber-700 dark:text-amber-300 break-all">
+                {typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/razorpay` : '/api/webhook/razorpay'}
+              </code>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Subscribe to: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 rounded">payment_link.paid</code>
+              </p>
             </div>
           </div>
         </div>

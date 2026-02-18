@@ -162,10 +162,13 @@ model Order {
   deliveryAddress  String?  @map("delivery_address")
   deliveryStatus   DeliveryStatus @default(pending) @map("delivery_status")
   notes            String?
-  cancelledReason  String?  @map("cancelled_reason")
-  cancelledAt      DateTime? @map("cancelled_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  cancelledReason        String?  @map("cancelled_reason")
+  cancelledAt            DateTime? @map("cancelled_at")
+  chatId                 String?  @map("chat_id")
+  razorpayPaymentLinkId  String?  @map("razorpay_payment_link_id")
+  razorpayPaymentId      String?  @map("razorpay_payment_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
 
   // Relations
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -179,6 +182,7 @@ model Order {
   @@index([tenantId, orderDate(sort: Desc)])
   @@index([tenantId, orderType])
   @@index([paymentStatus])
+  @@index([razorpayPaymentLinkId])
   @@map("orders")
 }
 
@@ -254,8 +258,9 @@ model WhatsAppChat {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  messages WhatsAppMessage[]
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages          WhatsAppMessage[]
+  conversationState ConversationState?
 
   @@unique([tenantId, customerPhone])
   @@index([tenantId])
@@ -282,6 +287,8 @@ model WhatsAppMessage {
   status      MessageStatus @default(sent)
   isAiGenerated Boolean @default(false) @map("is_ai_generated")
   createdAt   DateTime @default(now()) @map("created_at")
+
+  metadata    Json?    // stores orderId, productId, paymentLink for rich message rendering
 
   // Relations
   tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -331,12 +338,46 @@ model BusinessInfo {
   whatsappBusinessId    String? @map("whatsapp_business_id")
   whatsappToken         String? @map("whatsapp_token")
   openaiKey             String? @map("openai_key")
-  aiEnabled    Boolean  @default(true) @map("ai_enabled")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  aiEnabled             Boolean  @default(true) @map("ai_enabled")
+  razorpayKeyId         String?  @map("razorpay_key_id")
+  razorpayKeySecret     String?  @map("razorpay_key_secret")
+  whatsappAppSecret     String?  @map("whatsapp_app_secret")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("business_info")
+}
+
+enum ConversationStep {
+  idle
+  product_shown
+  awaiting_quantity
+  awaiting_address
+  awaiting_payment
+  order_complete
+}
+
+model ConversationState {
+  id             String           @id @default(uuid())
+  chatId         String           @unique @map("chat_id")
+  step           ConversationStep @default(idle)
+  productId      String?          @map("product_id")
+  variantId      String?          @map("variant_id")
+  quantity       Int?
+  deliveryAddress String?         @map("delivery_address")
+  orderId        String?          @map("order_id")
+  paymentLinkId  String?          @map("payment_link_id")
+  paymentLinkUrl String?          @map("payment_link_url")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  chat WhatsAppChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([updatedAt])
+  @@map("conversation_states")
 }
