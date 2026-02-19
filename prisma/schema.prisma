@@ -30,8 +30,9 @@ model Tenant {
   clientName   String   @map("client_name")
   businessName String   @map("business_name")
   mobile       String   @unique
-  passwordHash String   @map("password_hash")
-  address      String
+  passwordHash      String   @map("password_hash")
+  pinChangeRequired Boolean  @default(true) @map("pin_change_required")
+  address           String
   status       TenantStatus
   features     Json     @default("{\"inventory\":true,\"orders\":true,\"customers\":true,\"broadcasting\":false,\"whatsapp\":false}")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -55,6 +56,19 @@ model Tenant {
 enum TenantStatus {
   active
   inactive
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  mobile    String
+  otp       String
+  expiresAt DateTime @map("expires_at")
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([mobile])
+  @@map("otp_verifications")
 }
 
 // ============================================

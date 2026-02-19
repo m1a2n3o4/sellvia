@@ -9,6 +9,7 @@ export interface JWTPayload {
   tenantId?: string;
   role: 'superadmin' | 'client';
   username?: string;
+  pinChangeRequired?: boolean;
   [key: string]: unknown;
 }
 

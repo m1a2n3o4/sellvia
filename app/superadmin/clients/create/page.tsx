@@ -47,9 +47,9 @@ export default function CreateClientPage() {
         return;
       }
 
-      // Show success message with default password
+      // Show success message with generated PIN
       alert(
-        `Client created successfully!\n\nLogin Credentials:\nMobile: ${formData.mobile}\nPassword: ${data.defaultPassword}\n\nPlease share these credentials with the client.`
+        `Client created successfully!\n\nLogin Credentials:\nMobile: ${formData.mobile}\nPIN: ${data.generatedPin}\n\nA welcome SMS with the PIN has been sent to the client.`
       );
 
       router.push('/superadmin/clients');
@@ -202,7 +202,7 @@ export default function CreateClientPage() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
             <p className="text-sm text-blue-800">
-              <strong>Note:</strong> The default password will be "client". Please share the credentials with the client after creation.
+              <strong>Note:</strong> A random 6-digit PIN will be generated and sent to the client via SMS. The client will be asked to change it on first login.
             </p>
           </div>
 

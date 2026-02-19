@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { signJWT } from '@/lib/auth/jwt';
+import { verifyOtp } from '@/lib/sms/otp';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { mobile, password } = body;
+    const { mobile, pin, otp, mode } = body;
 
-    // Validate input
-    if (!mobile || !password) {
+    if (!mobile || !mode) {
       return NextResponse.json(
-        { error: 'Mobile and password are required' },
+        { error: 'Mobile and mode are required' },
         { status: 400 }
       );
     }
@@ -25,12 +25,11 @@ export async function POST(request: NextRequest) {
 
     if (!tenant) {
       return NextResponse.json(
-        { error: 'Invalid mobile number or password' },
+        { error: 'Invalid mobile number' },
         { status: 401 }
       );
     }
 
-    // Check if tenant is active
     if (tenant.status !== 'active') {
       return NextResponse.json(
         { error: 'Account is inactive. Please contact administrator.' },
@@ -38,13 +37,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, tenant.passwordHash);
+    if (mode === 'pin') {
+      if (!pin || !/^\d{6}$/.test(pin)) {
+        return NextResponse.json(
+          { error: 'PIN must be 6 digits' },
+          { status: 400 }
+        );
+      }
 
-    if (!isValidPassword) {
+      const isValid = await bcrypt.compare(pin, tenant.passwordHash);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Invalid PIN' },
+          { status: 401 }
+        );
+      }
+    } else if (mode === 'otp') {
+      if (!otp || !/^\d{6}$/.test(otp)) {
+        return NextResponse.json(
+          { error: 'OTP must be 6 digits' },
+          { status: 400 }
+        );
+      }
+
+      const otpResult = await verifyOtp(mobile, otp);
+      if (!otpResult.success) {
+        return NextResponse.json(
+          { error: otpResult.error },
+          { status: 401 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { error: 'Invalid mobile number or password' },
-        { status: 401 }
+        { error: 'Invalid mode. Use "pin" or "otp".' },
+        { status: 400 }
       );
     }
 
@@ -53,11 +79,12 @@ export async function POST(request: NextRequest) {
       userId: tenant.id,
       tenantId: tenant.id,
       role: 'client',
+      pinChangeRequired: tenant.pinChangeRequired,
     });
 
-    // Create response with token in cookie
     const response = NextResponse.json({
       success: true,
+      pinChangeRequired: tenant.pinChangeRequired,
       user: {
         id: tenant.id,
         clientName: tenant.clientName,
@@ -68,12 +95,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set HTTP-only cookie for security
     response.cookies.set('client_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+      maxAge: 60 * 60 * 24 * 30,
       path: '/',
     });
 

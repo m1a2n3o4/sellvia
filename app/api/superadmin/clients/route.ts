@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { getSuperAdminId } from '@/lib/auth/middleware';
+import { generatePin } from '@/lib/sms/otp';
+import { sendSms } from '@/lib/sms/fast2sms';
+import { welcomePin } from '@/lib/sms/templates';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,9 +68,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Default password is "client"
-    const defaultPassword = 'client';
-    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+    // Generate random 6-digit PIN
+    const generatedPin = generatePin();
+    const passwordHash = await bcrypt.hash(generatedPin, 10);
 
     // Create tenant
     const tenant = await prisma.tenant.create({
@@ -76,6 +79,7 @@ export async function POST(request: NextRequest) {
         businessName,
         mobile,
         passwordHash,
+        pinChangeRequired: true,
         address,
         status: status || 'active',
         features: features || {
@@ -87,6 +91,11 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Send welcome SMS with PIN (fire-and-forget)
+    sendSms({ mobile, message: welcomePin(clientName, generatedPin) }).catch((err) =>
+      console.error('[SMS] Welcome SMS failed:', err)
+    );
 
     return NextResponse.json(
       {
@@ -100,7 +109,7 @@ export async function POST(request: NextRequest) {
           status: tenant.status,
           features: tenant.features,
         },
-        defaultPassword,
+        generatedPin,
       },
       { status: 201 }
     );

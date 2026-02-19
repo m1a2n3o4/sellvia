@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { sendOrderNotificationSms } from '@/lib/sms/notifications';
 
 interface OrderItem {
   productId: string;
@@ -127,6 +128,15 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
 
     return newOrder;
   });
+
+  // Send SMS notification to owner (fire-and-forget)
+  sendOrderNotificationSms({
+    tenantId,
+    orderNumber: order.orderNumber,
+    customerName: order.customer.name,
+    total: Number(order.total),
+    itemCount: items.length,
+  }).catch((err) => console.error('[SMS] Order notification failed:', err));
 
   return order;
 }

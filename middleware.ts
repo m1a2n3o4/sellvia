@@ -36,8 +36,8 @@ export async function middleware(request: NextRequest) {
 
   // Client routes
   if (pathname.startsWith('/client')) {
-    // Allow login page
-    if (pathname === '/client/login') {
+    // Allow login and change-pin pages without auth
+    if (pathname === '/client/login' || pathname === '/client/change-pin') {
       return NextResponse.next();
     }
 
@@ -51,6 +51,11 @@ export async function middleware(request: NextRequest) {
       const payload = await verifyJWT(token);
       if (payload.role !== 'client') {
         return NextResponse.redirect(new URL('/client/login', request.url));
+      }
+
+      // Force PIN change if required
+      if (payload.pinChangeRequired && !pathname.startsWith('/client/change-pin') && !pathname.startsWith('/api/client/auth/change-pin')) {
+        return NextResponse.redirect(new URL('/client/change-pin', request.url));
       }
 
       // Inject tenant_id into headers for API routes

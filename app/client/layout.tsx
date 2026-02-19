@@ -40,7 +40,7 @@ export default function ClientLayout({
   };
 
   // Don't show sidebar on login page
-  if (pathname === '/client/login') {
+  if (pathname === '/client/login' || pathname === '/client/change-pin') {
     return <>{children}</>;
   }
 

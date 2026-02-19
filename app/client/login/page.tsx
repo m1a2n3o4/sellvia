@@ -1,14 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+type LoginMode = 'pin' | 'otp';
 
 export default function ClientLoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<LoginMode>('pin');
   const [mobile, setMobile] = useState('');
-  const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const handleSendOtp = async () => {
+    if (!mobile || mobile.length !== 10) {
+      setError('Enter a valid 10-digit mobile number');
+      return;
+    }
+    setError('');
+    setOtpLoading(true);
+
+    try {
+      const res = await fetch('/api/client/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to send OTP');
+        setOtpLoading(false);
+        return;
+      }
+
+      setOtpSent(true);
+      setCooldown(60);
+    } catch {
+      setError('Failed to send OTP. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,11 +61,15 @@ export default function ClientLoginPage() {
     setLoading(true);
 
     try {
+      const payload: Record<string, string> = { mobile, mode };
+      if (mode === 'pin') payload.pin = pin;
+      if (mode === 'otp') payload.otp = otp;
+
       const res = await fetch('/api/client/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile, password }),
-        credentials: 'include', // Important: Include cookies in request
+        body: JSON.stringify(payload),
+        credentials: 'include',
       });
 
       if (!res.ok) {
@@ -31,15 +80,16 @@ export default function ClientLoginPage() {
       }
 
       const data = await res.json();
-      console.log('Login successful:', data);
 
-      // Wait a bit for cookie to be set, then redirect
       setTimeout(() => {
-        router.push('/client');
-        router.refresh(); // Force refresh to read new cookie
+        if (data.pinChangeRequired) {
+          router.push('/client/change-pin');
+        } else {
+          router.push('/client');
+        }
+        router.refresh();
       }, 100);
-    } catch (err) {
-      console.error('Login error:', err);
+    } catch {
       setError('Login failed. Please try again.');
       setLoading(false);
     }
@@ -61,6 +111,32 @@ export default function ClientLoginPage() {
             Login to your account
           </h1>
 
+          {/* Tabs */}
+          <div className="flex mb-6 bg-white/5 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => { setMode('pin'); setError(''); }}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                mode === 'pin'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Login with PIN
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('otp'); setError(''); }}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                mode === 'otp'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Login with OTP
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="mobile" className="block text-sm font-medium text-gray-400 mb-1">
@@ -70,27 +146,72 @@ export default function ClientLoginPage() {
                 id="mobile"
                 type="tel"
                 placeholder="9876543210"
+                maxLength={10}
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                 className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
                 required
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
-                required
-              />
-            </div>
+            {mode === 'pin' && (
+              <div>
+                <label htmlFor="pin" className="block text-sm font-medium text-gray-400 mb-1">
+                  6-Digit PIN
+                </label>
+                <input
+                  id="pin"
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="Enter 6-digit PIN"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
+                  required
+                />
+              </div>
+            )}
+
+            {mode === 'otp' && (
+              <>
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={otpLoading || cooldown > 0}
+                    className="w-full py-2.5 px-4 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+                  >
+                    {otpLoading
+                      ? 'Sending...'
+                      : cooldown > 0
+                      ? `Resend OTP in ${cooldown}s`
+                      : otpSent
+                      ? 'Resend OTP'
+                      : 'Send OTP'}
+                  </button>
+                </div>
+
+                {otpSent && (
+                  <div>
+                    <label htmlFor="otp" className="block text-sm font-medium text-gray-400 mb-1">
+                      Enter OTP
+                    </label>
+                    <input
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Enter 6-digit OTP"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
+                      required
+                    />
+                  </div>
+                )}
+              </>
+            )}
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
@@ -100,16 +221,12 @@ export default function ClientLoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === 'otp' && !otpSent)}
               className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg shadow-purple-500/20"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Logging in...' : mode === 'pin' ? 'Login' : 'Verify & Login'}
             </button>
           </form>
-
-          <p className="mt-4 text-center text-sm text-gray-500">
-            Default password: <span className="font-mono font-semibold text-gray-400">client</span>
-          </p>
         </div>
       </div>
     </div>
