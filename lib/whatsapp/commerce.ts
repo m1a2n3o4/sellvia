@@ -158,10 +158,18 @@ async function handleAddressReceived(ctx: CommerceContext) {
     ctx;
   const address = aiResult.actionData?.address;
 
-  if (!address) return;
+  if (!address) {
+    console.error('[Commerce] handleAddressReceived: No address in actionData');
+    await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'Please share your delivery address so we can place your order.' });
+    return;
+  }
 
   const state = await getConversationState(chatId);
-  if (!state?.productId || !state?.quantity) return;
+  if (!state?.productId || !state?.quantity) {
+    console.error('[Commerce] handleAddressReceived: Missing state —', { productId: state?.productId, quantity: state?.quantity, chatId });
+    await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'Sorry, something went wrong. Please start your order again by telling us which product you want.' });
+    return;
+  }
 
   // Fetch product details
   const product = await prisma.product.findUnique({
@@ -169,7 +177,11 @@ async function handleAddressReceived(ctx: CommerceContext) {
     include: { variants: { where: { status: 'active' } } },
   });
 
-  if (!product) return;
+  if (!product) {
+    console.error('[Commerce] handleAddressReceived: Product not found —', state.productId);
+    await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'Sorry, this product is no longer available. Please try another product.' });
+    return;
+  }
 
   const variant = state.variantId
     ? product.variants.find((v) => v.id === state.variantId)

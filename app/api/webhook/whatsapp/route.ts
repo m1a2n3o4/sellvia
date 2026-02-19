@@ -195,37 +195,45 @@ export async function POST(request: NextRequest) {
         conversationQuantity: conversationState.quantity || undefined,
       });
 
-      // Send AI text reply via WhatsApp
       if (businessInfo.whatsappToken) {
-        const sendResult = await sendWhatsAppMessage({
-          phoneNumberId,
-          accessToken: businessInfo.whatsappToken,
-          to: customerPhone,
-          message: aiResult.reply,
-        });
+        // For collect_address: DON'T send the AI text reply first.
+        // The commerce handler (handleAddressReceived) sends the real order
+        // confirmation with order number. Sending the AI reply first would
+        // cause "order placed" to appear before the order is actually created.
+        const skipAiReply = aiResult.action === 'collect_address';
 
-        // Save AI reply
-        await prisma.whatsAppMessage.create({
-          data: {
-            tenantId,
-            chatId: chat.id,
-            waMessageId: sendResult.messageId,
-            sender: 'ai',
-            content: aiResult.reply,
-            messageType: 'text',
-            status: sendResult.success ? 'sent' : 'failed',
-            isAiGenerated: true,
-          },
-        });
+        if (!skipAiReply) {
+          // Send AI text reply via WhatsApp
+          const sendResult = await sendWhatsAppMessage({
+            phoneNumberId,
+            accessToken: businessInfo.whatsappToken,
+            to: customerPhone,
+            message: aiResult.reply,
+          });
 
-        // Update chat last message
-        await prisma.whatsAppChat.update({
-          where: { id: chat.id },
-          data: {
-            lastMessage: aiResult.reply,
-            lastMessageAt: new Date(),
-          },
-        });
+          // Save AI reply
+          await prisma.whatsAppMessage.create({
+            data: {
+              tenantId,
+              chatId: chat.id,
+              waMessageId: sendResult.messageId,
+              sender: 'ai',
+              content: aiResult.reply,
+              messageType: 'text',
+              status: sendResult.success ? 'sent' : 'failed',
+              isAiGenerated: true,
+            },
+          });
+
+          // Update chat last message
+          await prisma.whatsAppChat.update({
+            where: { id: chat.id },
+            data: {
+              lastMessage: aiResult.reply,
+              lastMessageAt: new Date(),
+            },
+          });
+        }
 
         // Execute commerce flow actions (send images, create orders, etc.)
         if (aiResult.action !== 'none') {
