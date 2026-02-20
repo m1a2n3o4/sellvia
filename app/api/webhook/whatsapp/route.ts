@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { prisma } from '@/lib/db/prisma';
 import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
 import { processMessageWithAI } from '@/lib/whatsapp/ai';
@@ -6,6 +7,7 @@ import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30; // Allow up to 30 seconds on Vercel Pro
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'bizmanager_webhook_verify';
 
@@ -26,135 +28,179 @@ export async function GET(request: NextRequest) {
 
 // POST - Incoming WhatsApp messages
 export async function POST(request: NextRequest) {
+  let rawBody: string;
+  let body: any;
+
   try {
-    // Read body as text first (needed for signature verification), then parse
-    const rawBody = await request.text();
-    const body = JSON.parse(rawBody);
+    rawBody = await request.text();
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ status: 'ok' });
+  }
 
-    // Meta sends webhook events in this structure
-    const entry = body.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const value = changes?.value;
+  const entry = body.entry?.[0];
+  const changes = entry?.changes?.[0];
+  const value = changes?.value;
 
-    // Handle message status updates (sent/delivered/read)
-    if (value?.statuses?.[0]) {
-      await handleStatusUpdate(value.statuses[0], value.metadata?.phone_number_id);
-      return NextResponse.json({ status: 'ok' });
+  // Handle message status updates (fire-and-forget)
+  if (value?.statuses?.[0]) {
+    waitUntil(handleStatusUpdate(value.statuses[0]));
+    return NextResponse.json({ status: 'ok' });
+  }
+
+  if (!value?.messages?.[0]) {
+    return NextResponse.json({ status: 'ok' });
+  }
+
+  const message = value.messages[0];
+  const contact = value.contacts?.[0];
+  const metadata = value.metadata;
+  const customerPhone = message.from;
+  const customerName = contact?.profile?.name || null;
+  const phoneNumberId = metadata?.phone_number_id;
+  const waMessageId = message.id;
+
+  let messageContent = '';
+  let messageType: string = 'text';
+
+  switch (message.type) {
+    case 'text':
+      messageContent = message.text?.body || '';
+      messageType = 'text';
+      break;
+    case 'image':
+      messageContent = message.image?.caption || '[Image received]';
+      messageType = 'image';
+      break;
+    case 'audio':
+      messageContent = '[Voice message received]';
+      messageType = 'audio';
+      break;
+    case 'video':
+      messageContent = message.video?.caption || '[Video received]';
+      messageType = 'video';
+      break;
+    case 'document':
+      messageContent = message.document?.caption || '[Document received]';
+      messageType = 'document';
+      break;
+    case 'location':
+      messageContent = `[Location: ${message.location?.latitude}, ${message.location?.longitude}]`;
+      messageType = 'location';
+      break;
+    case 'interactive':
+      messageContent =
+        message.interactive?.button_reply?.title ||
+        message.interactive?.list_reply?.title ||
+        '[Interactive reply]';
+      messageType = 'interactive';
+      break;
+    default:
+      messageContent = '[Unsupported message type]';
+  }
+
+  if (!messageContent || !phoneNumberId) {
+    return NextResponse.json({ status: 'ok' });
+  }
+
+  // Return 200 to Meta IMMEDIATELY — process message in background
+  // This prevents Meta from retrying and keeps the webhook fast
+  waitUntil(
+    processIncomingMessage({
+      phoneNumberId,
+      customerPhone,
+      customerName,
+      waMessageId,
+      messageContent,
+      messageType,
+      rawBody,
+      signature: request.headers.get('x-hub-signature-256'),
+    }).catch((error) => {
+      console.error('[Webhook] Background processing error:', error);
+    })
+  );
+
+  return NextResponse.json({ status: 'ok' });
+}
+
+// ============================================
+// Background message processing
+// ============================================
+
+interface IncomingMessage {
+  phoneNumberId: string;
+  customerPhone: string;
+  customerName: string | null;
+  waMessageId: string;
+  messageContent: string;
+  messageType: string;
+  rawBody: string;
+  signature: string | null;
+}
+
+async function processIncomingMessage(msg: IncomingMessage) {
+  const { phoneNumberId, customerPhone, customerName, waMessageId, messageContent, messageType } = msg;
+
+  // Find tenant by WhatsApp phone number ID
+  const businessInfo = await prisma.businessInfo.findFirst({
+    where: { whatsappPhoneNumberId: phoneNumberId },
+  });
+
+  if (!businessInfo) {
+    console.error('[Webhook] No tenant found for phone number ID:', phoneNumberId);
+    return;
+  }
+
+  const tenantId = businessInfo.tenantId;
+
+  // Verify Meta webhook signature
+  if (businessInfo.whatsappAppSecret) {
+    const isValid = verifyMetaWebhookSignature(msg.rawBody, msg.signature, businessInfo.whatsappAppSecret);
+    if (!isValid) {
+      console.error('[Webhook] Invalid Meta signature');
+      return;
     }
+  }
 
-    if (!value?.messages?.[0]) {
-      // Other non-message event — acknowledge
-      return NextResponse.json({ status: 'ok' });
-    }
+  // Run chat lookup + conversation state in PARALLEL
+  const [existingChat, _markRead] = await Promise.all([
+    prisma.whatsAppChat.findUnique({
+      where: { tenantId_customerPhone: { tenantId, customerPhone } },
+    }),
+    // Mark as read (fire-and-forget, don't await)
+    businessInfo.whatsappToken
+      ? markMessageAsRead({ phoneNumberId, accessToken: businessInfo.whatsappToken, messageId: waMessageId }).catch(() => {})
+      : Promise.resolve(),
+  ]);
 
-    const message = value.messages[0];
-    const contact = value.contacts?.[0];
-    const metadata = value.metadata;
-
-    const customerPhone = message.from; // e.g. "919876543210"
-    const customerName = contact?.profile?.name || null;
-    const phoneNumberId = metadata?.phone_number_id;
-    const waMessageId = message.id;
-
-    // Extract message content based on type
-    let messageContent = '';
-    let messageType: 'text' | 'image' | 'audio' | 'video' | 'document' | 'location' | 'interactive' = 'text';
-
-    switch (message.type) {
-      case 'text':
-        messageContent = message.text?.body || '';
-        messageType = 'text';
-        break;
-      case 'image':
-        messageContent = message.image?.caption || '[Image received]';
-        messageType = 'image';
-        break;
-      case 'audio':
-        messageContent = '[Voice message received]';
-        messageType = 'audio';
-        break;
-      case 'video':
-        messageContent = message.video?.caption || '[Video received]';
-        messageType = 'video';
-        break;
-      case 'document':
-        messageContent = message.document?.caption || '[Document received]';
-        messageType = 'document';
-        break;
-      case 'location':
-        messageContent = `[Location: ${message.location?.latitude}, ${message.location?.longitude}]`;
-        messageType = 'location';
-        break;
-      case 'interactive':
-        // Button reply or list reply
-        messageContent =
-          message.interactive?.button_reply?.title ||
-          message.interactive?.list_reply?.title ||
-          '[Interactive reply]';
-        messageType = 'interactive';
-        break;
-      default:
-        messageContent = '[Unsupported message type]';
-    }
-
-    if (!messageContent || !phoneNumberId) {
-      return NextResponse.json({ status: 'ok' });
-    }
-
-    // Find the tenant by their WhatsApp phone number ID
-    const businessInfo = await prisma.businessInfo.findFirst({
-      where: { whatsappPhoneNumberId: phoneNumberId },
-    });
-
-    if (!businessInfo) {
-      console.error('[Webhook] No tenant found for phone number ID:', phoneNumberId);
-      return NextResponse.json({ status: 'ok' });
-    }
-
-    const tenantId = businessInfo.tenantId;
-
-    // Verify Meta webhook signature if app secret is configured
-    if (businessInfo.whatsappAppSecret) {
-      const signature = request.headers.get('x-hub-signature-256');
-      const isValid = verifyMetaWebhookSignature(rawBody, signature, businessInfo.whatsappAppSecret);
-      if (!isValid) {
-        console.error('[Webhook] Invalid Meta signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
-    }
-
-    // Find or create chat
-    let chat = await prisma.whatsAppChat.findUnique({
-      where: {
-        tenantId_customerPhone: { tenantId, customerPhone },
+  // Create or update chat
+  let chat;
+  if (!existingChat) {
+    chat = await prisma.whatsAppChat.create({
+      data: {
+        tenantId,
+        customerPhone,
+        customerName,
+        lastMessage: messageContent,
+        lastMessageAt: new Date(),
+        unreadCount: 1,
       },
     });
+  } else {
+    chat = await prisma.whatsAppChat.update({
+      where: { id: existingChat.id },
+      data: {
+        customerName: customerName || existingChat.customerName,
+        lastMessage: messageContent,
+        lastMessageAt: new Date(),
+        unreadCount: { increment: 1 },
+      },
+    });
+  }
 
-    if (!chat) {
-      chat = await prisma.whatsAppChat.create({
-        data: {
-          tenantId,
-          customerPhone,
-          customerName,
-          lastMessage: messageContent,
-          lastMessageAt: new Date(),
-          unreadCount: 1,
-        },
-      });
-    } else {
-      chat = await prisma.whatsAppChat.update({
-        where: { id: chat.id },
-        data: {
-          customerName: customerName || chat.customerName,
-          lastMessage: messageContent,
-          lastMessageAt: new Date(),
-          unreadCount: { increment: 1 },
-        },
-      });
-    }
-
-    // Save incoming message
-    await prisma.whatsAppMessage.create({
+  // Save incoming message + get conversation state in PARALLEL
+  const [, conversationState] = await Promise.all([
+    prisma.whatsAppMessage.create({
       data: {
         tenantId,
         chatId: chat.id,
@@ -165,117 +211,105 @@ export async function POST(request: NextRequest) {
         messageType: messageType as any,
         status: 'delivered',
       },
+    }),
+    getOrCreateConversationState(chat.id),
+  ]);
+
+  // Process with AI if enabled
+  if (
+    !businessInfo.aiEnabled ||
+    !businessInfo.openaiKey ||
+    (messageType !== 'text' && messageType !== 'interactive')
+  ) {
+    return;
+  }
+
+  if (!businessInfo.whatsappToken) {
+    return;
+  }
+
+  try {
+    const aiResult = await processMessageWithAI({
+      tenantId,
+      customerPhone,
+      customerMessage: messageContent,
+      openaiKey: businessInfo.openaiKey,
+      conversationStep: conversationState.step,
+      conversationProductId: conversationState.productId || undefined,
+      conversationQuantity: conversationState.quantity || undefined,
+      businessInfo, // Pass pre-fetched data to avoid duplicate query
     });
 
-    // Mark as read on WhatsApp
-    if (businessInfo.whatsappToken) {
-      markMessageAsRead({
+    const skipAiReply = aiResult.action === 'collect_address';
+
+    // Send AI reply + execute commerce flow
+    if (!skipAiReply) {
+      const sendResult = await sendWhatsAppMessage({
         phoneNumberId,
         accessToken: businessInfo.whatsappToken,
-        messageId: waMessageId,
-      });
-    }
-
-    // Process with AI if enabled and it's a text/interactive message
-    if (
-      businessInfo.aiEnabled &&
-      businessInfo.openaiKey &&
-      (messageType === 'text' || messageType === 'interactive')
-    ) {
-      // Get conversation state for context
-      const conversationState = await getOrCreateConversationState(chat.id);
-
-      const aiResult = await processMessageWithAI({
-        tenantId,
-        customerPhone,
-        customerMessage: messageContent,
-        openaiKey: businessInfo.openaiKey,
-        conversationStep: conversationState.step,
-        conversationProductId: conversationState.productId || undefined,
-        conversationQuantity: conversationState.quantity || undefined,
+        to: customerPhone,
+        message: aiResult.reply,
       });
 
-      if (businessInfo.whatsappToken) {
-        // For collect_address: DON'T send the AI text reply first.
-        // The commerce handler (handleAddressReceived) sends the real order
-        // confirmation with order number. Sending the AI reply first would
-        // cause "order placed" to appear before the order is actually created.
-        const skipAiReply = aiResult.action === 'collect_address';
-
-        if (!skipAiReply) {
-          // Send AI text reply via WhatsApp
-          const sendResult = await sendWhatsAppMessage({
-            phoneNumberId,
-            accessToken: businessInfo.whatsappToken,
-            to: customerPhone,
-            message: aiResult.reply,
-          });
-
-          // Save AI reply
-          await prisma.whatsAppMessage.create({
-            data: {
-              tenantId,
-              chatId: chat.id,
-              waMessageId: sendResult.messageId,
-              sender: 'ai',
-              content: aiResult.reply,
-              messageType: 'text',
-              status: sendResult.success ? 'sent' : 'failed',
-              isAiGenerated: true,
-            },
-          });
-
-          // Update chat last message
-          await prisma.whatsAppChat.update({
-            where: { id: chat.id },
-            data: {
-              lastMessage: aiResult.reply,
-              lastMessageAt: new Date(),
-            },
-          });
-        }
-
-        // Execute commerce flow actions (send images, create orders, etc.)
-        if (aiResult.action !== 'none') {
-          await handleCommerceFlow({
+      // Save AI reply + update chat in PARALLEL
+      await Promise.all([
+        prisma.whatsAppMessage.create({
+          data: {
             tenantId,
             chatId: chat.id,
-            customerPhone,
-            customerName,
-            phoneNumberId,
-            accessToken: businessInfo.whatsappToken,
-            aiResult,
-            razorpayKeyId: businessInfo.razorpayKeyId,
-            razorpayKeySecret: businessInfo.razorpayKeySecret,
-          });
-        }
-      }
+            waMessageId: sendResult.messageId,
+            sender: 'ai',
+            content: aiResult.reply,
+            messageType: 'text',
+            status: sendResult.success ? 'sent' : 'failed',
+            isAiGenerated: true,
+          },
+        }),
+        prisma.whatsAppChat.update({
+          where: { id: chat.id },
+          data: {
+            lastMessage: aiResult.reply,
+            lastMessageAt: new Date(),
+          },
+        }),
+      ]);
     }
 
-    return NextResponse.json({ status: 'ok' });
+    // Execute commerce flow
+    if (aiResult.action !== 'none') {
+      await handleCommerceFlow({
+        tenantId,
+        chatId: chat.id,
+        customerPhone,
+        customerName,
+        phoneNumberId,
+        accessToken: businessInfo.whatsappToken,
+        aiResult,
+        razorpayKeyId: businessInfo.razorpayKeyId,
+        razorpayKeySecret: businessInfo.razorpayKeySecret,
+      });
+    }
   } catch (error) {
-    console.error('[Webhook] Error processing message:', error);
-    // Always return 200 to Meta so they don't retry
-    return NextResponse.json({ status: 'error' }, { status: 200 });
+    console.error('[Webhook] AI processing error:', error);
+    // Send fallback reply so customer doesn't get silence
+    try {
+      await sendWhatsAppMessage({
+        phoneNumberId,
+        accessToken: businessInfo.whatsappToken,
+        to: customerPhone,
+        message: 'Sorry, I\'m having a brief issue. Please try again in a moment.',
+      });
+    } catch {
+      console.error('[Webhook] Fallback reply also failed');
+    }
   }
 }
 
-/**
- * Handle message status updates from WhatsApp (sent/delivered/read).
- */
-async function handleStatusUpdate(
-  status: { id: string; status: string; timestamp: string },
-  phoneNumberId: string | undefined
-) {
+async function handleStatusUpdate(status: { id: string; status: string; timestamp: string }) {
   try {
     const waMessageId = status.id;
-    const newStatus = status.status; // 'sent' | 'delivered' | 'read' | 'failed'
-
-    if (!waMessageId || !['sent', 'delivered', 'read', 'failed'].includes(newStatus)) {
-      return;
-    }
-
-    // Update message status in database
+    const newStatus = status.status;
+    if (!waMessageId || !['sent', 'delivered', 'read', 'failed'].includes(newStatus)) return;
     await prisma.whatsAppMessage.updateMany({
       where: { waMessageId },
       data: { status: newStatus as any },
