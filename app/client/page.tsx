@@ -41,7 +41,7 @@ export default function ClientDashboard() {
     bgColor: string;
     iconColor: string;
   }) => (
-    <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-5">
+    <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-5">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-700 dark:text-neutral-400">{label}</p>
@@ -113,25 +113,25 @@ export default function ClientDashboard() {
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-4 text-center">
           <p className="text-xs text-gray-700 dark:text-neutral-400">Today Orders</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
             {loading ? '-' : metrics?.todayOrders ?? 0}
           </p>
         </div>
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-4 text-center">
           <p className="text-xs text-gray-700 dark:text-neutral-400">Active Products</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
             {loading ? '-' : metrics?.activeProducts ?? 0}
           </p>
         </div>
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-4 text-center">
           <p className="text-xs text-gray-700 dark:text-neutral-400">Low Stock Items</p>
           <p className={`text-xl font-bold mt-1 ${(metrics?.lowStockCount ?? 0) > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
             {loading ? '-' : metrics?.lowStockCount ?? 0}
           </p>
         </div>
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-4 text-center">
           <p className="text-xs text-gray-700 dark:text-neutral-400">Total Products</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
             {loading ? '-' : metrics?.totalProducts ?? 0}
@@ -142,7 +142,7 @@ export default function ClientDashboard() {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Orders */}
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-5">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Recent Orders
           </h2>
@@ -185,7 +185,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* Low Stock Alerts */}
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-5">
+        <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
             Low Stock Alerts

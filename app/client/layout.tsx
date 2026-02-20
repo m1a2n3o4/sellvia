@@ -31,6 +31,7 @@ export default function ClientLayout({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     // Show splash once per session (not on login/change-pin pages)
@@ -47,12 +48,14 @@ export default function ClientLayout({
   }, []);
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     try {
       await fetch('/api/client/logout', { method: 'POST' });
       router.push('/client/login');
       router.refresh();
     } catch (error) {
       console.error('Logout failed:', error);
+      setLoggingOut(false);
     }
   };
 
@@ -150,6 +153,17 @@ export default function ClientLayout({
 
   if (showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
+  }
+
+  if (loggingOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-neutral-800">
+        <div className="text-center">
+          <div className="h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-3 text-gray-700 dark:text-neutral-300 font-medium">Logging out...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

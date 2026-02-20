@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Column<T> {
@@ -18,6 +19,7 @@ interface DataTableProps<T> {
   onRowClick?: (item: T) => void;
   keyExtractor: (item: T) => string;
   mobileCard?: (item: T) => React.ReactNode;
+  onRefresh?: () => void;
 }
 
 export function DataTable<T>({
@@ -28,6 +30,7 @@ export function DataTable<T>({
   onRowClick,
   keyExtractor,
   mobileCard,
+  onRefresh,
 }: DataTableProps<T>) {
   if (loading) {
     return (
@@ -87,6 +90,19 @@ export function DataTable<T>({
 
   return (
     <>
+      {/* Refresh button */}
+      {onRefresh && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={onRefresh}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+          >
+            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+            Refresh
+          </button>
+        </div>
+      )}
+
       {/* Mobile card view */}
       {mobileCard && (
         <div className="space-y-3 md:hidden">

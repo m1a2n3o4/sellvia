@@ -13,16 +13,19 @@ interface OrderNotificationInput {
 export async function sendOrderNotificationSms(input: OrderNotificationInput): Promise<void> {
   const { tenantId, orderNumber, customerName, total, itemCount } = input;
 
-  const businessInfo = await prisma.businessInfo.findUnique({
-    where: { tenantId },
-    select: { ownerPhone: true },
-  });
+  // Try ownerPhone first, then fall back to tenant's registered mobile
+  const [businessInfo, tenant] = await Promise.all([
+    prisma.businessInfo.findUnique({ where: { tenantId }, select: { ownerPhone: true } }),
+    prisma.tenant.findUnique({ where: { id: tenantId }, select: { mobile: true } }),
+  ]);
 
-  if (!businessInfo?.ownerPhone) {
-    console.log('[SMS] No ownerPhone configured for tenant', tenantId);
+  const phone = businessInfo?.ownerPhone || tenant?.mobile;
+
+  if (!phone) {
+    console.log('[SMS] No phone configured for tenant', tenantId);
     return;
   }
 
   const message = newOrder(orderNumber, customerName, total, itemCount);
-  await sendSms({ mobile: businessInfo.ownerPhone, message });
+  await sendSms({ mobile: phone, message });
 }

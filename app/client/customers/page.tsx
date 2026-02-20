@@ -105,6 +105,7 @@ export default function CustomersPage() {
         emptyMessage="No customers found. Add your first customer!"
         keyExtractor={(c) => c.id}
         onRowClick={(c) => router.push(`/client/customers/${c.id}`)}
+        onRefresh={fetchCustomers}
         mobileCard={(c) => (
           <div>
             <div className="flex items-start justify-between gap-2">

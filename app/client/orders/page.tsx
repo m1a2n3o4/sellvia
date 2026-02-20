@@ -231,6 +231,7 @@ export default function OrdersPage() {
         emptyMessage="No orders found."
         keyExtractor={(o) => o.id}
         onRowClick={(o) => router.push(`/client/orders/${o.id}`)}
+        onRefresh={fetchOrders}
         mobileCard={(o) => (
           <div>
             <div className="flex items-start justify-between gap-2">

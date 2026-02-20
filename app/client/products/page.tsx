@@ -204,6 +204,7 @@ export default function ProductsPage() {
         emptyMessage="No products found. Create your first product!"
         keyExtractor={(p) => p.id}
         onRowClick={(p) => router.push(`/client/products/${p.id}`)}
+        onRefresh={fetchProducts}
         mobileCard={(p) => (
           <div className="flex items-start gap-3">
             {p.images && p.images.length > 0 ? (
