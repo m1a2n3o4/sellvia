@@ -10,6 +10,7 @@ import {
   SidebarBody,
   SidebarLink,
 } from '@/components/ui/sidebar';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import {
   LayoutDashboard,
   MessageCircle,
@@ -150,7 +151,7 @@ export default function ClientLayout({
           </div>
           <div>
             <button
-              onClick={handleLogout}
+              onClick={() => { setOpen(false); handleLogout(); }}
               className="flex items-center justify-start gap-2 group/sidebar py-2 w-full"
             >
               <LogOut className="h-5 w-5 flex-shrink-0 text-red-500" />
@@ -170,10 +171,12 @@ export default function ClientLayout({
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        <div className="p-4 md:p-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
+        <div className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
           {children}
         </div>
       </div>
+
+      <BottomNav onMoreClick={() => setOpen(true)} />
     </div>
   );
 }

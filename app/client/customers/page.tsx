@@ -72,20 +72,20 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Customers</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">My Customers</h1>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
             Manage your customer directory
           </p>
         </div>
-        <Button onClick={() => router.push('/client/customers/create')}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button size="sm" onClick={() => router.push('/client/customers/create')}>
+          <Plus className="h-4 w-4 mr-1.5" />
           Add Customer
         </Button>
       </div>
 
-      <div className="relative max-w-md">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search by name or mobile..."
@@ -105,6 +105,25 @@ export default function CustomersPage() {
         emptyMessage="No customers found. Add your first customer!"
         keyExtractor={(c) => c.id}
         onRowClick={(c) => router.push(`/client/customers/${c.id}`)}
+        mobileCard={(c) => (
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{c.mobile}</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-xs text-gray-500">{c.totalOrders} orders</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">&#8377;{Number(c.totalSpent).toLocaleString()}</p>
+              </div>
+            </div>
+            {(c.address || c.city || c.state) && (
+              <p className="text-xs text-gray-400 mt-1.5 truncate">
+                {[c.address, c.city, c.state].filter(Boolean).join(', ')}
+              </p>
+            )}
+          </div>
+        )}
       />
 
       {totalPages > 1 && (

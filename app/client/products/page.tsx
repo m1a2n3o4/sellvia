@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Product } from '@/types';
 
 export default function ProductsPage() {
@@ -152,20 +153,20 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Products</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">My Products</h1>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
             Manage your product inventory
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => router.push('/client/products/ai-create')}>
-            <Sparkles className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={() => router.push('/client/products/ai-create')}>
+            <Sparkles className="h-4 w-4 mr-1.5" />
             AI Image
           </Button>
-          <Button onClick={() => router.push('/client/products/create')}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button size="sm" onClick={() => router.push('/client/products/create')}>
+            <Plus className="h-4 w-4 mr-1.5" />
             Add Product
           </Button>
         </div>
@@ -203,6 +204,51 @@ export default function ProductsPage() {
         emptyMessage="No products found. Create your first product!"
         keyExtractor={(p) => p.id}
         onRowClick={(p) => router.push(`/client/products/${p.id}`)}
+        mobileCard={(p) => (
+          <div className="flex items-start gap-3">
+            {p.images && p.images.length > 0 ? (
+              <img
+                src={p.images[0]}
+                alt={p.name}
+                className="w-12 h-12 rounded-md object-cover border border-gray-200 dark:border-neutral-700 flex-shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-md bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-600 flex items-center justify-center flex-shrink-0">
+                <Package className="h-5 w-5 text-gray-400" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{p.name}</p>
+                  {p.brand && <p className="text-xs text-gray-500 truncate">{p.brand}</p>}
+                </div>
+                <Badge variant={p.status === 'active' ? 'default' : 'secondary'} className="text-[10px] flex-shrink-0">
+                  {p.status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="font-semibold">&#8377;{Number(p.basePrice).toLocaleString()}</span>
+                  <span className={cn('text-xs', p.stockQuantity <= (p.lowStockThreshold || 10) ? 'text-red-600 font-medium' : 'text-gray-500')}>
+                    Stock: {p.stockQuantity}
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/client/products/${p.id}/edit`)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(p)}>
+                    {p.status === 'active' ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-gray-400" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(p.id)}>
+                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       />
 
       {totalPages > 1 && (

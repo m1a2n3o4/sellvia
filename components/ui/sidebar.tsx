@@ -112,18 +112,8 @@ export const MobileSidebar = ({
   const { open, setOpen } = useSidebar();
   return (
     <>
-      <div
-        className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
-        )}
-        {...props}
-      >
-        <div className="flex justify-end z-20 w-full">
-          <Menu
-            className="text-neutral-800 dark:text-neutral-200 cursor-pointer"
-            onClick={() => setOpen(!open)}
-          />
-        </div>
+      {/* Overlay only — trigger strip is replaced by BottomNav "More" button */}
+      <div className="md:hidden" {...props}>
         <AnimatePresence>
           {open && (
             <motion.div
@@ -163,7 +153,7 @@ export const SidebarLink = ({
   className?: string;
   props?: LinkProps;
 }) => {
-  const { open, animate } = useSidebar();
+  const { open, setOpen, animate } = useSidebar();
   return (
     <Link
       href={link.href}
@@ -171,6 +161,7 @@ export const SidebarLink = ({
         "flex items-center justify-start gap-2 group/sidebar py-2",
         className
       )}
+      onClick={() => setOpen(false)}
       {...props}
     >
       {link.icon}

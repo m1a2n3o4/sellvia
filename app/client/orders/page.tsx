@@ -127,22 +127,22 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
           <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
             Manage all your orders
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Offline Order
+        <Button size="sm" onClick={() => setModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Create Order
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="space-y-3">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search orders..."
@@ -151,75 +151,76 @@ export default function OrdersPage() {
             className="pl-9"
           />
         </div>
-        <Select value={orderType} onValueChange={(v) => { setOrderType(v); setPage(1); }}>
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="online">Online</SelectItem>
-            <SelectItem value="offline">Offline</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={paymentFilter} onValueChange={(v) => { setPaymentFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Payment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Payment</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="unpaid">Unpaid / COD</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={deliveryFilter} onValueChange={(v) => { setDeliveryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Delivery" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Delivery</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="dispatched">Dispatched</SelectItem>
-            <SelectItem value="in_transit">In Transit</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="returned">Returned</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant={today ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => { setToday(!today); setDateFrom(''); setDateTo(''); setPage(1); }}
-        >
-          Today
-        </Button>
-        <div className="flex items-center gap-2">
-          <DatePicker
-            value={dateFrom}
-            onChange={(e) => { setDateFrom(e.target.value); setToday(false); setPage(1); }}
-            className="w-[150px] h-9"
-          />
-          <span className="text-sm text-gray-500">to</span>
-          <DatePicker
-            value={dateTo}
-            onChange={(e) => { setDateTo(e.target.value); setToday(false); setPage(1); }}
-            className="w-[150px] h-9"
-          />
+        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
+          <Select value={orderType} onValueChange={(v) => { setOrderType(v); setPage(1); }}>
+            <SelectTrigger className="w-full md:w-[130px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="offline">Offline</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-full md:w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={(v) => { setPaymentFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-full md:w-[140px]">
+              <SelectValue placeholder="Payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Payment</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="unpaid">Unpaid / COD</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={deliveryFilter} onValueChange={(v) => { setDeliveryFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-full md:w-[150px]">
+              <SelectValue placeholder="Delivery" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Delivery</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="dispatched">Dispatched</SelectItem>
+              <SelectItem value="in_transit">In Transit</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="returned">Returned</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={today ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setToday(!today); setDateFrom(''); setDateTo(''); setPage(1); }}
+          >
+            Today
+          </Button>
+          <div className="hidden md:flex items-center gap-2">
+            <DatePicker
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setToday(false); setPage(1); }}
+              className="w-[150px] h-9"
+            />
+            <span className="text-sm text-gray-500">to</span>
+            <DatePicker
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setToday(false); setPage(1); }}
+              className="w-[150px] h-9"
+            />
+          </div>
         </div>
       </div>
 
@@ -230,6 +231,32 @@ export default function OrdersPage() {
         emptyMessage="No orders found."
         keyExtractor={(o) => o.id}
         onRowClick={(o) => router.push(`/client/orders/${o.id}`)}
+        mobileCard={(o) => (
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{o.orderNumber}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{o.customer?.name || '-'}</p>
+                {o.customer?.mobile && <p className="text-xs text-gray-400">{o.customer.mobile}</p>}
+              </div>
+              <p className="text-base font-bold text-gray-900 dark:text-white flex-shrink-0">
+                &#8377;{Number(o.total).toLocaleString()}
+              </p>
+            </div>
+            <div className="flex items-center flex-wrap gap-1.5 mt-2.5">
+              <Badge variant={statusColor(o.status)} className="text-[10px]">{o.status}</Badge>
+              <Badge variant={o.paymentStatus === 'paid' ? 'default' : o.paymentStatus === 'failed' ? 'destructive' : 'secondary'} className="text-[10px]">
+                {o.paymentStatus}
+              </Badge>
+              <Badge variant={o.orderType === 'online' ? 'default' : 'outline'} className="text-[10px]">
+                {o.orderType}
+              </Badge>
+              <span className="text-[10px] text-gray-400 ml-auto">
+                {new Date(o.orderDate).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        )}
       />
 
       {totalPages > 1 && (
