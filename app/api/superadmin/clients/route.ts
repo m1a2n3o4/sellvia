@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send welcome SMS with PIN (fire-and-forget)
-    sendSms({ mobile, message: welcomePin(clientName, generatedPin) }).catch((err) =>
+    sendSms({ mobile, message: welcomePin(clientName, generatedPin, mobile) }).catch((err) =>
       console.error('[SMS] Welcome SMS failed:', err)
     );
 

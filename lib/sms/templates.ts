@@ -1,5 +1,5 @@
-export function welcomePin(name: string, pin: string): string {
-  return `Welcome to SatyaSell, ${name}! Your login PIN is: ${pin}. Login at satyasell.com/client/login - SatyaSell`;
+export function welcomePin(name: string, pin: string, mobile: string): string {
+  return `Welcome to SatyaSell, ${name}! Your account is ready. Username: ${mobile} (your mobile number). PIN: ${pin}. Please change your PIN after first login. Install the app: satyasell.com/install or login at satyasell.com/client/login - SatyaSell`;
 }
 
 export function otpLogin(otp: string): string {
