@@ -181,6 +181,8 @@ model Order {
   chatId                 String?  @map("chat_id")
   razorpayPaymentLinkId  String?  @map("razorpay_payment_link_id")
   razorpayPaymentId      String?  @map("razorpay_payment_id")
+  cashfreeLinkId         String?  @map("cashfree_link_id")
+  cashfreePaymentId      String?  @map("cashfree_payment_id")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
@@ -197,6 +199,7 @@ model Order {
   @@index([tenantId, orderType])
   @@index([paymentStatus])
   @@index([razorpayPaymentLinkId])
+  @@index([cashfreeLinkId])
   @@map("orders")
 }
 
@@ -355,6 +358,10 @@ model BusinessInfo {
   aiEnabled             Boolean  @default(true) @map("ai_enabled")
   razorpayKeyId         String?  @map("razorpay_key_id")
   razorpayKeySecret     String?  @map("razorpay_key_secret")
+  cashfreeAppId         String?  @map("cashfree_app_id")
+  cashfreeSecretKey     String?  @map("cashfree_secret_key")
+  paymentGateway        String?  @default("none") @map("payment_gateway")
+  platformFeePercent    Float?   @default(0) @map("platform_fee_percent")
   whatsappAppSecret     String?  @map("whatsapp_app_secret")
   ownerPhone            String?  @map("owner_phone")
   aiCustomInstructions  String?  @map("ai_custom_instructions")

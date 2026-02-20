@@ -26,6 +26,9 @@ interface BusinessInfoData {
   aiEnabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  cashfreeAppId: string;
+  cashfreeSecretKey: string;
+  paymentGateway: string;
   ownerPhone: string;
   aiCustomInstructions: string;
 }
@@ -52,6 +55,9 @@ export default function SettingsPage() {
     aiEnabled: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
+    cashfreeAppId: '',
+    cashfreeSecretKey: '',
+    paymentGateway: 'none',
     ownerPhone: '',
     aiCustomInstructions: '',
   });
@@ -78,6 +84,9 @@ export default function SettingsPage() {
             aiEnabled: data.aiEnabled ?? true,
             razorpayKeyId: data.razorpayKeyId || '',
             razorpayKeySecret: data.razorpayKeySecret || '',
+            cashfreeAppId: data.cashfreeAppId || '',
+            cashfreeSecretKey: data.cashfreeSecretKey || '',
+            paymentGateway: data.paymentGateway || 'none',
             ownerPhone: data.ownerPhone || '',
             aiCustomInstructions: data.aiCustomInstructions || '',
           });
@@ -308,46 +317,118 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Razorpay Config */}
+        {/* Payment Gateway Config */}
         <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Razorpay Payment Gateway</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Payment Gateway</h2>
           <p className="text-sm text-gray-500 dark:text-neutral-400">
-            Configure Razorpay to accept payments via WhatsApp payment links
+            Choose a payment gateway for WhatsApp order payments
           </p>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="razorpayKeyId">Razorpay Key ID</Label>
-              <Input
-                id="razorpayKeyId"
-                value={form.razorpayKeyId}
-                onChange={(e) => setForm({ ...form, razorpayKeyId: e.target.value })}
-                placeholder="rzp_live_..."
-                className="mt-1"
-              />
+              <Label>Gateway</Label>
+              <div className="flex gap-2 mt-2">
+                {[
+                  { value: 'none', label: 'None (COD)' },
+                  { value: 'cashfree', label: 'Cashfree' },
+                  { value: 'razorpay', label: 'Razorpay' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, paymentGateway: opt.value })}
+                    className={cn(
+                      'px-4 py-2 text-sm font-medium rounded-lg border transition-all',
+                      form.paymentGateway === opt.value
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300 border-neutral-300 dark:border-neutral-600 hover:border-purple-400'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <Label htmlFor="razorpayKeySecret">Razorpay Key Secret</Label>
-              <Input
-                id="razorpayKeySecret"
-                type="password"
-                value={form.razorpayKeySecret}
-                onChange={(e) => setForm({ ...form, razorpayKeySecret: e.target.value })}
-                placeholder="Your Razorpay Key Secret"
-                className="mt-1"
-              />
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                <strong>Razorpay Webhook URL</strong> (set in Razorpay Dashboard → Webhooks):
+
+            {form.paymentGateway === 'cashfree' && (
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label htmlFor="cashfreeAppId">Cashfree App ID</Label>
+                  <Input
+                    id="cashfreeAppId"
+                    value={form.cashfreeAppId}
+                    onChange={(e) => setForm({ ...form, cashfreeAppId: e.target.value })}
+                    placeholder="TEST... or your production App ID"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cashfreeSecretKey">Cashfree Secret Key</Label>
+                  <Input
+                    id="cashfreeSecretKey"
+                    type="password"
+                    value={form.cashfreeSecretKey}
+                    onChange={(e) => setForm({ ...form, cashfreeSecretKey: e.target.value })}
+                    placeholder="cfsk_..."
+                    className="mt-1"
+                  />
+                </div>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    <strong>Cashfree Webhook URL</strong> (set in Cashfree Dashboard → Payment Links → Webhooks):
+                  </p>
+                  <code className="text-xs bg-emerald-100 dark:bg-emerald-900/40 px-2 py-1 rounded block mt-1 text-emerald-700 dark:text-emerald-300 break-all">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/cashfree` : '/api/webhook/cashfree'}
+                  </code>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                    Fee: ~1.1% per transaction (lower than Razorpay)
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {form.paymentGateway === 'razorpay' && (
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label htmlFor="razorpayKeyId">Razorpay Key ID</Label>
+                  <Input
+                    id="razorpayKeyId"
+                    value={form.razorpayKeyId}
+                    onChange={(e) => setForm({ ...form, razorpayKeyId: e.target.value })}
+                    placeholder="rzp_live_..."
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="razorpayKeySecret">Razorpay Key Secret</Label>
+                  <Input
+                    id="razorpayKeySecret"
+                    type="password"
+                    value={form.razorpayKeySecret}
+                    onChange={(e) => setForm({ ...form, razorpayKeySecret: e.target.value })}
+                    placeholder="Your Razorpay Key Secret"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    <strong>Razorpay Webhook URL</strong> (set in Razorpay Dashboard → Webhooks):
+                  </p>
+                  <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-2 py-1 rounded block mt-1 text-amber-700 dark:text-amber-300 break-all">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/razorpay` : '/api/webhook/razorpay'}
+                  </code>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Subscribe to: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 rounded">payment_link.paid</code>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {form.paymentGateway === 'none' && (
+              <p className="text-sm text-gray-500 dark:text-neutral-400 pt-1">
+                Orders will default to Cash on Delivery. No payment link will be sent.
               </p>
-              <code className="text-xs bg-amber-100 dark:bg-amber-900/40 px-2 py-1 rounded block mt-1 text-amber-700 dark:text-amber-300 break-all">
-                {typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/razorpay` : '/api/webhook/razorpay'}
-              </code>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Subscribe to: <code className="bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 rounded">payment_link.paid</code>
-              </p>
-            </div>
+            )}
           </div>
         </div>
 

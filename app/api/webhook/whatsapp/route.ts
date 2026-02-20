@@ -287,6 +287,9 @@ async function processIncomingMessage(msg: IncomingMessage) {
         aiResult,
         razorpayKeyId: businessInfo.razorpayKeyId,
         razorpayKeySecret: businessInfo.razorpayKeySecret,
+        paymentGateway: businessInfo.paymentGateway,
+        cashfreeAppId: businessInfo.cashfreeAppId,
+        cashfreeSecretKey: businessInfo.cashfreeSecretKey,
       });
     }
   } catch (error) {

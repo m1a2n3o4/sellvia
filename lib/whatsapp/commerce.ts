@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { sendWhatsAppMessage, sendWhatsAppImage, sendWhatsAppInteractiveMessage } from './client';
 import { createOrderFromWhatsApp } from './order-service';
 import { createPaymentLink } from './razorpay';
+import { createCashfreePaymentLink } from './cashfree';
 import type { AIResponse } from './ai';
 
 const CONVERSATION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -16,6 +17,9 @@ interface CommerceContext {
   aiResult: AIResponse;
   razorpayKeyId?: string | null;
   razorpayKeySecret?: string | null;
+  paymentGateway?: string | null;
+  cashfreeAppId?: string | null;
+  cashfreeSecretKey?: string | null;
 }
 
 export async function handleCommerceFlow(ctx: CommerceContext) {
@@ -242,17 +246,44 @@ async function handleAddressReceived(ctx: CommerceContext) {
       ],
     });
 
-    // Try to create Razorpay payment link
+    // Try to create payment link based on configured gateway
     let paymentLinkUrl: string | null = null;
     let paymentLinkId: string | null = null;
+    const gateway = ctx.paymentGateway || 'none';
+    const linkDescription = `Order ${order.orderNumber} - ${product.name} x${quantity}`;
 
-    if (ctx.razorpayKeyId && ctx.razorpayKeySecret) {
+    if (gateway === 'cashfree' && ctx.cashfreeAppId && ctx.cashfreeSecretKey) {
+      try {
+        const paymentLink = await createCashfreePaymentLink({
+          amount: totalAmount,
+          customerName: customerName || 'WhatsApp Customer',
+          customerPhone,
+          description: linkDescription,
+          orderId: order.id,
+          cashfreeAppId: ctx.cashfreeAppId,
+          cashfreeSecretKey: ctx.cashfreeSecretKey,
+        });
+
+        paymentLinkUrl = paymentLink.link_url;
+        paymentLinkId = paymentLink.link_id;
+
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            cashfreeLinkId: paymentLinkId,
+            paymentMethod: 'cashfree',
+          },
+        });
+      } catch (error) {
+        console.error('[Commerce] Cashfree payment link creation failed:', error);
+      }
+    } else if (gateway === 'razorpay' && ctx.razorpayKeyId && ctx.razorpayKeySecret) {
       try {
         const paymentLink = await createPaymentLink({
           amount: totalAmount,
           customerName: customerName || 'WhatsApp Customer',
           customerPhone,
-          description: `Order ${order.orderNumber} - ${product.name} x${quantity}`,
+          description: linkDescription,
           orderId: order.id,
           razorpayKeyId: ctx.razorpayKeyId,
           razorpayKeySecret: ctx.razorpayKeySecret,
@@ -261,7 +292,6 @@ async function handleAddressReceived(ctx: CommerceContext) {
         paymentLinkUrl = paymentLink.short_url;
         paymentLinkId = paymentLink.id;
 
-        // Update order with payment link info
         await prisma.order.update({
           where: { id: order.id },
           data: {
@@ -270,7 +300,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
           },
         });
       } catch (error) {
-        console.error('[Commerce] Payment link creation failed:', error);
+        console.error('[Commerce] Razorpay payment link creation failed:', error);
       }
     }
 
