@@ -53,7 +53,7 @@ export default function CustomersPage() {
       key: 'address',
       header: 'Address',
       render: (c: Customer) => (
-        <span className="text-gray-500 dark:text-neutral-400 truncate max-w-[200px] inline-block">
+        <span className="text-gray-700 dark:text-neutral-400 truncate max-w-[200px] inline-block">
           {[c.address, c.city, c.state].filter(Boolean).join(', ') || '-'}
         </span>
       ),
@@ -75,7 +75,7 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">My Customers</h1>
-          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-gray-700 dark:text-neutral-400 mt-1">
             Manage your customer directory
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function CustomersPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
         <Input
           placeholder="Search by name or mobile..."
           value={search}
@@ -110,15 +110,15 @@ export default function CustomersPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{c.mobile}</p>
+                <p className="text-xs text-gray-700 mt-0.5">{c.mobile}</p>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-xs text-gray-500">{c.totalOrders} orders</p>
+                <p className="text-xs text-gray-700">{c.totalOrders} orders</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">&#8377;{Number(c.totalSpent).toLocaleString()}</p>
               </div>
             </div>
             {(c.address || c.city || c.state) && (
-              <p className="text-xs text-gray-400 mt-1.5 truncate">
+              <p className="text-xs text-gray-600 mt-1.5 truncate">
                 {[c.address, c.city, c.state].filter(Boolean).join(', ')}
               </p>
             )}
@@ -131,7 +131,7 @@ export default function CustomersPage() {
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             Previous
           </Button>
-          <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-sm text-gray-700">Page {page} of {totalPages}</span>
           <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
             Next
           </Button>

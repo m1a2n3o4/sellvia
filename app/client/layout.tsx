@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -11,6 +11,7 @@ import {
   SidebarLink,
 } from '@/components/ui/sidebar';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { SplashScreen } from '@/components/ui/splash-screen';
 import {
   LayoutDashboard,
   MessageCircle,
@@ -29,6 +30,21 @@ export default function ClientLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+
+  useEffect(() => {
+    // Show splash once per session (not on login/change-pin pages)
+    if (pathname === '/client/login' || pathname === '/client/change-pin') return;
+    const seen = sessionStorage.getItem('splash_shown');
+    if (!seen) {
+      setShowSplash(true);
+    }
+  }, [pathname]);
+
+  const handleSplashFinish = useCallback(() => {
+    sessionStorage.setItem('splash_shown', '1');
+    setShowSplash(false);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -55,7 +71,7 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname === '/client'
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
@@ -69,7 +85,7 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname?.startsWith('/client/chats')
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
@@ -83,7 +99,7 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname?.startsWith('/client/products')
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
@@ -97,7 +113,7 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname?.startsWith('/client/orders')
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
@@ -111,7 +127,7 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname?.startsWith('/client/customers')
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
@@ -125,12 +141,16 @@ export default function ClientLayout({
             'h-5 w-5 flex-shrink-0',
             pathname?.startsWith('/client/settings')
               ? 'text-black dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
+              : 'text-neutral-700 dark:text-neutral-400'
           )}
         />
       ),
     },
   ];
+
+  if (showSplash) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
 
   return (
     <div
@@ -171,7 +191,7 @@ export default function ClientLayout({
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        <div className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
+        <div className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
           {children}
         </div>
       </div>

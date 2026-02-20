@@ -25,7 +25,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-neutral-300 dark:border-neutral-700 md:hidden">
       <div className="flex items-center justify-around h-16 px-1" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {tabs.map((tab) => {
           const active = isActive(tab.href, tab.exact);
@@ -35,7 +35,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
               href={tab.href}
               className={cn(
                 'flex flex-col items-center justify-center flex-1 h-full min-w-0 gap-0.5 transition-colors',
-                active ? 'text-purple-600' : 'text-gray-400'
+                active ? 'text-purple-600' : 'text-gray-500'
               )}
             >
               <tab.icon className="h-5 w-5" />
@@ -47,7 +47,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
         })}
         <button
           onClick={onMoreClick}
-          className="flex flex-col items-center justify-center flex-1 h-full min-w-0 gap-0.5 text-gray-400 transition-colors"
+          className="flex flex-col items-center justify-center flex-1 h-full min-w-0 gap-0.5 text-gray-500 transition-colors"
         >
           <Menu className="h-5 w-5" />
           <span className="text-[10px] leading-tight font-normal">More</span>

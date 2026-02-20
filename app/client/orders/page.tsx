@@ -82,7 +82,7 @@ export default function OrdersPage() {
       render: (o: Order) => (
         <div>
           <p className="text-sm">{o.customer?.name || '-'}</p>
-          <p className="text-xs text-gray-500">{o.customer?.mobile}</p>
+          <p className="text-xs text-gray-700">{o.customer?.mobile}</p>
         </div>
       ),
     },
@@ -118,7 +118,7 @@ export default function OrdersPage() {
       key: 'orderDate',
       header: 'Date',
       render: (o: Order) => (
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-700">
           {new Date(o.orderDate).toLocaleDateString()}
         </span>
       ),
@@ -130,7 +130,7 @@ export default function OrdersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
-          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-gray-700 dark:text-neutral-400 mt-1">
             Manage all your orders
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function OrdersPage() {
       {/* Filters */}
       <div className="space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
           <Input
             placeholder="Search orders..."
             value={search}
@@ -214,7 +214,7 @@ export default function OrdersPage() {
               onChange={(e) => { setDateFrom(e.target.value); setToday(false); setPage(1); }}
               className="w-[150px] h-9"
             />
-            <span className="text-sm text-gray-500">to</span>
+            <span className="text-sm text-gray-700">to</span>
             <DatePicker
               value={dateTo}
               onChange={(e) => { setDateTo(e.target.value); setToday(false); setPage(1); }}
@@ -236,8 +236,8 @@ export default function OrdersPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{o.orderNumber}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{o.customer?.name || '-'}</p>
-                {o.customer?.mobile && <p className="text-xs text-gray-400">{o.customer.mobile}</p>}
+                <p className="text-xs text-gray-700 mt-0.5">{o.customer?.name || '-'}</p>
+                {o.customer?.mobile && <p className="text-xs text-gray-600">{o.customer.mobile}</p>}
               </div>
               <p className="text-base font-bold text-gray-900 dark:text-white flex-shrink-0">
                 &#8377;{Number(o.total).toLocaleString()}
@@ -251,7 +251,7 @@ export default function OrdersPage() {
               <Badge variant={o.orderType === 'online' ? 'default' : 'outline'} className="text-[10px]">
                 {o.orderType}
               </Badge>
-              <span className="text-[10px] text-gray-400 ml-auto">
+              <span className="text-[10px] text-gray-600 ml-auto">
                 {new Date(o.orderDate).toLocaleDateString()}
               </span>
             </div>
@@ -264,7 +264,7 @@ export default function OrdersPage() {
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             Previous
           </Button>
-          <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-sm text-gray-700">Page {page} of {totalPages}</span>
           <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
             Next
           </Button>

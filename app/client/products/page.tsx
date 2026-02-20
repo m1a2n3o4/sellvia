@@ -74,16 +74,16 @@ export default function ProductsPage() {
             <img
               src={p.images[0]}
               alt={p.name}
-              className="w-10 h-10 rounded-md object-cover border border-gray-200 dark:border-neutral-700 flex-shrink-0"
+              className="w-10 h-10 rounded-md object-cover border border-gray-300 dark:border-neutral-700 flex-shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 flex items-center justify-center flex-shrink-0">
-              <Package className="h-5 w-5 text-gray-400 dark:text-neutral-500" />
+            <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 flex items-center justify-center flex-shrink-0">
+              <Package className="h-5 w-5 text-gray-600 dark:text-neutral-500" />
             </div>
           )}
           <div>
             <p className="font-medium">{p.name}</p>
-            {p.brand && <p className="text-xs text-gray-500">{p.brand}</p>}
+            {p.brand && <p className="text-xs text-gray-700">{p.brand}</p>}
           </div>
         </div>
       ),
@@ -136,7 +136,7 @@ export default function ProductsPage() {
             {p.status === 'active' ? (
               <ToggleRight className="h-4 w-4 text-green-600" />
             ) : (
-              <ToggleLeft className="h-4 w-4 text-gray-400" />
+              <ToggleLeft className="h-4 w-4 text-gray-600" />
             )}
           </Button>
           <Button
@@ -156,7 +156,7 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">My Products</h1>
-          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-gray-700 dark:text-neutral-400 mt-1">
             Manage your product inventory
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function ProductsPage() {
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
           <Input
             placeholder="Search products..."
             value={search}
@@ -210,18 +210,18 @@ export default function ProductsPage() {
               <img
                 src={p.images[0]}
                 alt={p.name}
-                className="w-12 h-12 rounded-md object-cover border border-gray-200 dark:border-neutral-700 flex-shrink-0"
+                className="w-12 h-12 rounded-md object-cover border border-gray-300 dark:border-neutral-700 flex-shrink-0"
               />
             ) : (
-              <div className="w-12 h-12 rounded-md bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-600 flex items-center justify-center flex-shrink-0">
-                <Package className="h-5 w-5 text-gray-400" />
+              <div className="w-12 h-12 rounded-md bg-gray-100 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 flex items-center justify-center flex-shrink-0">
+                <Package className="h-5 w-5 text-gray-600" />
               </div>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{p.name}</p>
-                  {p.brand && <p className="text-xs text-gray-500 truncate">{p.brand}</p>}
+                  {p.brand && <p className="text-xs text-gray-700 truncate">{p.brand}</p>}
                 </div>
                 <Badge variant={p.status === 'active' ? 'default' : 'secondary'} className="text-[10px] flex-shrink-0">
                   {p.status}
@@ -230,7 +230,7 @@ export default function ProductsPage() {
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-3 text-sm">
                   <span className="font-semibold">&#8377;{Number(p.basePrice).toLocaleString()}</span>
-                  <span className={cn('text-xs', p.stockQuantity <= (p.lowStockThreshold || 10) ? 'text-red-600 font-medium' : 'text-gray-500')}>
+                  <span className={cn('text-xs', p.stockQuantity <= (p.lowStockThreshold || 10) ? 'text-red-600 font-medium' : 'text-gray-700')}>
                     Stock: {p.stockQuantity}
                   </span>
                 </div>
@@ -239,7 +239,7 @@ export default function ProductsPage() {
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleStatus(p)}>
-                    {p.status === 'active' ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-gray-400" />}
+                    {p.status === 'active' ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-gray-600" />}
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(p.id)}>
                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
@@ -261,7 +261,7 @@ export default function ProductsPage() {
           >
             Previous
           </Button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-700">
             Page {page} of {totalPages}
           </span>
           <Button
