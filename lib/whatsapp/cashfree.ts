@@ -34,6 +34,9 @@ export async function createCashfreePaymentLink(
   // Normalize phone: strip +91 or 91 prefix to get 10-digit number
   const phone = customerPhone.replace(/^\+?91/, '').slice(-10);
 
+  // Sanitize customer name: Cashfree only accepts letters, spaces, dots, hyphens
+  const safeName = customerName.replace(/[^a-zA-Z\s.\-]/g, '').trim() || 'Customer';
+
   const linkId = `order_${orderId.slice(0, 8)}_${Date.now()}`;
 
   const res = await fetch(`${getCashfreeBaseUrl()}/links`, {
@@ -51,7 +54,7 @@ export async function createCashfreePaymentLink(
       link_purpose: description,
       customer_details: {
         customer_phone: phone,
-        customer_name: customerName,
+        customer_name: safeName,
       },
       link_notify: { send_sms: false, send_email: false },
       link_meta: {
