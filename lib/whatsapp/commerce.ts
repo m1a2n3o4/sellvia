@@ -279,8 +279,10 @@ async function handleAddressReceived(ctx: CommerceContext) {
             paymentMethod: 'cashfree',
           },
         });
-      } catch (error) {
-        console.error('[Commerce] Cashfree payment link creation failed:', error);
+      } catch (error: any) {
+        console.error('[Commerce] Cashfree payment link creation failed:', error?.message || error);
+        // Temporary: send error detail to owner for debugging
+        await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: `[Debug] Cashfree error: ${error?.message || 'unknown'}` }).catch(() => {});
       }
     } else if (gateway === 'razorpay' && ctx.razorpayKeyId && ctx.razorpayKeySecret) {
       try {
@@ -310,6 +312,10 @@ async function handleAddressReceived(ctx: CommerceContext) {
     }
 
     // Send order confirmation + payment link
+    // Temporary debug: log gateway detection
+    if (!paymentLinkUrl) {
+      console.error('[Commerce] No payment link. gateway:', gateway, '| paymentGateway:', ctx.paymentGateway, '| cashfreeAppId:', ctx.cashfreeAppId ? 'SET' : 'NULL', '| cashfreeSecret:', ctx.cashfreeSecretKey ? 'SET' : 'NULL');
+    }
     const orderSummary = `Order Created!\n\nOrder: ${order.orderNumber}\nProduct: ${product.name}${variant ? ` (${variant.variantName})` : ''}\nQuantity: ${quantity}\nTotal: ₹${totalAmount}\nDelivery: ${address}`;
 
     if (paymentLinkUrl) {
