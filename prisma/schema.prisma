@@ -404,3 +404,47 @@ model ConversationState {
   @@index([updatedAt])
   @@map("conversation_states")
 }
+
+// ============================================
+// LANDING PAGE TABLES
+// ============================================
+
+model Enquiry {
+  id            String        @id @default(uuid())
+  name          String
+  mobile        String
+  instagramLink String?       @map("instagram_link")
+  website       String?
+  message       String?
+  status        EnquiryStatus @default(pending)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("enquiries")
+}
+
+enum EnquiryStatus {
+  pending
+  contacted
+  converted
+  closed
+}
+
+model PageView {
+  id        String   @id @default(uuid())
+  page      String   @default("/")
+  country   String?
+  state     String?
+  city      String?
+  device    String?
+  browser   String?
+  referrer  String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([country])
+  @@map("page_views")
+}

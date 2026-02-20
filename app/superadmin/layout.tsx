@@ -52,6 +52,16 @@ export default function SuperAdminLayout({
               >
                 Clients
               </Link>
+              <Link
+                href="/superadmin/enquiries"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                  pathname?.startsWith('/superadmin/enquiries')
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Enquiries
+              </Link>
             </div>
 
             <div className="flex items-center">
