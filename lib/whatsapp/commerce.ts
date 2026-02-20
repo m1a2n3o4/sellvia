@@ -125,7 +125,7 @@ async function handleProductSearch(ctx: CommerceContext) {
 }
 
 async function handleOrderInitiation(ctx: CommerceContext) {
-  const { aiResult, chatId } = ctx;
+  const { aiResult, chatId, tenantId, phoneNumberId, accessToken, customerPhone } = ctx;
   const productId = aiResult.actionData?.productId;
   const quantity = aiResult.actionData?.quantity;
 
@@ -139,12 +139,49 @@ async function handleOrderInitiation(ctx: CommerceContext) {
     return;
   }
 
+  // Fetch product to verify and show confirmation
+  const product = await prisma.product.findUnique({
+    where: { id: resolvedProductId },
+    include: { variants: { where: { status: 'active' } } },
+  });
+
+  if (!product) {
+    return;
+  }
+
+  const variantId = aiResult.actionData?.variantId || state?.variantId;
+  const variant = variantId ? product.variants.find((v) => v.id === variantId) : null;
+  const price = variant ? Number(variant.price) : Number(product.basePrice);
+
   if (quantity && quantity > 0) {
-    // We have both product and quantity — move to awaiting address
+    const total = price * quantity;
+
+    // Show order summary and ask for address
+    await sendWhatsAppMessage({
+      phoneNumberId,
+      accessToken,
+      to: customerPhone,
+      message: `You're ordering:\n\n${product.name}${variant ? ` (${variant.variantName})` : ''}\nPrice: ₹${price} x ${quantity} = ₹${total}\n\nPlease share your delivery address to proceed.`,
+    });
+
+    // Save confirmation message
+    await prisma.whatsAppMessage.create({
+      data: {
+        tenantId,
+        chatId,
+        sender: 'ai',
+        content: `Order summary: ${product.name} x${quantity} = ₹${total}`,
+        messageType: 'text',
+        isAiGenerated: true,
+        status: 'sent',
+        metadata: { productId: product.id },
+      },
+    });
+
     await upsertConversationState(chatId, {
       step: 'awaiting_address',
       productId: resolvedProductId,
-      variantId: aiResult.actionData?.variantId || state?.variantId,
+      variantId: variantId || null,
       quantity,
     });
   } else {
@@ -152,7 +189,7 @@ async function handleOrderInitiation(ctx: CommerceContext) {
     await upsertConversationState(chatId, {
       step: 'awaiting_quantity',
       productId: resolvedProductId,
-      variantId: aiResult.actionData?.variantId || state?.variantId,
+      variantId: variantId || null,
     });
   }
 }
