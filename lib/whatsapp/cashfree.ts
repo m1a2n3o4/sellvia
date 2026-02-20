@@ -58,7 +58,7 @@ export async function createCashfreePaymentLink(
       },
       link_notify: { send_sms: false, send_email: false },
       link_meta: {
-        notify_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.satyasell.com'}/api/webhook/cashfree`,
+        notify_url: 'https://www.satyasell.com/api/webhook/cashfree',
       },
       link_notes: { order_id: orderId },
     }),
