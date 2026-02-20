@@ -178,7 +178,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
   // If productId still missing, try to find the last shown product for this chat
   if (!productId) {
     const recentProductMsg = await prisma.whatsAppMessage.findFirst({
-      where: { chatId, metadata: { path: ['productId'], not: undefined as any } },
+      where: { chatId, metadata: { path: ['productId'], not: 'null' } },
       orderBy: { createdAt: 'desc' },
     });
     if (recentProductMsg) {
