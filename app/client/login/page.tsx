@@ -228,6 +228,18 @@ export default function ClientLoginPage() {
             </button>
           </form>
         </div>
+
+        <p className="text-center mt-5 text-sm text-gray-500">
+          Want an account?{' '}
+          <a
+            href="https://wa.me/919553345235?text=Hi%20SatyaSell%20-%20I%20need%20an%20account%2C%20you%20can%20create%20it%20for%20me%20free%3F"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-green-400 hover:text-green-300 font-medium underline underline-offset-2"
+          >
+            Ask SatyaSell on WhatsApp
+          </a>
+        </p>
       </div>
     </div>
   );
