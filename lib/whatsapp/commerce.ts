@@ -249,7 +249,12 @@ async function handleAddressReceived(ctx: CommerceContext) {
     // Try to create payment link based on configured gateway
     let paymentLinkUrl: string | null = null;
     let paymentLinkId: string | null = null;
-    const gateway = ctx.paymentGateway || 'none';
+    // Auto-detect gateway if not explicitly set
+    let gateway = ctx.paymentGateway || 'none';
+    if (gateway === 'none') {
+      if (ctx.cashfreeAppId && ctx.cashfreeSecretKey) gateway = 'cashfree';
+      else if (ctx.razorpayKeyId && ctx.razorpayKeySecret) gateway = 'razorpay';
+    }
     const linkDescription = `Order ${order.orderNumber} - ${product.name} x${quantity}`;
 
     console.log('[Commerce] Payment gateway:', gateway, '| cashfreeAppId:', !!ctx.cashfreeAppId, '| cashfreeSecret:', !!ctx.cashfreeSecretKey);
