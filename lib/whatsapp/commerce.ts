@@ -165,30 +165,62 @@ async function handleAddressReceived(ctx: CommerceContext) {
   }
 
   const state = await getConversationState(chatId);
-  if (!state?.productId || !state?.quantity) {
-    console.error('[Commerce] handleAddressReceived: Missing state —', { productId: state?.productId, quantity: state?.quantity, chatId });
-    await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'Sorry, something went wrong. Please start your order again by telling us which product you want.' });
+
+  // Try to recover missing productId from AI actionData or recent state
+  let productId = state?.productId || aiResult.actionData?.productId || null;
+  let variantId = state?.variantId || aiResult.actionData?.variantId || null;
+  let quantity = state?.quantity || aiResult.actionData?.quantity || null;
+
+  // If productId still missing, try to find the last shown product for this chat
+  if (!productId) {
+    const recentProductMsg = await prisma.whatsAppMessage.findFirst({
+      where: { chatId, metadata: { path: ['productId'], not: undefined as any } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (recentProductMsg) {
+      const meta = recentProductMsg.metadata as Record<string, string> | null;
+      if (meta?.productId) {
+        productId = meta.productId;
+        console.log('[Commerce] Recovered productId from recent message:', productId);
+      }
+    }
+  }
+
+  // Default quantity to 1 if still missing
+  if (!quantity || quantity < 1) {
+    quantity = 1;
+    console.log('[Commerce] Defaulting quantity to 1 for chatId:', chatId);
+  }
+
+  if (!productId) {
+    console.error('[Commerce] handleAddressReceived: Cannot recover productId —', { chatId });
+    await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'I have your address, but I\'m not sure which product you want to order. Could you please tell me the product name and quantity?' });
+    // Save address in state so they don't need to repeat it
+    await upsertConversationState(chatId, {
+      step: 'awaiting_product',
+      deliveryAddress: address,
+    });
     return;
   }
 
   // Fetch product details
   const product = await prisma.product.findUnique({
-    where: { id: state.productId },
+    where: { id: productId },
     include: { variants: { where: { status: 'active' } } },
   });
 
   if (!product) {
-    console.error('[Commerce] handleAddressReceived: Product not found —', state.productId);
+    console.error('[Commerce] handleAddressReceived: Product not found —', productId);
     await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: 'Sorry, this product is no longer available. Please try another product.' });
     return;
   }
 
-  const variant = state.variantId
-    ? product.variants.find((v) => v.id === state.variantId)
+  const variant = variantId
+    ? product.variants.find((v) => v.id === variantId)
     : null;
 
   const price = variant ? Number(variant.price) : Number(product.basePrice);
-  const totalAmount = price * state.quantity;
+  const totalAmount = price * quantity;
 
   // Create order
   try {
@@ -205,7 +237,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
           productName: product.name,
           variantName: variant?.variantName,
           price,
-          quantity: state.quantity,
+          quantity,
         },
       ],
     });
@@ -220,7 +252,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
           amount: totalAmount,
           customerName: customerName || 'WhatsApp Customer',
           customerPhone,
-          description: `Order ${order.orderNumber} - ${product.name} x${state.quantity}`,
+          description: `Order ${order.orderNumber} - ${product.name} x${quantity}`,
           orderId: order.id,
           razorpayKeyId: ctx.razorpayKeyId,
           razorpayKeySecret: ctx.razorpayKeySecret,
@@ -243,7 +275,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
     }
 
     // Send order confirmation + payment link
-    const orderSummary = `Order Created!\n\nOrder: ${order.orderNumber}\nProduct: ${product.name}${variant ? ` (${variant.variantName})` : ''}\nQuantity: ${state.quantity}\nTotal: ₹${totalAmount}\nDelivery: ${address}`;
+    const orderSummary = `Order Created!\n\nOrder: ${order.orderNumber}\nProduct: ${product.name}${variant ? ` (${variant.variantName})` : ''}\nQuantity: ${quantity}\nTotal: ₹${totalAmount}\nDelivery: ${address}`;
 
     if (paymentLinkUrl) {
       await sendWhatsAppMessage({
@@ -287,7 +319,7 @@ async function handleAddressReceived(ctx: CommerceContext) {
       step: paymentLinkUrl ? 'awaiting_payment' : 'order_complete',
       productId: product.id,
       variantId: variant?.id || null,
-      quantity: state.quantity,
+      quantity,
       deliveryAddress: address,
       orderId: order.id,
       paymentLinkId,
