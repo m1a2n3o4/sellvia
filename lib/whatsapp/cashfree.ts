@@ -64,9 +64,15 @@ export async function createCashfreePaymentLink(
   });
 
   if (!res.ok) {
-    const errorData = await res.json();
-    console.error('[Cashfree] Payment link creation failed:', errorData);
-    throw new Error(errorData.message || 'Failed to create Cashfree payment link');
+    let errorData;
+    try {
+      errorData = await res.json();
+    } catch {
+      const text = await res.text().catch(() => 'no body');
+      errorData = { message: `HTTP ${res.status}: ${text}` };
+    }
+    console.error('[Cashfree] Payment link creation failed:', JSON.stringify(errorData));
+    throw new Error(errorData?.message || `Cashfree API error: ${res.status}`);
   }
 
   const data = await res.json();

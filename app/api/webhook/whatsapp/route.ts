@@ -292,8 +292,8 @@ async function processIncomingMessage(msg: IncomingMessage) {
         cashfreeSecretKey: businessInfo.cashfreeSecretKey,
       });
     }
-  } catch (error) {
-    console.error('[Webhook] AI processing error:', error);
+  } catch (error: any) {
+    console.error('[Webhook] AI processing error:', error?.message || error, error?.stack);
     // Send fallback reply so customer doesn't get silence
     try {
       await sendWhatsAppMessage({
