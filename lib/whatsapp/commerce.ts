@@ -281,8 +281,6 @@ async function handleAddressReceived(ctx: CommerceContext) {
         });
       } catch (error: any) {
         console.error('[Commerce] Cashfree payment link creation failed:', error?.message || error);
-        // Temporary: send error detail to owner for debugging
-        await sendWhatsAppMessage({ phoneNumberId, accessToken, to: customerPhone, message: `[Debug] Cashfree error: ${error?.message || 'unknown'}` }).catch(() => {});
       }
     } else if (gateway === 'razorpay' && ctx.razorpayKeyId && ctx.razorpayKeySecret) {
       try {
@@ -311,26 +309,22 @@ async function handleAddressReceived(ctx: CommerceContext) {
       }
     }
 
-    // Send order confirmation + payment link
-    // Temporary debug: log gateway detection
-    if (!paymentLinkUrl) {
-      console.error('[Commerce] No payment link. gateway:', gateway, '| paymentGateway:', ctx.paymentGateway, '| cashfreeAppId:', ctx.cashfreeAppId ? 'SET' : 'NULL', '| cashfreeSecret:', ctx.cashfreeSecretKey ? 'SET' : 'NULL');
-    }
-    const orderSummary = `Order Created!\n\nOrder: ${order.orderNumber}\nProduct: ${product.name}${variant ? ` (${variant.variantName})` : ''}\nQuantity: ${quantity}\nTotal: ₹${totalAmount}\nDelivery: ${address}`;
+    // Send order summary + payment link
+    const orderDetails = `Order: ${order.orderNumber}\nProduct: ${product.name}${variant ? ` (${variant.variantName})` : ''}\nQuantity: ${quantity}\nTotal: ₹${totalAmount}\nDelivery: ${address}`;
 
     if (paymentLinkUrl) {
       await sendWhatsAppMessage({
         phoneNumberId,
         accessToken,
         to: customerPhone,
-        message: `${orderSummary}\n\nPlease complete your payment here:\n${paymentLinkUrl}`,
+        message: `Your order is ready!\n\n${orderDetails}\n\nPlease complete payment to confirm your order:\n${paymentLinkUrl}\n\nOrder will be confirmed once payment is received.`,
       });
     } else {
       await sendWhatsAppMessage({
         phoneNumberId,
         accessToken,
         to: customerPhone,
-        message: `${orderSummary}\n\nPayment will be collected on delivery.`,
+        message: `Order Confirmed!\n\n${orderDetails}\n\nPayment will be collected on delivery.`,
       });
     }
 
@@ -341,8 +335,8 @@ async function handleAddressReceived(ctx: CommerceContext) {
         chatId,
         sender: 'ai',
         content: paymentLinkUrl
-          ? `${orderSummary}\n\nPayment link: ${paymentLinkUrl}`
-          : `${orderSummary}\n\nPayment: Cash on delivery`,
+          ? `${orderDetails}\n\nPayment link: ${paymentLinkUrl}`
+          : `${orderDetails}\n\nPayment: Cash on delivery`,
         messageType: 'text',
         isAiGenerated: true,
         status: 'sent',
