@@ -5,7 +5,7 @@ import { createPaymentLink } from './razorpay';
 import { createCashfreePaymentLink } from './cashfree';
 import type { AIResponse } from './ai';
 
-const CONVERSATION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const CONVERSATION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 interface CommerceContext {
   tenantId: string;
@@ -256,8 +256,6 @@ async function handleAddressReceived(ctx: CommerceContext) {
       else if (ctx.razorpayKeyId && ctx.razorpayKeySecret) gateway = 'razorpay';
     }
     const linkDescription = `Order ${order.orderNumber} - ${product.name} x${quantity}`;
-
-    console.log('[Commerce] Payment gateway:', gateway, '| cashfreeAppId:', !!ctx.cashfreeAppId, '| cashfreeSecret:', !!ctx.cashfreeSecretKey);
 
     if (gateway === 'cashfree' && ctx.cashfreeAppId && ctx.cashfreeSecretKey) {
       try {

@@ -119,11 +119,11 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
     ctx.businessInfo
       ? Promise.resolve(ctx.businessInfo)
       : prisma.businessInfo.findUnique({ where: { tenantId: ctx.tenantId } }),
-    // Products (limit 20 for faster OpenAI processing)
+    // Products (limit 10 for faster OpenAI processing)
     prisma.product.findMany({
       where: { tenantId: ctx.tenantId, status: 'active' },
-      include: { variants: { where: { status: 'active' } } },
-      take: 20,
+      include: { variants: { where: { status: 'active' }, take: 3 } },
+      take: 10,
     }),
     // Customer with recent orders
     prisma.customer.findFirst({
@@ -135,11 +135,11 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
         orders: {
           include: { orderItems: true },
           orderBy: { createdAt: 'desc' },
-          take: 3,
+          take: 2,
         },
       },
     }),
-    // Recent chat messages
+    // Recent chat messages (5 for speed, enough for context)
     prisma.whatsAppChat.findUnique({
       where: {
         tenantId_customerPhone: {
@@ -150,7 +150,7 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
       include: {
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 8,
+          take: 5,
         },
       },
     }),
@@ -161,8 +161,7 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
   // Build product catalog string with IDs so GPT can reference specific products
   const productCatalog = products
     .map((p) => {
-      const images = (p.images as string[]) || [];
-      const hasImage = images.length > 0;
+      const desc = p.description ? p.description.slice(0, 80) : '';
       const variantInfo =
         p.variants.length > 0
           ? p.variants
@@ -170,12 +169,12 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
                 const attrs = Object.entries(v.attributes as Record<string, string>)
                   .map(([k, val]) => `${k}: ${val}`)
                   .join(', ');
-                return `  - [VariantID: ${v.id}] ${v.variantName} (${attrs}) - ₹${v.price} (Stock: ${v.stockQuantity})`;
+                return `  - [${v.id}] ${v.variantName} (${attrs}) ₹${v.price} Stock:${v.stockQuantity}`;
               })
               .join('\n')
           : '';
 
-      return `• [ProductID: ${p.id}] ${p.name}${p.brand ? ` (${p.brand})` : ''} - ₹${p.basePrice} (Stock: ${p.stockQuantity})${hasImage ? ' [has image]' : ''}${p.description ? ` - ${p.description}` : ''}${variantInfo ? '\n' + variantInfo : ''}`;
+      return `• [${p.id}] ${p.name}${p.brand ? ` (${p.brand})` : ''} ₹${p.basePrice} Stock:${p.stockQuantity}${desc ? ` - ${desc}` : ''}${variantInfo ? '\n' + variantInfo : ''}`;
     })
     .join('\n');
 
@@ -207,6 +206,9 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
     if (ctx.conversationQuantity) {
       stateContext += `\nSelected Quantity: ${ctx.conversationQuantity}`;
     }
+  } else {
+    // State is idle — tell AI to ignore old order references in history
+    stateContext = '\nCURRENT CONVERSATION STATE: idle (new conversation — ignore any previous order discussions in chat history)';
   }
 
   const systemPrompt = `You are a helpful WhatsApp sales assistant for "${businessInfo?.storeName || 'our store'}".

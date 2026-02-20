@@ -36,8 +36,6 @@ export async function createCashfreePaymentLink(
 
   const linkId = `order_${orderId.slice(0, 8)}_${Date.now()}`;
 
-  console.log('[Cashfree] Creating payment link — env:', process.env.CASHFREE_ENV, '| amount:', amount, '| phone:', phone);
-
   const res = await fetch(`${getCashfreeBaseUrl()}/links`, {
     method: 'POST',
     headers: {
