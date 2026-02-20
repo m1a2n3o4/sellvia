@@ -252,6 +252,8 @@ async function handleAddressReceived(ctx: CommerceContext) {
     const gateway = ctx.paymentGateway || 'none';
     const linkDescription = `Order ${order.orderNumber} - ${product.name} x${quantity}`;
 
+    console.log('[Commerce] Payment gateway:', gateway, '| cashfreeAppId:', !!ctx.cashfreeAppId, '| cashfreeSecret:', !!ctx.cashfreeSecretKey);
+
     if (gateway === 'cashfree' && ctx.cashfreeAppId && ctx.cashfreeSecretKey) {
       try {
         const paymentLink = await createCashfreePaymentLink({

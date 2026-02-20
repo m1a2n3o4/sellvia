@@ -1,10 +1,11 @@
 import crypto from 'crypto';
 
-const CASHFREE_ENV = process.env.CASHFREE_ENV || 'sandbox';
-const BASE_URL =
-  CASHFREE_ENV === 'production'
+function getCashfreeBaseUrl() {
+  const env = process.env.CASHFREE_ENV || 'sandbox';
+  return env === 'production'
     ? 'https://api.cashfree.com/pg'
     : 'https://sandbox.cashfree.com/pg';
+}
 
 interface CreateCashfreeLinkInput {
   amount: number; // in rupees
@@ -35,7 +36,9 @@ export async function createCashfreePaymentLink(
 
   const linkId = `order_${orderId.slice(0, 8)}_${Date.now()}`;
 
-  const res = await fetch(`${BASE_URL}/links`, {
+  console.log('[Cashfree] Creating payment link — env:', process.env.CASHFREE_ENV, '| amount:', amount, '| phone:', phone);
+
+  const res = await fetch(`${getCashfreeBaseUrl()}/links`, {
     method: 'POST',
     headers: {
       'x-client-id': cashfreeAppId,
