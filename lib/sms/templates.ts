@@ -13,3 +13,7 @@ export function pinChanged(): string {
 export function newOrder(orderNumber: string, customerName: string, total: number, itemCount: number): string {
   return `New Order! ${orderNumber} from ${customerName} - ${itemCount} item(s), Total: Rs.${total.toFixed(2)}. Check your SatyaSell dashboard for details. - SatyaSell`;
 }
+
+export function customerEscalation(customerName: string, customerPhone: string, reason: string): string {
+  return `ALERT: Customer ${customerName} (${customerPhone}) needs help. Issue: ${reason}. Please check your SatyaSell WhatsApp dashboard. - SatyaSell`;
+}

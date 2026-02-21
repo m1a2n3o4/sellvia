@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { waitUntil } from '@vercel/functions';
 import { prisma } from '@/lib/db/prisma';
-import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
-import { processMessageWithAI } from '@/lib/whatsapp/ai';
+import { sendWhatsAppMessage, markMessageAsRead, reactToMessage } from '@/lib/whatsapp/client';
+import { processMessageWithAI, processImageWithAI } from '@/lib/whatsapp/ai';
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
+import { downloadWhatsAppMedia, transcribeAudio } from '@/lib/whatsapp/media';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Allow up to 30 seconds on Vercel Pro
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
 
   let messageContent = '';
   let messageType: string = 'text';
+  let mediaId: string | null = null;
 
   switch (message.type) {
     case 'text':
@@ -71,10 +73,12 @@ export async function POST(request: NextRequest) {
     case 'image':
       messageContent = message.image?.caption || '[Image received]';
       messageType = 'image';
+      mediaId = message.image?.id || null;
       break;
     case 'audio':
       messageContent = '[Voice message received]';
       messageType = 'audio';
+      mediaId = message.audio?.id || null;
       break;
     case 'video':
       messageContent = message.video?.caption || '[Video received]';
@@ -113,6 +117,7 @@ export async function POST(request: NextRequest) {
       waMessageId,
       messageContent,
       messageType,
+      mediaId,
       rawBody,
       signature: request.headers.get('x-hub-signature-256'),
     }).catch((error) => {
@@ -134,12 +139,14 @@ interface IncomingMessage {
   waMessageId: string;
   messageContent: string;
   messageType: string;
+  mediaId: string | null;
   rawBody: string;
   signature: string | null;
 }
 
 async function processIncomingMessage(msg: IncomingMessage) {
-  const { phoneNumberId, customerPhone, customerName, waMessageId, messageContent, messageType } = msg;
+  const { phoneNumberId, customerPhone, customerName, waMessageId, messageType, mediaId } = msg;
+  let { messageContent } = msg;
 
   // Find tenant by WhatsApp phone number ID
   const businessInfo = await prisma.businessInfo.findFirst({
@@ -216,10 +223,11 @@ async function processIncomingMessage(msg: IncomingMessage) {
   ]);
 
   // Process with AI if enabled
+  const aiSupportedTypes = ['text', 'interactive', 'audio', 'image'];
   if (
     !businessInfo.aiEnabled ||
     !businessInfo.openaiKey ||
-    (messageType !== 'text' && messageType !== 'interactive')
+    !aiSupportedTypes.includes(messageType)
   ) {
     return;
   }
@@ -229,6 +237,73 @@ async function processIncomingMessage(msg: IncomingMessage) {
   }
 
   try {
+    // Feature 1: Show 👀 reaction to acknowledge message while AI processes
+    await reactToMessage({
+      phoneNumberId,
+      accessToken: businessInfo.whatsappToken,
+      to: customerPhone,
+      messageId: waMessageId,
+      emoji: '👀',
+    });
+
+    // Feature 6: Voice note — transcribe audio to text via Whisper
+    if (messageType === 'audio' && mediaId) {
+      const media = await downloadWhatsAppMedia({
+        mediaId,
+        accessToken: businessInfo.whatsappToken,
+      });
+      if (media) {
+        const transcribed = await transcribeAudio({
+          audioBuffer: media.buffer,
+          mimeType: media.mimeType,
+          openaiKey: businessInfo.openaiKey,
+        });
+        if (transcribed) {
+          messageContent = transcribed;
+        } else {
+          await sendWhatsAppMessage({
+            phoneNumberId,
+            accessToken: businessInfo.whatsappToken,
+            to: customerPhone,
+            message: "Sorry, I couldn't understand your voice message. Could you please type your message instead?",
+          });
+          await reactToMessage({ phoneNumberId, accessToken: businessInfo.whatsappToken, to: customerPhone, messageId: waMessageId, emoji: '' });
+          return;
+        }
+      } else {
+        await sendWhatsAppMessage({
+          phoneNumberId,
+          accessToken: businessInfo.whatsappToken,
+          to: customerPhone,
+          message: "Sorry, I couldn't process your voice message. Could you please type your message instead?",
+        });
+        await reactToMessage({ phoneNumberId, accessToken: businessInfo.whatsappToken, to: customerPhone, messageId: waMessageId, emoji: '' });
+        return;
+      }
+    }
+
+    // Feature 7: Image — analyze with GPT-4o-mini Vision for product matching
+    if (messageType === 'image' && mediaId) {
+      const media = await downloadWhatsAppMedia({
+        mediaId,
+        accessToken: businessInfo.whatsappToken,
+      });
+      if (media) {
+        const visionResult = await processImageWithAI({
+          tenantId,
+          imageBuffer: media.buffer,
+          mimeType: media.mimeType,
+          customerCaption: messageContent !== '[Image received]' ? messageContent : undefined,
+          openaiKey: businessInfo.openaiKey,
+        });
+        if (visionResult) {
+          // Feed vision analysis to AI as the message content
+          messageContent = visionResult;
+        }
+      }
+      // If media download failed, messageContent stays as "[Image received]" and AI will handle gracefully
+    }
+
     const aiResult = await processMessageWithAI({
       tenantId,
       customerPhone,
@@ -274,6 +349,15 @@ async function processIncomingMessage(msg: IncomingMessage) {
         }),
       ]);
     }
+
+    // Feature 1: Remove 👀 reaction after reply is sent
+    await reactToMessage({
+      phoneNumberId,
+      accessToken: businessInfo.whatsappToken,
+      to: customerPhone,
+      messageId: waMessageId,
+      emoji: '',
+    });
 
     // Execute commerce flow
     if (aiResult.action !== 'none') {

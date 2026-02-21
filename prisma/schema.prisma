@@ -271,6 +271,7 @@ model WhatsAppChat {
   lastMessageAt   DateTime? @map("last_message_at")
   unreadCount     Int      @default(0) @map("unread_count")
   status          ChatStatus @default(active)
+  needsAttention  Boolean  @default(false) @map("needs_attention")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -283,6 +284,7 @@ model WhatsAppChat {
   @@index([tenantId])
   @@index([tenantId, lastMessageAt(sort: Desc)])
   @@index([tenantId, status])
+  @@index([tenantId, needsAttention])
   @@map("whatsapp_chats")
 }
 

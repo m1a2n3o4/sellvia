@@ -159,6 +159,46 @@ export async function sendWhatsAppInteractiveMessage({
   }
 }
 
+/**
+ * React to a customer message with an emoji to show acknowledgment.
+ * Call with emoji="" to remove the reaction after sending the actual reply.
+ */
+export async function reactToMessage({
+  phoneNumberId,
+  accessToken,
+  to,
+  messageId,
+  emoji,
+}: {
+  phoneNumberId: string;
+  accessToken: string;
+  to: string;
+  messageId: string;
+  emoji: string; // e.g. "👀" to add, "" to remove
+}) {
+  try {
+    await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to,
+        type: 'reaction',
+        reaction: {
+          message_id: messageId,
+          emoji,
+        },
+      }),
+    });
+  } catch {
+    // Fail silently — reaction is non-critical
+  }
+}
+
 export async function markMessageAsRead({
   phoneNumberId,
   accessToken,

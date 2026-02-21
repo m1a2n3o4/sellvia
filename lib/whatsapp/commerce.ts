@@ -3,6 +3,8 @@ import { sendWhatsAppMessage, sendWhatsAppImage, sendWhatsAppInteractiveMessage 
 import { createOrderFromWhatsApp } from './order-service';
 import { createPaymentLink } from './razorpay';
 import { createCashfreePaymentLink } from './cashfree';
+import { sendSms } from '@/lib/sms/fast2sms';
+import { customerEscalation } from '@/lib/sms/templates';
 import type { AIResponse } from './ai';
 
 const CONVERSATION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
@@ -486,17 +488,28 @@ async function handleEscalation(ctx: CommerceContext) {
     return;
   }
 
-  // Send alert to business owner
-  try {
-    await sendWhatsAppMessage({
+  // Send WhatsApp alert + SMS to owner in parallel (fail silently)
+  await Promise.all([
+    sendWhatsAppMessage({
       phoneNumberId,
       accessToken,
       to: businessInfo.ownerPhone,
       message: `CUSTOMER ALERT\n\nCustomer: ${customerName || 'Unknown'} (${customerPhone})\nIssue: ${reason}\n\nPlease follow up with this customer.`,
-    });
-  } catch (error) {
-    console.error('[Commerce] Failed to send escalation to owner:', error);
-  }
+    }).catch((error) => {
+      console.error('[Commerce] Failed to send escalation WhatsApp to owner:', error);
+    }),
+    sendSms({
+      mobile: businessInfo.ownerPhone,
+      message: customerEscalation(customerName || 'Unknown', customerPhone, reason),
+    }).catch((error) => {
+      console.error('[Commerce] Failed to send escalation SMS to owner:', error);
+    }),
+    // Mark chat as needs attention
+    prisma.whatsAppChat.update({
+      where: { id: chatId },
+      data: { needsAttention: true },
+    }).catch(() => {}),
+  ]);
 
   // Save escalation record in chat
   await prisma.whatsAppMessage.create({
@@ -597,11 +610,11 @@ export async function getConversationState(chatId: string) {
     where: { chatId },
   });
 
-  // Check for timeout
+  // Check for timeout — DELETE stale state entirely
   if (state && state.step !== 'idle') {
     const elapsed = Date.now() - state.updatedAt.getTime();
     if (elapsed > CONVERSATION_TIMEOUT_MS) {
-      await resetConversationState(chatId);
+      await prisma.conversationState.delete({ where: { chatId } }).catch(() => {});
       return null;
     }
   }
@@ -614,30 +627,20 @@ export async function getOrCreateConversationState(chatId: string) {
     where: { chatId },
   });
 
+  // Check for timeout — DELETE stale state entirely
+  if (state && state.step !== 'idle') {
+    const elapsed = Date.now() - state.updatedAt.getTime();
+    if (elapsed > CONVERSATION_TIMEOUT_MS) {
+      await prisma.conversationState.delete({ where: { chatId } }).catch(() => {});
+      state = null;
+    }
+  }
+
+  // Create fresh state if none exists
   if (!state) {
     state = await prisma.conversationState.create({
       data: { chatId, step: 'idle' },
     });
-  }
-
-  // Check for timeout
-  if (state.step !== 'idle') {
-    const elapsed = Date.now() - state.updatedAt.getTime();
-    if (elapsed > CONVERSATION_TIMEOUT_MS) {
-      state = await prisma.conversationState.update({
-        where: { chatId },
-        data: {
-          step: 'idle',
-          productId: null,
-          variantId: null,
-          quantity: null,
-          deliveryAddress: null,
-          orderId: null,
-          paymentLinkId: null,
-          paymentLinkUrl: null,
-        },
-      });
-    }
   }
 
   return state;
@@ -684,18 +687,10 @@ async function upsertConversationState(
 
 export async function resetConversationState(chatId: string) {
   try {
-    await prisma.conversationState.update({
+    // DELETE the record entirely instead of setting to idle.
+    // This ensures no stale productId/variantId/quantity lingers.
+    await prisma.conversationState.delete({
       where: { chatId },
-      data: {
-        step: 'idle',
-        productId: null,
-        variantId: null,
-        quantity: null,
-        deliveryAddress: null,
-        orderId: null,
-        paymentLinkId: null,
-        paymentLinkUrl: null,
-      },
     });
   } catch {
     // State might not exist — that's fine

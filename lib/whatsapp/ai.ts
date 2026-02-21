@@ -157,6 +157,7 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
   ]);
 
   const recentMessages = (chat?.messages || []).reverse();
+  const totalMessageCount = chat?.messages?.length || 0;
 
   // Build product catalog string with IDs so GPT can reference specific products
   const productCatalog = products
@@ -207,8 +208,9 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
       stateContext += `\nSelected Quantity: ${ctx.conversationQuantity}`;
     }
   } else {
-    // State is idle — tell AI to ignore old order references in history
-    stateContext = '\nCURRENT CONVERSATION STATE: idle (new conversation — ignore any previous order discussions in chat history)';
+    // State is idle — strongly tell AI to ignore ALL old order/product references
+    stateContext = `\nCURRENT CONVERSATION STATE: idle
+IMPORTANT: This is a FRESH conversation. COMPLETELY IGNORE any products, orders, quantities, or addresses mentioned in the chat history above. Do NOT reference, re-order, or suggest any previously discussed products. Treat this as if you are talking to the customer for the first time. Only respond to what the customer is saying RIGHT NOW in their current message.`;
   }
 
   const systemPrompt = `You are a helpful WhatsApp sales assistant for "${businessInfo?.storeName || 'our store'}".
@@ -243,6 +245,13 @@ CRITICAL RULES:
 - NEVER create or confirm an order without first collecting a delivery address.
 - If the customer tries to confirm an order but no address has been collected yet, ask for the address instead of confirming.
 
+INPUT VALIDATION RULES (VERY IMPORTANT — follow strictly):
+- QUANTITY: Must be a whole number between 1 and 99. If the customer replies with letters, symbols, gibberish, or a number outside 1-99, politely re-ask: "Please tell me the quantity as a number (1-99). For example: 2"
+- ADDRESS: Must be at least 10 characters and contain a recognizable location (area, city, pincode, or landmark). If the customer sends a very short or meaningless reply (like "ok", "yes", "ABCD", random characters), politely re-ask: "Could you please share your full delivery address? Include your area, city, and pincode so we can deliver your order."
+- PRODUCT SELECTION: When the customer is choosing a product, their reply must reasonably match a product name in the catalog or be a clear "yes/no". If they send random text that doesn't match any product, ask: "I didn't find that product. Could you tell me the product name again?"
+- If a customer gives an invalid reply TWICE in a row for the same step, respond warmly: "No worries! Take your time. Whenever you're ready, just let me know." and use action "none" to avoid forcing the step.
+- NEVER proceed with bad data. NEVER guess what the customer meant if their input is clearly invalid.
+
 INSTRUCTIONS:
 1. Be friendly, concise, and helpful. Use simple language.
 2. When customer asks about products, use action "search_products" with the relevant searchQuery. Include product details with prices in your reply.
@@ -253,14 +262,27 @@ INSTRUCTIONS:
 7. When the conversation state is "awaiting_address", the customer is providing their delivery address. Use action "collect_address" with the address. If they have NOT yet provided an address, ask for it.
 8. When the customer says "confirm" or agrees to proceed, use action "confirm_order" ONLY if delivery address has already been collected. Otherwise, ask for the address first.
 9. For order tracking queries, use action "track_order".
-10. If the customer is angry, frustrated, complaining about a broken/defective product, or asks to speak with the owner/manager/someone in charge, use action "escalate_to_owner" with the escalationReason. Tell the customer their concern has been noted and someone will contact them shortly.
+10. Use action "escalate_to_owner" with escalationReason in ANY of these situations:
+  - Customer is angry, frustrated, or uses abusive language
+  - Customer complains about a broken/defective product
+  - Customer explicitly asks to "talk to a person", "call the owner", or "speak with someone"
+  - Customer requests a refund, return, or exchange
+  - Customer has a payment issue or complaint about being charged incorrectly
+  - You are unable to answer the same question after 2 attempts
+  - You are unsure about a product detail and cannot find it in the catalog
+  Tell the customer: "I've noted your concern and I'm connecting you with the store owner. They will contact you shortly."${businessInfo?.ownerPhone ? ` Also tell them: "You can also reach the owner directly at ${businessInfo.ownerPhone}."` : ''}
 11. If the customer says "cancel", "nevermind", or wants to stop ordering, use action "none" and acknowledge the cancellation.
 12. Always mention prices in ₹ (Indian Rupees).
 13. Keep responses under 300 words. WhatsApp messages should be short and readable.
 14. Use line breaks for readability. Don't use markdown formatting (no **, no ##).
 15. NEVER make up product information. Only share what's in the catalog.
 16. Always use the commerce_action function to structure your response.
-17. Include ProductID/VariantID in the function call when referencing specific products.${businessInfo?.aiCustomInstructions ? `\n\nCUSTOM STORE RULES:\n${businessInfo.aiCustomInstructions}` : ''}`;
+17. Include ProductID/VariantID in the function call when referencing specific products.
+18. When conversation state is "idle", NEVER auto-initiate an order based on chat history. Only initiate orders when the customer EXPLICITLY asks to buy something in their CURRENT message.
+19. NEVER say "Would you like to reorder [product]?" or reference any product from previous conversations unless the customer specifically asks about it.
+20. If you are unsure about a product detail, price, or availability, say: "I'm not sure about that. Let me connect you with the store owner." and use action "escalate_to_owner".
+21. Always confirm the product name and price before proceeding to order. Never assume.
+22. ONLY recommend products that exist in the PRODUCT CATALOG above. NEVER make up product names, prices, or details.${totalMessageCount >= 20 ? `\n23. CONVERSATION LIMIT REACHED: This conversation has ${totalMessageCount} messages. If the customer needs more help, suggest: "For more detailed assistance, I can connect you with the store owner. Would you like that?" Use action "escalate_to_owner" if they agree.` : ''}${businessInfo?.aiCustomInstructions ? `\n\nCUSTOM STORE RULES:\n${businessInfo.aiCustomInstructions}` : ''}`;
 
   try {
     const messages: OpenAI.ChatCompletionMessageParam[] = [
@@ -275,7 +297,7 @@ INSTRUCTIONS:
       tools: commerceFunctions,
       tool_choice: { type: 'function', function: { name: 'commerce_action' } },
       max_tokens: 800,
-      temperature: 0.7,
+      temperature: 0.3,
     });
 
     const toolCall = completion.choices[0]?.message?.tool_calls?.[0] as
@@ -311,6 +333,92 @@ INSTRUCTIONS:
       reply: "Sorry, I'm having trouble right now. Please try again in a moment or contact us directly.",
       action: 'none',
     };
+  }
+}
+
+/**
+ * Process a customer-sent image using GPT-4o-mini Vision.
+ * Matches the image against the product catalog and returns a text description
+ * that gets fed into the main AI pipeline as messageContent.
+ */
+export async function processImageWithAI({
+  tenantId,
+  imageBuffer,
+  mimeType,
+  customerCaption,
+  openaiKey,
+}: {
+  tenantId: string;
+  imageBuffer: Buffer;
+  mimeType: string;
+  customerCaption?: string;
+  openaiKey: string;
+}): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: openaiKey });
+
+    // Fetch product catalog for matching
+    const products = await prisma.product.findMany({
+      where: { tenantId, status: 'active' },
+      select: { id: true, name: true, brand: true, category: true, basePrice: true, description: true },
+      take: 20,
+    });
+
+    const catalogText = products
+      .map((p) => `[${p.id}] ${p.name}${p.brand ? ` (${p.brand})` : ''}${p.category ? ` - ${p.category}` : ''} ₹${p.basePrice}${p.description ? ` - ${p.description.slice(0, 60)}` : ''}`)
+      .join('\n');
+
+    // Convert buffer to base64 data URL
+    const base64 = imageBuffer.toString('base64');
+    const mediaType = mimeType.split(';')[0].trim() as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a product matching assistant. A customer sent an image on WhatsApp. Your job is to:
+1. Describe what you see in the image briefly
+2. Match it to the closest product in the catalog below
+3. Return a SHORT text summary (2-3 sentences max)
+
+PRODUCT CATALOG:
+${catalogText || 'No products available.'}
+
+RULES:
+- If you find a matching product, say: "Customer sent a photo that looks like [Product Name] ([Product ID]). They seem interested in this product."
+- If you find a partial/similar match, say: "Customer sent a photo that looks similar to [Product Name]. Not an exact match but closest in our catalog."
+- If no match found, say: "Customer sent a photo of [brief description]. No matching product found in our catalog."
+- Keep it factual and brief. This text will be fed to another AI for responding to the customer.`,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mediaType};base64,${base64}`,
+                detail: 'low',
+              },
+            },
+            ...(customerCaption
+              ? [{ type: 'text' as const, text: `Customer's caption: "${customerCaption}"` }]
+              : []),
+          ],
+        },
+      ],
+      max_tokens: 200,
+      temperature: 0.2,
+    });
+
+    const result = response.choices[0]?.message?.content?.trim();
+    if (!result) return null;
+
+    console.log('[Vision] Image analysis:', result.slice(0, 100));
+    return result;
+  } catch (error) {
+    console.error('[Vision] Image processing error:', error);
+    return null;
   }
 }
 
