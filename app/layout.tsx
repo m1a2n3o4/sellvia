@@ -10,13 +10,13 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: 'SatyaSell - AI Powered WhatsApp Auto Ordering System',
-  description: 'Free WhatsApp ordering system for Instagram sellers and small businesses. AI handles products, payments, and orders automatically. Pay only 1% per order.',
-  keywords: ['WhatsApp ordering', 'Instagram sellers', 'AI commerce', 'auto order', 'payment links', 'SatyaSell', 'WhatsApp business'],
+  title: 'SatyaSell - Smart WhatsApp Auto Ordering System',
+  description: 'Free WhatsApp ordering system for Instagram sellers and small businesses. Smart system handles products, payments, and orders automatically. Pay only 1% per order.',
+  keywords: ['WhatsApp ordering', 'Instagram sellers', 'smart commerce', 'auto order', 'payment links', 'SatyaSell', 'WhatsApp business'],
   manifest: '/manifest.json',
   openGraph: {
-    title: 'SatyaSell - AI Powered WhatsApp Auto Ordering System',
-    description: 'Free WhatsApp ordering for Instagram sellers. AI handles everything — products, address, payment, orders. Pay only 1% per order.',
+    title: 'SatyaSell - Smart WhatsApp Auto Ordering System',
+    description: 'Free WhatsApp ordering for Instagram sellers. Smart system handles everything — products, address, payment, orders. Pay only 1% per order.',
     url: 'https://www.satyasell.com',
     siteName: 'SatyaSell',
     type: 'website',
