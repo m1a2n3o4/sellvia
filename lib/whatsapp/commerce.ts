@@ -215,9 +215,15 @@ async function handleAddressReceived(ctx: CommerceContext) {
   let quantity = state?.quantity || aiResult.actionData?.quantity || null;
 
   // If productId still missing, try to find the last shown product for this chat
+  // IMPORTANT: Only look at messages from the last 15 minutes to avoid pulling stale products
   if (!productId) {
+    const fifteenMinutesAgo = new Date(Date.now() - CONVERSATION_TIMEOUT_MS);
     const recentProductMsg = await prisma.whatsAppMessage.findFirst({
-      where: { chatId, metadata: { path: ['productId'], not: 'null' } },
+      where: {
+        chatId,
+        metadata: { path: ['productId'], not: 'null' },
+        createdAt: { gte: fifteenMinutesAgo },
+      },
       orderBy: { createdAt: 'desc' },
     });
     if (recentProductMsg) {
@@ -610,8 +616,8 @@ export async function getConversationState(chatId: string) {
     where: { chatId },
   });
 
-  // Check for timeout — DELETE stale state entirely
-  if (state && state.step !== 'idle') {
+  // Check for timeout — DELETE stale state entirely (including idle states with old productId)
+  if (state) {
     const elapsed = Date.now() - state.updatedAt.getTime();
     if (elapsed > CONVERSATION_TIMEOUT_MS) {
       await prisma.conversationState.delete({ where: { chatId } }).catch(() => {});
@@ -627,8 +633,8 @@ export async function getOrCreateConversationState(chatId: string) {
     where: { chatId },
   });
 
-  // Check for timeout — DELETE stale state entirely
-  if (state && state.step !== 'idle') {
+  // Check for timeout — DELETE stale state entirely (including idle states with old productId)
+  if (state) {
     const elapsed = Date.now() - state.updatedAt.getTime();
     if (elapsed > CONVERSATION_TIMEOUT_MS) {
       await prisma.conversationState.delete({ where: { chatId } }).catch(() => {});

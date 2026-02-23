@@ -209,8 +209,15 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
     }
   } else {
     // State is idle — strongly tell AI to ignore ALL old order/product references
-    stateContext = `\nCURRENT CONVERSATION STATE: idle
-IMPORTANT: This is a FRESH conversation. COMPLETELY IGNORE any products, orders, quantities, or addresses mentioned in the chat history above. Do NOT reference, re-order, or suggest any previously discussed products. Treat this as if you are talking to the customer for the first time. Only respond to what the customer is saying RIGHT NOW in their current message.`;
+    stateContext = `\nCURRENT CONVERSATION STATE: idle (NO active order in progress)
+CRITICAL RULES FOR IDLE STATE:
+1. This is a FRESH conversation start. There is NO ongoing order.
+2. COMPLETELY IGNORE any products, orders, quantities, or addresses mentioned in the chat history above — they are OLD and IRRELEVANT.
+3. Do NOT reference, re-order, suggest, or mention any previously discussed products. NEVER say "Would you like to reorder..." or "Last time you ordered...".
+4. Treat this customer as if you are talking to them for the FIRST TIME.
+5. Only respond to what the customer is saying RIGHT NOW in their CURRENT message.
+6. If the customer says "hi", "hello", or a greeting, respond with a friendly welcome and ask how you can help. Do NOT bring up old orders or products.
+7. Only use "initiate_order" if the customer EXPLICITLY names a product they want to buy in THIS message.`;
   }
 
   const systemPrompt = `You are a helpful WhatsApp sales assistant for "${businessInfo?.storeName || 'our store'}".

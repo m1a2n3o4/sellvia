@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { waitUntil } from '@vercel/functions';
 import { prisma } from '@/lib/db/prisma';
-import { sendWhatsAppMessage, markMessageAsRead, reactToMessage } from '@/lib/whatsapp/client';
+import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
 import { processMessageWithAI, processImageWithAI } from '@/lib/whatsapp/ai';
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
@@ -237,15 +237,6 @@ async function processIncomingMessage(msg: IncomingMessage) {
   }
 
   try {
-    // Feature 1: Show 👀 reaction to acknowledge message while AI processes
-    await reactToMessage({
-      phoneNumberId,
-      accessToken: businessInfo.whatsappToken,
-      to: customerPhone,
-      messageId: waMessageId,
-      emoji: '👀',
-    });
-
     // Feature 6: Voice note — transcribe audio to text via Whisper
     if (messageType === 'audio' && mediaId) {
       const media = await downloadWhatsAppMedia({
@@ -267,7 +258,6 @@ async function processIncomingMessage(msg: IncomingMessage) {
             to: customerPhone,
             message: "Sorry, I couldn't understand your voice message. Could you please type your message instead?",
           });
-          await reactToMessage({ phoneNumberId, accessToken: businessInfo.whatsappToken, to: customerPhone, messageId: waMessageId, emoji: '' });
           return;
         }
       } else {
@@ -277,7 +267,6 @@ async function processIncomingMessage(msg: IncomingMessage) {
           to: customerPhone,
           message: "Sorry, I couldn't process your voice message. Could you please type your message instead?",
         });
-        await reactToMessage({ phoneNumberId, accessToken: businessInfo.whatsappToken, to: customerPhone, messageId: waMessageId, emoji: '' });
         return;
       }
     }
@@ -304,14 +293,18 @@ async function processIncomingMessage(msg: IncomingMessage) {
       // If media download failed, messageContent stays as "[Image received]" and AI will handle gracefully
     }
 
+    // Only pass productId/quantity to AI when conversation is actively in progress (not idle)
+    // This prevents stale product references from old conversations leaking into new ones
+    const isActiveConversation = conversationState.step !== 'idle';
+
     const aiResult = await processMessageWithAI({
       tenantId,
       customerPhone,
       customerMessage: messageContent,
       openaiKey: businessInfo.openaiKey,
       conversationStep: conversationState.step,
-      conversationProductId: conversationState.productId || undefined,
-      conversationQuantity: conversationState.quantity || undefined,
+      conversationProductId: isActiveConversation ? (conversationState.productId || undefined) : undefined,
+      conversationQuantity: isActiveConversation ? (conversationState.quantity || undefined) : undefined,
       businessInfo, // Pass pre-fetched data to avoid duplicate query
     });
 
@@ -349,15 +342,6 @@ async function processIncomingMessage(msg: IncomingMessage) {
         }),
       ]);
     }
-
-    // Feature 1: Remove 👀 reaction after reply is sent
-    await reactToMessage({
-      phoneNumberId,
-      accessToken: businessInfo.whatsappToken,
-      to: customerPhone,
-      messageId: waMessageId,
-      emoji: '',
-    });
 
     // Execute commerce flow
     if (aiResult.action !== 'none') {
