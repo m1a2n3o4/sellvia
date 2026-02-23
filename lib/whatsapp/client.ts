@@ -199,6 +199,40 @@ export async function reactToMessage({
   }
 }
 
+/**
+ * Send typing indicator — shows "typing..." in customer's WhatsApp for up to 25 seconds
+ * or until the actual reply is sent. Also marks the message as read (blue ticks).
+ */
+export async function sendTypingIndicator({
+  phoneNumberId,
+  accessToken,
+  messageId,
+}: {
+  phoneNumberId: string;
+  accessToken: string;
+  messageId: string;
+}) {
+  try {
+    await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        status: 'read',
+        message_id: messageId,
+        typing_indicator: {
+          type: 'text',
+        },
+      }),
+    });
+  } catch {
+    // Fail silently — typing indicator is non-critical
+  }
+}
+
 export async function markMessageAsRead({
   phoneNumberId,
   accessToken,

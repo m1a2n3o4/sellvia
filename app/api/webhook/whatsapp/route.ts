@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { waitUntil } from '@vercel/functions';
 import { prisma } from '@/lib/db/prisma';
-import { sendWhatsAppMessage, markMessageAsRead } from '@/lib/whatsapp/client';
+import { sendWhatsAppMessage, markMessageAsRead, sendTypingIndicator } from '@/lib/whatsapp/client';
 import { processMessageWithAI, processImageWithAI } from '@/lib/whatsapp/ai';
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
@@ -169,14 +169,14 @@ async function processIncomingMessage(msg: IncomingMessage) {
     }
   }
 
-  // Run chat lookup + conversation state in PARALLEL
-  const [existingChat, _markRead] = await Promise.all([
+  // Run chat lookup + typing indicator in PARALLEL
+  // sendTypingIndicator both marks as read (blue ticks) AND shows "typing..." to customer
+  const [existingChat] = await Promise.all([
     prisma.whatsAppChat.findUnique({
       where: { tenantId_customerPhone: { tenantId, customerPhone } },
     }),
-    // Mark as read (fire-and-forget, don't await)
     businessInfo.whatsappToken
-      ? markMessageAsRead({ phoneNumberId, accessToken: businessInfo.whatsappToken, messageId: waMessageId }).catch(() => {})
+      ? sendTypingIndicator({ phoneNumberId, accessToken: businessInfo.whatsappToken, messageId: waMessageId }).catch(() => {})
       : Promise.resolve(),
   ]);
 
