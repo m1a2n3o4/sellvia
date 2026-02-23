@@ -59,6 +59,7 @@ export async function PUT(request: NextRequest) {
       paymentGateway,
       whatsappAppSecret,
       ownerPhone,
+      shareOwnerPhone,
       aiCustomInstructions,
     } = body;
 
@@ -84,6 +85,7 @@ export async function PUT(request: NextRequest) {
         ...(paymentGateway !== undefined && { paymentGateway }),
         ...(whatsappAppSecret !== undefined && { whatsappAppSecret }),
         ...(ownerPhone !== undefined && { ownerPhone }),
+        ...(shareOwnerPhone !== undefined && { shareOwnerPhone }),
         ...(aiCustomInstructions !== undefined && { aiCustomInstructions }),
       },
       create: {
@@ -107,6 +109,7 @@ export async function PUT(request: NextRequest) {
         paymentGateway: paymentGateway || 'none',
         whatsappAppSecret,
         ownerPhone,
+        shareOwnerPhone: shareOwnerPhone ?? false,
         aiCustomInstructions,
       },
     });

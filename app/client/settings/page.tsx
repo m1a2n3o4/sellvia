@@ -30,6 +30,7 @@ interface BusinessInfoData {
   cashfreeSecretKey: string;
   paymentGateway: string;
   ownerPhone: string;
+  shareOwnerPhone: boolean;
   aiCustomInstructions: string;
 }
 
@@ -76,6 +77,7 @@ export default function SettingsPage() {
     cashfreeSecretKey: '',
     paymentGateway: 'none',
     ownerPhone: '',
+    shareOwnerPhone: false,
     aiCustomInstructions: '',
   });
 
@@ -105,6 +107,7 @@ export default function SettingsPage() {
             cashfreeSecretKey: data.cashfreeSecretKey || '',
             paymentGateway: data.paymentGateway || 'none',
             ownerPhone: data.ownerPhone || '',
+            shareOwnerPhone: data.shareOwnerPhone ?? false,
             aiCustomInstructions: data.aiCustomInstructions || '',
           });
         }
@@ -404,6 +407,33 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-400 mt-1">
                 AI will notify you here when a customer needs personal attention (angry customer, complaints, escalations)
               </p>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, shareOwnerPhone: !form.shareOwnerPhone })}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                    form.shareOwnerPhone ? 'bg-green-500' : 'bg-gray-300 dark:bg-neutral-600'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                      form.shareOwnerPhone ? 'translate-x-6' : 'translate-x-1'
+                    )}
+                  />
+                </button>
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {form.shareOwnerPhone ? 'Share this number with customers' : 'Do not share this number'}
+                  </span>
+                  <p className="text-xs text-gray-400">
+                    {form.shareOwnerPhone
+                      ? 'When a customer asks to talk to the owner, AI will share this number on WhatsApp'
+                      : 'AI will tell the customer "we will get back to you soon" without sharing your number'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
