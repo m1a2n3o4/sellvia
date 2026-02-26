@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types';
 
@@ -161,6 +161,10 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.push('/client/products/import')}>
+            <Upload className="h-4 w-4 mr-1.5" />
+            Import
+          </Button>
           <Button variant="outline" size="sm" onClick={() => router.push('/client/products/ai-create')}>
             <Sparkles className="h-4 w-4 mr-1.5" />
             AI Image
