@@ -61,7 +61,28 @@ export async function PUT(request: NextRequest) {
       ownerPhone,
       shareOwnerPhone,
       aiCustomInstructions,
+      // Storefront fields
+      storeSlug,
+      storeEnabled,
+      storeLogo,
+      storeBanner,
+      storeThemeColor,
+      storeDescription,
+      deliveryFee,
+      minOrderAmount,
+      codEnabled,
+      onlinePayEnabled,
     } = body;
+
+    // Validate storeSlug uniqueness if changed
+    if (storeSlug !== undefined && storeSlug) {
+      const slugTaken = await prisma.businessInfo.findFirst({
+        where: { storeSlug, tenantId: { not: tenantId } },
+      });
+      if (slugTaken) {
+        return NextResponse.json({ error: 'This store URL is already taken. Please choose another.' }, { status: 400 });
+      }
+    }
 
     const businessInfo = await prisma.businessInfo.upsert({
       where: { tenantId },
@@ -87,6 +108,16 @@ export async function PUT(request: NextRequest) {
         ...(ownerPhone !== undefined && { ownerPhone }),
         ...(shareOwnerPhone !== undefined && { shareOwnerPhone }),
         ...(aiCustomInstructions !== undefined && { aiCustomInstructions }),
+        ...(storeSlug !== undefined && { storeSlug: storeSlug || null }),
+        ...(storeEnabled !== undefined && { storeEnabled }),
+        ...(storeLogo !== undefined && { storeLogo }),
+        ...(storeBanner !== undefined && { storeBanner }),
+        ...(storeThemeColor !== undefined && { storeThemeColor }),
+        ...(storeDescription !== undefined && { storeDescription }),
+        ...(deliveryFee !== undefined && { deliveryFee }),
+        ...(minOrderAmount !== undefined && { minOrderAmount }),
+        ...(codEnabled !== undefined && { codEnabled }),
+        ...(onlinePayEnabled !== undefined && { onlinePayEnabled }),
       },
       create: {
         tenantId,
@@ -111,6 +142,16 @@ export async function PUT(request: NextRequest) {
         ownerPhone,
         shareOwnerPhone: shareOwnerPhone ?? false,
         aiCustomInstructions,
+        storeSlug: storeSlug || null,
+        storeEnabled: storeEnabled ?? false,
+        storeLogo,
+        storeBanner,
+        storeThemeColor: storeThemeColor || '#2563eb',
+        storeDescription,
+        deliveryFee: deliveryFee ?? 0,
+        minOrderAmount: minOrderAmount ?? 0,
+        codEnabled: codEnabled ?? true,
+        onlinePayEnabled: onlinePayEnabled ?? true,
       },
     });
 

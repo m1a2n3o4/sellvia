@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, CheckCircle, ChevronDown, ChevronRight, Unplug } from 'lucide-react';
+import { Save, CheckCircle, ChevronDown, ChevronRight, Unplug, Store } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface BusinessInfoData {
@@ -300,6 +301,23 @@ export default function SettingsPage() {
           {isConfigured ? 'Connected' : 'Not configured'}
         </Badge>
       </div>
+
+      {/* Storefront Settings Link */}
+      <button
+        onClick={() => window.location.href = '/client/settings/store'}
+        className="w-full flex items-center justify-between bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-neutral-750 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <Store className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900 dark:text-white text-sm">Storefront Settings</p>
+            <p className="text-xs text-gray-500 dark:text-neutral-400">Customize your online store, URL, branding & delivery</p>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-gray-400" />
+      </button>
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">

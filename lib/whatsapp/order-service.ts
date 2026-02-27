@@ -10,16 +10,22 @@ interface OrderItem {
   quantity: number;
 }
 
-interface CreateWhatsAppOrderInput {
+interface CreateOrderInput {
   tenantId: string;
   customerPhone: string;
   customerName: string;
   deliveryAddress: string;
   items: OrderItem[];
   chatId?: string;
+  orderType?: 'online' | 'offline' | 'whatsapp' | 'website';
   paymentMethod?: string;
   paymentStatus?: 'paid' | 'unpaid' | 'pending';
   notes?: string;
+  customerEmail?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  shippingFee?: number;
 }
 
 function generateOrderNumber(): string {
@@ -30,7 +36,7 @@ function generateOrderNumber(): string {
   return `ORD-${yy}${mm}${dd}`;
 }
 
-export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
+export async function createOrder(input: CreateOrderInput) {
   const {
     tenantId,
     customerPhone,
@@ -38,9 +44,15 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
     deliveryAddress,
     items,
     chatId,
+    orderType = 'whatsapp',
     paymentMethod,
     paymentStatus = 'unpaid',
     notes,
+    customerEmail,
+    city,
+    state,
+    pincode,
+    shippingFee = 0,
   } = input;
 
   // Normalize phone: strip +91 prefix, keep last 10 digits
@@ -54,8 +66,29 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
 
     if (!customer) {
       customer = await tx.customer.create({
-        data: { tenantId, name: customerName, mobile },
+        data: {
+          tenantId,
+          name: customerName,
+          mobile,
+          ...(customerEmail ? { email: customerEmail } : {}),
+          ...(city ? { city } : {}),
+          ...(state ? { state } : {}),
+          ...(pincode ? { pincode } : {}),
+        },
       });
+    } else {
+      // Update customer info if new fields provided
+      const updates: Record<string, string> = {};
+      if (customerEmail && !customer.email) updates.email = customerEmail;
+      if (city && !customer.city) updates.city = city;
+      if (state && !customer.state) updates.state = state;
+      if (pincode && !customer.pincode) updates.pincode = pincode;
+      if (Object.keys(updates).length > 0) {
+        customer = await tx.customer.update({
+          where: { id: customer.id },
+          data: updates,
+        });
+      }
     }
 
     // Generate order number
@@ -70,7 +103,7 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
 
     // Calculate totals
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const total = subtotal;
+    const total = subtotal + shippingFee;
 
     // Create order
     const newOrder = await tx.order.create({
@@ -78,11 +111,12 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
         tenantId,
         orderNumber,
         customerId: customer.id,
-        orderType: 'online',
-        paymentMethod: paymentMethod || 'razorpay',
+        orderType,
+        paymentMethod: paymentMethod || (orderType === 'website' ? 'cod' : 'razorpay'),
         paymentStatus,
         deliveryAddress,
         subtotal,
+        shippingFee,
         total,
         notes,
         chatId,
@@ -141,4 +175,7 @@ export async function createOrderFromWhatsApp(input: CreateWhatsAppOrderInput) {
   return order;
 }
 
-export type { CreateWhatsAppOrderInput, OrderItem };
+// Backward-compatible alias
+export const createOrderFromWhatsApp = createOrder;
+
+export type { CreateOrderInput, CreateOrderInput as CreateWhatsAppOrderInput, OrderItem };

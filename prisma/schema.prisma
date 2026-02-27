@@ -224,6 +224,8 @@ enum PaymentStatus {
 enum OrderType {
   online
   offline
+  whatsapp
+  website
 }
 
 enum DeliveryStatus {
@@ -370,6 +372,19 @@ model BusinessInfo {
   ownerPhone            String?  @map("owner_phone")
   shareOwnerPhone       Boolean  @default(false) @map("share_owner_phone")
   aiCustomInstructions  String?  @map("ai_custom_instructions")
+
+  // Storefront settings
+  storeSlug             String?  @unique @map("store_slug")
+  storeEnabled          Boolean  @default(false) @map("store_enabled")
+  storeLogo             String?  @map("store_logo")
+  storeBanner           String?  @map("store_banner")
+  storeThemeColor       String?  @default("#2563eb") @map("store_theme_color")
+  storeDescription      String?  @map("store_description")
+  deliveryFee           Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  minOrderAmount        Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
+  codEnabled            Boolean  @default(true) @map("cod_enabled")
+  onlinePayEnabled      Boolean  @default(true) @map("online_pay_enabled")
+
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
