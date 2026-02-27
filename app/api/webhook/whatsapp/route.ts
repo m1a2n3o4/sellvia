@@ -5,6 +5,7 @@ import { sendWhatsAppMessage, markMessageAsRead, sendTypingIndicator } from '@/l
 import { processMessageWithAI, processImageWithAI } from '@/lib/whatsapp/ai';
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
+import { getActiveCartForChat, formatCartMessage } from '@/lib/cart/cart-service';
 import { downloadWhatsAppMedia, transcribeAudio } from '@/lib/whatsapp/media';
 
 export const dynamic = 'force-dynamic';
@@ -297,6 +298,17 @@ async function processIncomingMessage(msg: IncomingMessage) {
     // This prevents stale product references from old conversations leaking into new ones
     const isActiveConversation = conversationState.step !== 'idle';
 
+    // Fetch active cart context for AI (if cart exists)
+    let cartSummary: string | undefined;
+    let cartItemCount: number | undefined;
+    if (conversationState.cartId || conversationState.step === 'shopping') {
+      const activeCart = await getActiveCartForChat(chat.id);
+      if (activeCart && activeCart.items.length > 0) {
+        cartSummary = formatCartMessage(activeCart);
+        cartItemCount = activeCart.items.length;
+      }
+    }
+
     const aiResult = await processMessageWithAI({
       tenantId,
       customerPhone,
@@ -305,10 +317,17 @@ async function processIncomingMessage(msg: IncomingMessage) {
       conversationStep: conversationState.step,
       conversationProductId: isActiveConversation ? (conversationState.productId || undefined) : undefined,
       conversationQuantity: isActiveConversation ? (conversationState.quantity || undefined) : undefined,
+      cartSummary,
+      cartItemCount,
       businessInfo, // Pass pre-fetched data to avoid duplicate query
     });
 
-    const skipAiReply = aiResult.action === 'collect_address';
+    const skipAiReply =
+      aiResult.action === 'collect_address' ||
+      aiResult.action === 'add_to_cart' ||
+      aiResult.action === 'remove_from_cart' ||
+      aiResult.action === 'view_cart' ||
+      aiResult.action === 'checkout';
 
     // Send AI reply + execute commerce flow
     if (!skipAiReply) {

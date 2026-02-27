@@ -5,6 +5,10 @@ type CommerceAction =
   | 'none'
   | 'search_products'
   | 'initiate_order'
+  | 'add_to_cart'
+  | 'remove_from_cart'
+  | 'view_cart'
+  | 'checkout'
   | 'collect_address'
   | 'confirm_order'
   | 'track_order'
@@ -18,6 +22,8 @@ interface AIContext {
   conversationStep?: string;
   conversationProductId?: string;
   conversationQuantity?: number;
+  cartSummary?: string;
+  cartItemCount?: number;
   businessInfo?: any; // Pre-fetched to avoid duplicate query
 }
 
@@ -57,6 +63,10 @@ const commerceFunctions: OpenAI.ChatCompletionTool[] = [
               'none',
               'search_products',
               'initiate_order',
+              'add_to_cart',
+              'remove_from_cart',
+              'view_cart',
+              'checkout',
               'collect_address',
               'confirm_order',
               'track_order',
@@ -65,7 +75,11 @@ const commerceFunctions: OpenAI.ChatCompletionTool[] = [
             description: `The commerce action to perform:
 - none: General conversation, greeting, or info query. No commerce action needed.
 - search_products: Customer is asking about products, availability, wants to browse, or asks to see/show/view product images. Extract searchQuery. Product images are sent automatically.
-- initiate_order: Customer wants to buy a specific product. Extract productId (or productName) and quantity if mentioned.
+- initiate_order: Customer wants to buy a SINGLE product immediately AND has NO active cart. Extract productId (or productName) and quantity if mentioned.
+- add_to_cart: Customer wants to add a product to their cart. Use when they say "add to cart", "I also want...", "add this too", or want to buy something while already having items in cart. Extract productId, variantId, quantity.
+- remove_from_cart: Customer wants to remove an item from cart. Extract productId or productName.
+- view_cart: Customer wants to see what is in their cart ("show cart", "my cart", "what's in my cart").
+- checkout: Customer wants to place order for all cart items ("checkout", "place order", "done", "that's all", "buy all").
 - collect_address: Customer has provided their delivery address. Extract the address.
 - confirm_order: Customer confirms they want to proceed with the order.
 - track_order: Customer wants to track their order. Extract orderId if mentioned.
@@ -196,7 +210,16 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
 
   // Build conversation state context
   let stateContext = '';
-  if (ctx.conversationStep && ctx.conversationStep !== 'idle') {
+  if (ctx.conversationStep === 'shopping') {
+    stateContext = `\nCURRENT CONVERSATION STATE: shopping (customer is building a cart)`;
+    if (ctx.cartSummary) {
+      stateContext += `\nCURRENT CART:\n${ctx.cartSummary}`;
+    }
+    if (ctx.cartItemCount !== undefined) {
+      stateContext += `\nCart Items: ${ctx.cartItemCount}`;
+    }
+    stateContext += `\nIMPORTANT: Customer has an active cart. If they want to buy another product, use "add_to_cart". If they want to order, use "checkout". Do NOT use "initiate_order".`;
+  } else if (ctx.conversationStep && ctx.conversationStep !== 'idle') {
     stateContext = `\nCURRENT CONVERSATION STATE: ${ctx.conversationStep}`;
     if (ctx.conversationProductId) {
       const product = products.find((p) => p.id === ctx.conversationProductId);
@@ -206,6 +229,9 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
     }
     if (ctx.conversationQuantity) {
       stateContext += `\nSelected Quantity: ${ctx.conversationQuantity}`;
+    }
+    if (ctx.cartSummary) {
+      stateContext += `\nACTIVE CART:\n${ctx.cartSummary}`;
     }
   } else {
     // State is idle — strongly tell AI to ignore ALL old order/product references
@@ -246,6 +272,16 @@ Step 2: If quantity was NOT provided, ask the customer how many they want. Wait 
 Step 3: ALWAYS ask the customer for their delivery address. Say something like "Please share your delivery address so we can place your order."
 Step 4: Customer provides their address → use "collect_address" with the full address text. The order is created automatically after this step.
 Step 5: NEVER say "order placed", "order confirmed", or "order created" until AFTER the delivery address has been collected via "collect_address".
+
+CART FLOW (multi-product ordering):
+- When a customer wants to buy a product and the conversation state is "shopping" (cart exists), use "add_to_cart" with productId and quantity.
+- When a customer wants to buy a product and there is NO active cart, you can use either "initiate_order" (quick single buy) or "add_to_cart" (starts a cart).
+- After adding to cart, tell the customer what was added. The cart summary will be sent separately.
+- When customer says "checkout", "place order", "done shopping", "that's all", "buy all", use "checkout".
+- When customer says "remove [product]" or "cancel [product]" from cart, use "remove_from_cart" with productId.
+- When customer says "show cart", "my cart", "what's in my cart", use "view_cart".
+- If customer has items in cart and mentions a NEW product to buy, use "add_to_cart" (NOT "initiate_order").
+- Maximum 20 items per cart, maximum 99 per item.
 
 CRITICAL RULES:
 - When the conversation state is "awaiting_address", your reply MUST ask the customer for their delivery address. Do NOT skip this step. Do NOT use "confirm_order" or "initiate_order" — only "collect_address" or "none" are valid actions in this state.

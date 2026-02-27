@@ -15,28 +15,28 @@ datasource db {
 // ============================================
 
 model Admin {
-  id            String   @id @default(uuid())
-  username      String   @unique
-  passwordHash  String   @map("password_hash")
-  email         String?  @unique
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  email        String?  @unique
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("admins")
 }
 
 model Tenant {
-  id           String   @id @default(uuid())
-  clientName   String   @map("client_name")
-  businessName String   @map("business_name")
-  mobile       String   @unique
-  passwordHash      String   @map("password_hash")
-  pinChangeRequired Boolean  @default(true) @map("pin_change_required")
+  id                String       @id @default(uuid())
+  clientName        String       @map("client_name")
+  businessName      String       @map("business_name")
+  mobile            String       @unique
+  passwordHash      String       @map("password_hash")
+  pinChangeRequired Boolean      @default(true) @map("pin_change_required")
   address           String
-  status       TenantStatus
-  features     Json     @default("{\"inventory\":true,\"orders\":true,\"customers\":true,\"broadcasting\":false,\"whatsapp\":false}")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  status            TenantStatus
+  features          Json         @default("{\"inventory\":true,\"orders\":true,\"customers\":true,\"broadcasting\":false,\"whatsapp\":false}")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
 
   // Relations
   products         Product[]
@@ -76,25 +76,26 @@ model OtpVerification {
 // ============================================
 
 model Product {
-  id                 String   @id @default(uuid())
-  tenantId           String   @map("tenant_id")
-  name               String
-  brand              String?
-  description        String?
-  category           String?
-  basePrice          Decimal  @map("base_price") @db.Decimal(10, 2)
-  sku                String?
-  stockQuantity      Int      @default(0) @map("stock_quantity")
-  lowStockThreshold  Int      @default(10) @map("low_stock_threshold")
-  images             Json     @default("[]")
-  status             ProductStatus @default(active)
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                String        @id @default(uuid())
+  tenantId          String        @map("tenant_id")
+  name              String
+  brand             String?
+  description       String?
+  category          String?
+  basePrice         Decimal       @map("base_price") @db.Decimal(10, 2)
+  sku               String?
+  stockQuantity     Int           @default(0) @map("stock_quantity")
+  lowStockThreshold Int           @default(10) @map("low_stock_threshold")
+  images            Json          @default("[]")
+  status            ProductStatus @default(active)
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  variants    ProductVariant[]
-  orderItems  OrderItem[]
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -109,22 +110,23 @@ enum ProductStatus {
 }
 
 model ProductVariant {
-  id            String   @id @default(uuid())
-  tenantId      String   @map("tenant_id")
-  productId     String   @map("product_id")
-  variantName   String   @map("variant_name")
+  id            String        @id @default(uuid())
+  tenantId      String        @map("tenant_id")
+  productId     String        @map("product_id")
+  variantName   String        @map("variant_name")
   sku           String?
-  price         Decimal  @db.Decimal(10, 2)
-  stockQuantity Int      @default(0) @map("stock_quantity")
-  attributes    Json     // {"Color": "Black", "RAM": "16GB"}
+  price         Decimal       @db.Decimal(10, 2)
+  stockQuantity Int           @default(0) @map("stock_quantity")
+  attributes    Json // {"Color": "Black", "RAM": "16GB"}
   status        ProductStatus @default(active)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   // Relations
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@index([tenantId])
   @@index([productId])
@@ -159,32 +161,32 @@ model Customer {
 }
 
 model Order {
-  id               String   @id @default(uuid())
-  tenantId         String   @map("tenant_id")
-  orderNumber      String   @map("order_number")
-  customerId       String   @map("customer_id")
-  orderDate        DateTime @default(now()) @map("order_date")
-  status           OrderStatus @default(pending)
-  paymentMethod    String?  @map("payment_method")
-  paymentStatus    PaymentStatus @default(unpaid) @map("payment_status")
-  subtotal         Decimal  @db.Decimal(10, 2)
-  discount         Decimal  @default(0) @db.Decimal(10, 2)
-  shippingFee      Decimal  @default(0) @map("shipping_fee") @db.Decimal(10, 2)
-  tax              Decimal  @default(0) @db.Decimal(10, 2)
-  total            Decimal  @db.Decimal(10, 2)
-  orderType        OrderType @default(offline) @map("order_type")
-  deliveryAddress  String?  @map("delivery_address")
-  deliveryStatus   DeliveryStatus @default(pending) @map("delivery_status")
-  notes            String?
-  cancelledReason        String?  @map("cancelled_reason")
-  cancelledAt            DateTime? @map("cancelled_at")
-  chatId                 String?  @map("chat_id")
-  razorpayPaymentLinkId  String?  @map("razorpay_payment_link_id")
-  razorpayPaymentId      String?  @map("razorpay_payment_id")
-  cashfreeLinkId         String?  @map("cashfree_link_id")
-  cashfreePaymentId      String?  @map("cashfree_payment_id")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
+  id                    String         @id @default(uuid())
+  tenantId              String         @map("tenant_id")
+  orderNumber           String         @map("order_number")
+  customerId            String         @map("customer_id")
+  orderDate             DateTime       @default(now()) @map("order_date")
+  status                OrderStatus    @default(pending)
+  paymentMethod         String?        @map("payment_method")
+  paymentStatus         PaymentStatus  @default(unpaid) @map("payment_status")
+  subtotal              Decimal        @db.Decimal(10, 2)
+  discount              Decimal        @default(0) @db.Decimal(10, 2)
+  shippingFee           Decimal        @default(0) @map("shipping_fee") @db.Decimal(10, 2)
+  tax                   Decimal        @default(0) @db.Decimal(10, 2)
+  total                 Decimal        @db.Decimal(10, 2)
+  orderType             OrderType      @default(offline) @map("order_type")
+  deliveryAddress       String?        @map("delivery_address")
+  deliveryStatus        DeliveryStatus @default(pending) @map("delivery_status")
+  notes                 String?
+  cancelledReason       String?        @map("cancelled_reason")
+  cancelledAt           DateTime?      @map("cancelled_at")
+  chatId                String?        @map("chat_id")
+  razorpayPaymentLinkId String?        @map("razorpay_payment_link_id")
+  razorpayPaymentId     String?        @map("razorpay_payment_id")
+  cashfreeLinkId        String?        @map("cashfree_link_id")
+  cashfreePaymentId     String?        @map("cashfree_payment_id")
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
 
   // Relations
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -233,17 +235,17 @@ enum DeliveryStatus {
 }
 
 model OrderItem {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  orderId      String   @map("order_id")
-  productId    String   @map("product_id")
-  variantId    String?  @map("variant_id")
-  productName  String   @map("product_name")
-  variantName  String?  @map("variant_name")
-  price        Decimal  @db.Decimal(10, 2)
-  quantity     Int
-  subtotal     Decimal  @db.Decimal(10, 2)
-  createdAt    DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  orderId     String   @map("order_id")
+  productId   String   @map("product_id")
+  variantId   String?  @map("variant_id")
+  productName String   @map("product_name")
+  variantName String?  @map("variant_name")
+  price       Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
   tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -263,20 +265,20 @@ model OrderItem {
 // ============================================
 
 model WhatsAppChat {
-  id              String   @id @default(uuid())
-  tenantId        String   @map("tenant_id")
-  customerPhone   String   @map("customer_phone")
-  customerName    String?  @map("customer_name")
-  lastMessage     String?  @map("last_message")
-  lastMessageAt   DateTime? @map("last_message_at")
-  unreadCount     Int      @default(0) @map("unread_count")
-  status          ChatStatus @default(active)
-  needsAttention  Boolean  @default(false) @map("needs_attention")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String     @id @default(uuid())
+  tenantId       String     @map("tenant_id")
+  customerPhone  String     @map("customer_phone")
+  customerName   String?    @map("customer_name")
+  lastMessage    String?    @map("last_message")
+  lastMessageAt  DateTime?  @map("last_message_at")
+  unreadCount    Int        @default(0) @map("unread_count")
+  status         ChatStatus @default(active)
+  needsAttention Boolean    @default(false) @map("needs_attention")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   messages          WhatsAppMessage[]
   conversationState ConversationState?
 
@@ -294,20 +296,20 @@ enum ChatStatus {
 }
 
 model WhatsAppMessage {
-  id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
-  chatId      String   @map("chat_id")
-  waMessageId String?  @map("wa_message_id")
-  sender      MessageSender
-  senderPhone String?  @map("sender_phone")
-  content     String
-  messageType MessageType @default(text) @map("message_type")
-  mediaUrl    String?  @map("media_url")
-  status      MessageStatus @default(sent)
-  isAiGenerated Boolean @default(false) @map("is_ai_generated")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id            String        @id @default(uuid())
+  tenantId      String        @map("tenant_id")
+  chatId        String        @map("chat_id")
+  waMessageId   String?       @map("wa_message_id")
+  sender        MessageSender
+  senderPhone   String?       @map("sender_phone")
+  content       String
+  messageType   MessageType   @default(text) @map("message_type")
+  mediaUrl      String?       @map("media_url")
+  status        MessageStatus @default(sent)
+  isAiGenerated Boolean       @default(false) @map("is_ai_generated")
+  createdAt     DateTime      @default(now()) @map("created_at")
 
-  metadata    Json?    // stores orderId, productId, paymentLink for rich message rendering
+  metadata Json? // stores orderId, productId, paymentLink for rich message rendering
 
   // Relations
   tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -344,19 +346,19 @@ enum MessageStatus {
 }
 
 model BusinessInfo {
-  id           String   @id @default(uuid())
-  tenantId     String   @unique @map("tenant_id")
-  storeName    String?  @map("store_name")
-  description  String?
-  storeHours   String?  @map("store_hours")
-  location     String?
-  locationUrl  String?  @map("location_url")
-  policies     String?
-  greeting     String?
-  whatsappPhoneNumberId String? @map("whatsapp_phone_number_id")
-  whatsappBusinessId    String? @map("whatsapp_business_id")
-  whatsappToken         String? @map("whatsapp_token")
-  openaiKey             String? @map("openai_key")
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique @map("tenant_id")
+  storeName             String?  @map("store_name")
+  description           String?
+  storeHours            String?  @map("store_hours")
+  location              String?
+  locationUrl           String?  @map("location_url")
+  policies              String?
+  greeting              String?
+  whatsappPhoneNumberId String?  @map("whatsapp_phone_number_id")
+  whatsappBusinessId    String?  @map("whatsapp_business_id")
+  whatsappToken         String?  @map("whatsapp_token")
+  openaiKey             String?  @map("openai_key")
   aiEnabled             Boolean  @default(true) @map("ai_enabled")
   razorpayKeyId         String?  @map("razorpay_key_id")
   razorpayKeySecret     String?  @map("razorpay_key_secret")
@@ -381,24 +383,26 @@ enum ConversationStep {
   idle
   product_shown
   awaiting_quantity
+  shopping
   awaiting_address
   awaiting_payment
   order_complete
 }
 
 model ConversationState {
-  id             String           @id @default(uuid())
-  chatId         String           @unique @map("chat_id")
-  step           ConversationStep @default(idle)
-  productId      String?          @map("product_id")
-  variantId      String?          @map("variant_id")
-  quantity       Int?
-  deliveryAddress String?         @map("delivery_address")
-  orderId        String?          @map("order_id")
-  paymentLinkId  String?          @map("payment_link_id")
-  paymentLinkUrl String?          @map("payment_link_url")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
+  id              String           @id @default(uuid())
+  chatId          String           @unique @map("chat_id")
+  step            ConversationStep @default(idle)
+  productId       String?          @map("product_id")
+  variantId       String?          @map("variant_id")
+  quantity        Int?
+  deliveryAddress String?          @map("delivery_address")
+  orderId         String?          @map("order_id")
+  paymentLinkId   String?          @map("payment_link_id")
+  paymentLinkUrl  String?          @map("payment_link_url")
+  cartId          String?          @map("cart_id")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
 
   // Relations
   chat WhatsAppChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
@@ -406,6 +410,56 @@ model ConversationState {
   @@index([chatId])
   @@index([updatedAt])
   @@map("conversation_states")
+}
+
+// ============================================
+// CART SYSTEM
+// ============================================
+
+enum CartStatus {
+  active
+  converted
+  expired
+  abandoned
+}
+
+model Cart {
+  id            String     @id @default(uuid())
+  tenantId      String     @map("tenant_id")
+  customerPhone String     @map("customer_phone")
+  chatId        String     @map("chat_id")
+  status        CartStatus @default(active)
+  expiresAt     DateTime   @map("expires_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  items CartItem[]
+
+  @@index([chatId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  productId String   @map("product_id")
+  variantId String?  @map("variant_id")
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([cartId])
+  @@index([cartId, productId, variantId])
+  @@map("cart_items")
 }
 
 // ============================================
