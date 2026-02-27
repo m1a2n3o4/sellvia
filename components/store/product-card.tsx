@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Package } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
 import { useCart } from '@/lib/store/cart-context';
 
 interface ProductCardProps {
@@ -82,11 +82,11 @@ export function ProductCard({ slug, product, themeColor = '#2563eb' }: ProductCa
           {inStock && (
             <button
               onClick={handleAddToCart}
-              className="p-2 rounded-full text-white transition-colors hover:opacity-90"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-white text-xs font-medium transition-colors hover:opacity-90"
               style={{ backgroundColor: themeColor }}
               aria-label="Add to cart"
             >
-              <ShoppingCart className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" /> Add
             </button>
           )}
         </div>

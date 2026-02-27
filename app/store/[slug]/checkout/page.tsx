@@ -82,10 +82,12 @@ export default function CheckoutPage() {
       clearCart();
 
       // Redirect based on payment method
+      // Use window.location.href (not router.push) to prevent re-render
+      // that would redirect back to cart due to empty items check
       if (data.paymentLink) {
         window.location.href = data.paymentLink;
       } else {
-        router.push(`/store/${store.storeSlug}/order/${data.orderId}`);
+        window.location.href = `/store/${store.storeSlug}/order/${data.orderId}`;
       }
     } catch {
       setServerError('Network error. Please check your connection and try again.');
