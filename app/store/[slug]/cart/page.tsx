@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, MessageCircle } from 'lucide-react';
 import { useStore } from '../store-layout-client';
 import { useCart } from '@/lib/store/cart-context';
 import { CartItemRow } from '@/components/store/cart-item';
@@ -80,6 +80,18 @@ export default function CartPage() {
             <span>Proceed to Checkout</span>
             <span>&#8377;{grandTotal.toLocaleString('en-IN')}</span>
           </Link>
+          {store.whatsappNumber && meetsMinOrder && (
+            <a
+              href={`https://wa.me/${store.whatsappNumber}?text=${encodeURIComponent(
+                `Hi! I'd like to order:\n\n${items.map((i) => `- ${i.name}${i.variantName ? ` (${i.variantName})` : ''} x${i.quantity} - Rs.${(i.price * i.quantity).toLocaleString('en-IN')}`).join('\n')}\n\nTotal: Rs.${grandTotal.toLocaleString('en-IN')}${deliveryFee > 0 ? ` (incl. Rs.${deliveryFee} delivery)` : ''}\n\nPlease confirm my order.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border-2 border-green-500 text-green-600 font-medium text-sm hover:bg-green-50"
+            >
+              <MessageCircle className="h-4 w-4" /> Order via WhatsApp
+            </a>
+          )}
           <Link
             href={`/store/${store.storeSlug}`}
             className="block text-center text-sm text-gray-500 hover:text-gray-700 py-1"

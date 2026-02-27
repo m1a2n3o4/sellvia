@@ -132,6 +132,7 @@ export default function StoreHomePage() {
             products={products}
             slug={store.storeSlug}
             themeColor={store.storeThemeColor}
+            accentColor={store.storeAccentColor}
             loading={loading && products.length === 0}
           />
 

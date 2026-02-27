@@ -16,10 +16,11 @@ interface ProductGridProps {
   products: Product[];
   slug: string;
   themeColor?: string;
+  accentColor?: string;
   loading?: boolean;
 }
 
-export function ProductGrid({ products, slug, themeColor, loading }: ProductGridProps) {
+export function ProductGrid({ products, slug, themeColor, accentColor, loading }: ProductGridProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -53,6 +54,7 @@ export function ProductGrid({ products, slug, themeColor, loading }: ProductGrid
           slug={slug}
           product={{ ...product, images: Array.isArray(product.images) ? product.images : [] }}
           themeColor={themeColor}
+          accentColor={accentColor}
         />
       ))}
     </div>

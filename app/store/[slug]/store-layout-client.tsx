@@ -13,6 +13,7 @@ export interface StoreData {
   storeLogo: string | null;
   storeBanner: string | null;
   storeThemeColor: string;
+  storeAccentColor: string;
   storeDescription: string | null;
   deliveryFee: number;
   minOrderAmount: number;

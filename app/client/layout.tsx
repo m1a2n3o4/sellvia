@@ -20,6 +20,7 @@ import {
   Users,
   Settings,
   LogOut,
+  Globe,
 } from 'lucide-react';
 
 export default function ClientLayout({
@@ -32,6 +33,7 @@ export default function ClientLayout({
   const [open, setOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [storeSlug, setStoreSlug] = useState('');
 
   useEffect(() => {
     // Show splash once per session (not on login/change-pin pages)
@@ -40,6 +42,14 @@ export default function ClientLayout({
     if (!seen) {
       setShowSplash(true);
     }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === '/client/login' || pathname === '/client/change-pin') return;
+    fetch('/api/client/business-info')
+      .then((r) => r.json())
+      .then((d) => { if (d.storeSlug && d.storeEnabled) setStoreSlug(d.storeSlug); })
+      .catch(() => {});
   }, [pathname]);
 
   const handleSplashFinish = useCallback(() => {
@@ -151,6 +161,12 @@ export default function ClientLayout({
     },
   ];
 
+  const storeLink = storeSlug ? {
+    label: 'My E-com Store',
+    href: `/store/${storeSlug}`,
+    icon: <Globe className="h-5 w-5 flex-shrink-0 text-blue-500" />,
+  } : null;
+
   if (showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
@@ -177,7 +193,18 @@ export default function ClientLayout({
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             {open ? <Logo /> : <LogoIcon />}
-            <div className="mt-8 flex flex-col gap-2">
+            {storeLink && (
+              <a
+                href={storeLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+              >
+                <Globe className="h-4 w-4 flex-shrink-0" />
+                {open && <span className="truncate">My E-com Store</span>}
+              </a>
+            )}
+            <div className="mt-4 flex flex-col gap-2">
               {links.map((link, idx) => (
                 <SidebarLink key={idx} link={link} />
               ))}

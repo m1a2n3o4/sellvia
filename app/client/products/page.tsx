@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload, Link2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types';
 
@@ -25,6 +25,8 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [storeSlug, setStoreSlug] = useState('');
+  const [copiedId, setCopiedId] = useState('');
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -47,6 +49,22 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    fetch('/api/client/business-info')
+      .then((r) => r.json())
+      .then((d) => { if (d.storeSlug) setStoreSlug(d.storeSlug); })
+      .catch(() => {});
+  }, []);
+
+  const copyProductUrl = (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!storeSlug) return;
+    const url = `https://www.satyasell.com/store/${storeSlug}/product/${productId}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(productId);
+    setTimeout(() => setCopiedId(''), 2000);
+  };
 
   const handleToggleStatus = async (product: Product) => {
     const newStatus = product.status === 'active' ? 'inactive' : 'active';
@@ -121,6 +139,16 @@ export default function ProductsPage() {
       header: 'Actions',
       render: (p: Product) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {storeSlug && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Copy product URL"
+              onClick={(e) => copyProductUrl(p.id, e)}
+            >
+              {copiedId === p.id ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Link2 className="h-4 w-4 text-blue-500" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -240,6 +268,11 @@ export default function ProductsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  {storeSlug && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => copyProductUrl(p.id, e)}>
+                      {copiedId === p.id ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : <Link2 className="h-3.5 w-3.5 text-blue-500" />}
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/client/products/${p.id}/edit`)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

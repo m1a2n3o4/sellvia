@@ -49,6 +49,7 @@ export async function GET(
       storeLogo: businessInfo.storeLogo,
       storeBanner: businessInfo.storeBanner,
       storeThemeColor: businessInfo.storeThemeColor || '#2563eb',
+      storeAccentColor: businessInfo.storeAccentColor || '#f59e0b',
       storeDescription: businessInfo.storeDescription || businessInfo.description,
       deliveryFee: Number(businessInfo.deliveryFee),
       minOrderAmount: Number(businessInfo.minOrderAmount),

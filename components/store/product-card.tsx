@@ -16,9 +16,10 @@ interface ProductCardProps {
     variants?: { id: string; variantName: string; price: string | number; stockQuantity: number }[];
   };
   themeColor?: string;
+  accentColor?: string;
 }
 
-export function ProductCard({ slug, product, themeColor = '#2563eb' }: ProductCardProps) {
+export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor }: ProductCardProps) {
   const { addItem } = useCart();
   const price = Number(product.basePrice);
   const inStock = product.stockQuantity > 0 || (product.variants && product.variants.some((v) => v.stockQuantity > 0));
@@ -83,7 +84,7 @@ export function ProductCard({ slug, product, themeColor = '#2563eb' }: ProductCa
             <button
               onClick={handleAddToCart}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-white text-xs font-medium transition-colors hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
+              style={{ backgroundColor: accentColor || themeColor }}
               aria-label="Add to cart"
             >
               <Plus className="h-3.5 w-3.5" /> Add

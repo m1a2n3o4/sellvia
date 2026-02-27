@@ -86,6 +86,7 @@ export default async function StoreLayout({ children, params }: Props) {
     storeLogo: store.storeLogo,
     storeBanner: store.storeBanner,
     storeThemeColor: store.storeThemeColor || '#2563eb',
+    storeAccentColor: store.storeAccentColor || '#f59e0b',
     storeDescription: store.storeDescription || store.description,
     deliveryFee: Number(store.deliveryFee),
     minOrderAmount: Number(store.minOrderAmount),

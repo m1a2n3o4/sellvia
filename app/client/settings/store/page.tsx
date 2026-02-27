@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Copy, ExternalLink, ArrowLeft, Store, Loader2 } from 'lucide-react';
+import { Save, CheckCircle, Copy, ExternalLink, ArrowLeft, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 
 export default function StorefrontSettingsPage() {
   const router = useRouter();
@@ -15,6 +15,10 @@ export default function StorefrontSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     storeEnabled: false,
@@ -22,6 +26,7 @@ export default function StorefrontSettingsPage() {
     storeLogo: '',
     storeBanner: '',
     storeThemeColor: '#2563eb',
+    storeAccentColor: '#f59e0b',
     storeDescription: '',
     deliveryFee: 0,
     minOrderAmount: 0,
@@ -39,6 +44,7 @@ export default function StorefrontSettingsPage() {
           storeLogo: data.storeLogo || '',
           storeBanner: data.storeBanner || '',
           storeThemeColor: data.storeThemeColor || '#2563eb',
+          storeAccentColor: data.storeAccentColor || '#f59e0b',
           storeDescription: data.storeDescription || '',
           deliveryFee: Number(data.deliveryFee) || 0,
           minOrderAmount: Number(data.minOrderAmount) || 0,
@@ -90,6 +96,37 @@ export default function StorefrontSettingsPage() {
 
   const slugify = (text: string) =>
     text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+
+  const handleImageUpload = async (file: File, purpose: 'logo' | 'banner') => {
+    const isLogo = purpose === 'logo';
+    if (isLogo) setUploadingLogo(true);
+    else setUploadingBanner(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('purpose', purpose);
+
+      const res = await fetch('/api/client/upload-image', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Upload failed');
+        return;
+      }
+
+      if (isLogo) {
+        setForm((f) => ({ ...f, storeLogo: data.url }));
+      } else {
+        setForm((f) => ({ ...f, storeBanner: data.url }));
+      }
+    } catch {
+      setError('Upload failed. Please try again.');
+    } finally {
+      if (isLogo) setUploadingLogo(false);
+      else setUploadingBanner(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -179,43 +216,161 @@ export default function StorefrontSettingsPage() {
       </div>
 
       {/* Branding */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-4">
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-5">
         <h2 className="font-semibold text-gray-900 dark:text-white">Branding</h2>
 
+        {/* Store Logo */}
         <div>
-          <Label>Store Logo URL</Label>
-          <Input
-            value={form.storeLogo}
-            onChange={(e) => setForm((f) => ({ ...f, storeLogo: e.target.value }))}
-            placeholder="https://example.com/logo.png"
-            className="mt-1"
-          />
+          <Label>Store Logo</Label>
+          <div className="mt-2 flex items-start gap-4">
+            {form.storeLogo ? (
+              <div className="relative">
+                <img src={form.storeLogo} alt="Logo" className="w-16 h-16 rounded-full object-cover border border-gray-200" />
+                <button
+                  onClick={() => setForm((f) => ({ ...f, storeLogo: '' }))}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-neutral-800 border border-dashed border-gray-300 flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+            <div className="flex-1 space-y-2">
+              <button
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploadingLogo ? 'Uploading...' : 'Upload Image'}
+              </button>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file, 'logo');
+                  e.target.value = '';
+                }}
+              />
+              <div className="text-xs text-gray-400">Or paste URL below</div>
+              <Input
+                value={form.storeLogo}
+                onChange={(e) => setForm((f) => ({ ...f, storeLogo: e.target.value }))}
+                placeholder="https://example.com/logo.png"
+                className="text-xs"
+              />
+            </div>
+          </div>
         </div>
 
+        {/* Store Banner */}
         <div>
-          <Label>Banner Image URL</Label>
-          <Input
-            value={form.storeBanner}
-            onChange={(e) => setForm((f) => ({ ...f, storeBanner: e.target.value }))}
-            placeholder="https://example.com/banner.jpg"
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label>Theme Color</Label>
-          <div className="flex items-center gap-3 mt-1">
+          <Label>Banner Image</Label>
+          <div className="mt-2 space-y-2">
+            {form.storeBanner ? (
+              <div className="relative">
+                <img src={form.storeBanner} alt="Banner" className="w-full h-32 rounded-lg object-cover border border-gray-200" />
+                <button
+                  onClick={() => setForm((f) => ({ ...f, storeBanner: '' }))}
+                  className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => bannerInputRef.current?.click()}
+                className="w-full h-32 rounded-lg bg-gray-100 dark:bg-neutral-800 border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                {uploadingBanner ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                ) : (
+                  <>
+                    <Upload className="h-6 w-6 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-400">Click to upload banner</span>
+                  </>
+                )}
+              </div>
+            )}
             <input
-              type="color"
-              value={form.storeThemeColor}
-              onChange={(e) => setForm((f) => ({ ...f, storeThemeColor: e.target.value }))}
-              className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+              ref={bannerInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file, 'banner');
+                e.target.value = '';
+              }}
             />
+            {form.storeBanner && (
+              <button
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {uploadingBanner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Change Banner
+              </button>
+            )}
+            <div className="text-xs text-gray-400">Or paste URL</div>
             <Input
-              value={form.storeThemeColor}
-              onChange={(e) => setForm((f) => ({ ...f, storeThemeColor: e.target.value }))}
-              className="w-32"
+              value={form.storeBanner}
+              onChange={(e) => setForm((f) => ({ ...f, storeBanner: e.target.value }))}
+              placeholder="https://example.com/banner.jpg"
+              className="text-xs"
             />
+          </div>
+        </div>
+
+        {/* Theme Colors */}
+        <div>
+          <Label>Theme Colors</Label>
+          <p className="text-xs text-gray-500 mt-0.5 mb-2">Primary for header & buttons. Accent for highlights & badges.</p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={form.storeThemeColor}
+                onChange={(e) => setForm((f) => ({ ...f, storeThemeColor: e.target.value }))}
+                className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+              />
+              <div>
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Primary</p>
+                <Input
+                  value={form.storeThemeColor}
+                  onChange={(e) => setForm((f) => ({ ...f, storeThemeColor: e.target.value }))}
+                  className="w-24 h-7 text-xs mt-0.5"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={form.storeAccentColor}
+                onChange={(e) => setForm((f) => ({ ...f, storeAccentColor: e.target.value }))}
+                className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+              />
+              <div>
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Accent</p>
+                <Input
+                  value={form.storeAccentColor}
+                  onChange={(e) => setForm((f) => ({ ...f, storeAccentColor: e.target.value }))}
+                  className="w-24 h-7 text-xs mt-0.5"
+                />
+              </div>
+            </div>
+          </div>
+          {/* Preview */}
+          <div className="mt-3 p-3 rounded-lg border border-gray-200 flex items-center gap-3">
+            <div className="flex-1 h-8 rounded-lg" style={{ backgroundColor: form.storeThemeColor }} />
+            <div className="flex-1 h-8 rounded-lg" style={{ backgroundColor: form.storeAccentColor }} />
           </div>
         </div>
 
@@ -259,29 +414,47 @@ export default function StorefrontSettingsPage() {
         </div>
       </div>
 
-      {/* Payment Options */}
+      {/* Payment Options - Toggle Style */}
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-4">
         <h2 className="font-semibold text-gray-900 dark:text-white">Payment Options</h2>
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.codEnabled}
-            onChange={(e) => setForm((f) => ({ ...f, codEnabled: e.target.checked }))}
-            className="w-4 h-4 rounded accent-blue-600"
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">Cash on Delivery</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cash on Delivery (COD)</p>
+            <p className="text-xs text-gray-500">Allow customers to pay on delivery</p>
+          </div>
+          <button
+            onClick={() => setForm((f) => ({ ...f, codEnabled: !f.codEnabled }))}
+            className={`relative w-12 h-7 rounded-full transition-colors ${
+              form.codEnabled ? 'bg-green-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                form.codEnabled ? 'translate-x-5' : ''
+              }`}
+            />
+          </button>
+        </div>
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.onlinePayEnabled}
-            onChange={(e) => setForm((f) => ({ ...f, onlinePayEnabled: e.target.checked }))}
-            className="w-4 h-4 rounded accent-blue-600"
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">Online Payment (UPI/Card)</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Online Payment (UPI/Card)</p>
+            <p className="text-xs text-gray-500">Accept payments via UPI, cards & wallets</p>
+          </div>
+          <button
+            onClick={() => setForm((f) => ({ ...f, onlinePayEnabled: !f.onlinePayEnabled }))}
+            className={`relative w-12 h-7 rounded-full transition-colors ${
+              form.onlinePayEnabled ? 'bg-green-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                form.onlinePayEnabled ? 'translate-x-5' : ''
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Save Button */}

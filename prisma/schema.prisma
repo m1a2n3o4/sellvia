@@ -379,6 +379,7 @@ model BusinessInfo {
   storeLogo             String?  @map("store_logo")
   storeBanner           String?  @map("store_banner")
   storeThemeColor       String?  @default("#2563eb") @map("store_theme_color")
+  storeAccentColor      String?  @default("#f59e0b") @map("store_accent_color")
   storeDescription      String?  @map("store_description")
   deliveryFee           Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
   minOrderAmount        Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
