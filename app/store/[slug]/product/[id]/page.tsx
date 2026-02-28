@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Minus, Plus, ShoppingCart, MessageCircle, CheckCircle, Package } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, MessageCircle, CheckCircle, Package, ArrowLeft } from 'lucide-react';
 import { useStore } from '../../store-layout-client';
 import { useCart } from '@/lib/store/cart-context';
 import { ProductGallery } from '@/components/store/product-gallery';
 import { VariantSelector } from '@/components/store/variant-selector';
 import { ProductGrid } from '@/components/store/product-grid';
-import { StoreHeader } from '@/components/store/store-header';
+import Link from 'next/link';
 
 interface Variant {
   id: string;
@@ -116,6 +116,14 @@ export default function ProductDetailPage() {
 
   return (
     <div className="space-y-6 pb-4">
+      {/* Back button */}
+      <Link
+        href={`/store/${store.storeSlug}`}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to Store
+      </Link>
+
       {/* Image Gallery */}
       <ProductGallery images={images} productName={product.name} />
 

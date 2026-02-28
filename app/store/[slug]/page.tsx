@@ -6,6 +6,7 @@ import { useStore } from './store-layout-client';
 import { useCart } from '@/lib/store/cart-context';
 import { ProductGrid } from '@/components/store/product-grid';
 import { CategoryTabs } from '@/components/store/category-tabs';
+import { ProductQuickView } from '@/components/store/product-quick-view';
 import Link from 'next/link';
 
 export default function StoreHomePage() {
@@ -17,8 +18,8 @@ export default function StoreHomePage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   // Fetch store categories
   useEffect(() => {
@@ -49,7 +50,6 @@ export default function StoreHomePage() {
       } else {
         setProducts((prev) => [...prev, ...(data.products || [])]);
       }
-      setTotalPages(data.totalPages || 1);
       setHasMore(p < (data.totalPages || 1));
     } catch {
       console.error('Failed to fetch products');
@@ -65,7 +65,6 @@ export default function StoreHomePage() {
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    // Fetch more
     setLoading(true);
     const params = new URLSearchParams({ page: String(nextPage), limit: '20' });
     if (search) params.set('search', search);
@@ -80,11 +79,27 @@ export default function StoreHomePage() {
       .finally(() => setLoading(false));
   };
 
-  // Empty store state
   const isEmpty = !loading && products.length === 0 && !search && !category;
 
   return (
     <div className="space-y-4">
+      {/* Banner */}
+      {store.storeBanner && (
+        <div className="relative -mx-4 -mt-4 mb-2">
+          <img
+            src={store.storeBanner}
+            alt={store.storeName}
+            className="w-full h-36 sm:h-48 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          {store.storeDescription && (
+            <p className="absolute bottom-3 left-4 right-4 text-white text-sm font-medium drop-shadow-md line-clamp-2">
+              {store.storeDescription}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -127,16 +142,15 @@ export default function StoreHomePage() {
         </div>
       ) : (
         <>
-          {/* Product Grid */}
           <ProductGrid
             products={products}
             slug={store.storeSlug}
             themeColor={store.storeThemeColor}
             accentColor={store.storeAccentColor}
             loading={loading && products.length === 0}
+            onProductClick={(id) => setSelectedProductId(id)}
           />
 
-          {/* Load More */}
           {hasMore && !loading && (
             <div className="text-center py-4">
               <button
@@ -170,6 +184,18 @@ export default function StoreHomePage() {
             </Link>
           </div>
         </div>
+      )}
+
+      {/* Product Quick View Modal */}
+      {selectedProductId && (
+        <ProductQuickView
+          productId={selectedProductId}
+          storeSlug={store.storeSlug}
+          themeColor={store.storeThemeColor}
+          accentColor={store.storeAccentColor}
+          whatsappNumber={store.whatsappNumber}
+          onClose={() => setSelectedProductId(null)}
+        />
       )}
     </div>
   );

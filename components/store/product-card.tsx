@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Plus, Package } from 'lucide-react';
 import { useCart } from '@/lib/store/cart-context';
 
@@ -17,9 +16,10 @@ interface ProductCardProps {
   };
   themeColor?: string;
   accentColor?: string;
+  onProductClick?: (productId: string) => void;
 }
 
-export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor }: ProductCardProps) {
+export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor, onProductClick }: ProductCardProps) {
   const { addItem } = useCart();
   const price = Number(product.basePrice);
   const inStock = product.stockQuantity > 0 || (product.variants && product.variants.some((v) => v.stockQuantity > 0));
@@ -27,12 +27,11 @@ export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor
   const image = product.images?.[0];
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
 
     if (hasVariants) {
-      // Navigate to product page for variant selection
-      window.location.href = `/store/${slug}/product/${product.id}`;
+      // Open modal for variant selection
+      onProductClick?.(product.id);
       return;
     }
 
@@ -46,10 +45,14 @@ export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor
     });
   };
 
+  const handleCardClick = () => {
+    onProductClick?.(product.id);
+  };
+
   return (
-    <Link
-      href={`/store/${slug}/product/${product.id}`}
-      className="group block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+    <div
+      onClick={handleCardClick}
+      className="group block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
     >
       <div className="aspect-square bg-gray-50 relative overflow-hidden">
         {image ? (
@@ -92,6 +95,6 @@ export function ProductCard({ slug, product, themeColor = '#2563eb', accentColor
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
