@@ -45,6 +45,19 @@ export default function EditProductPage() {
 
   const [specs, setSpecs] = useState<SpecRow[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState('');
+
+  useEffect(() => {
+    fetch('/api/client/stores')
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data)) {
+          setStores(data.map((s) => ({ id: s.id, name: s.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleImageUploaded = (result: AIAnalysisResult) => {
     setImages([result.imageUrl]);
@@ -73,6 +86,9 @@ export default function EditProductPage() {
         });
         if (p.images && p.images.length > 0) {
           setImages(p.images);
+        }
+        if (p.storeId) {
+          setSelectedStoreId(p.storeId);
         }
         if (p.variants && p.variants.length > 0) {
           setSpecs(
@@ -131,6 +147,7 @@ export default function EditProductPage() {
           lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
           images,
           variants,
+          storeId: selectedStoreId || null,
         }),
       });
 
@@ -208,6 +225,23 @@ export default function EditProductPage() {
             </div>
           )}
         </div>
+
+        {/* Store Selector */}
+        {stores.length > 0 && (
+          <div>
+            <Label htmlFor="store">Store</Label>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a store" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">

@@ -304,7 +304,7 @@ export default function SettingsPage() {
 
       {/* Storefront Settings Link */}
       <button
-        onClick={() => window.location.href = '/client/settings/store'}
+        onClick={() => window.location.href = '/client/stores'}
         className="w-full flex items-center justify-between bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-neutral-750 transition-colors text-left"
       >
         <div className="flex items-center gap-3">
@@ -312,8 +312,8 @@ export default function SettingsPage() {
             <Store className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="font-medium text-gray-900 dark:text-white text-sm">Storefront Settings</p>
-            <p className="text-xs text-gray-500 dark:text-neutral-400">Customize your online store, URL, branding & delivery</p>
+            <p className="font-medium text-gray-900 dark:text-white text-sm">Manage Stores</p>
+            <p className="text-xs text-gray-500 dark:text-neutral-400">Create and manage your storefronts</p>
           </div>
         </div>
         <ChevronRight className="h-4 w-4 text-gray-400" />

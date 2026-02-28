@@ -9,13 +9,25 @@ interface Props {
 }
 
 async function getStoreInfo(slug: string) {
-  const info = await prisma.businessInfo.findUnique({
-    where: { storeSlug: slug },
-    include: { tenant: { select: { status: true } } },
+  const store = await prisma.store.findUnique({
+    where: { slug },
+    include: {
+      tenant: {
+        select: {
+          status: true,
+          businessInfo: {
+            select: {
+              ownerPhone: true,
+              shareOwnerPhone: true,
+            },
+          },
+        },
+      },
+    },
   });
 
-  if (!info || info.tenant.status !== 'active') return null;
-  return info;
+  if (!store || store.tenant.status !== 'active') return null;
+  return store;
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -24,8 +36,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     return { title: 'Store Not Found | SatyaSell' };
   }
 
-  const title = `${store.storeName || 'Store'} | SatyaSell`;
-  const description = store.storeDescription || store.description || `Shop at ${store.storeName}`;
+  const title = `${store.name || 'Store'} | SatyaSell`;
+  const description = store.description || `Shop at ${store.name}`;
 
   return {
     title,
@@ -33,7 +45,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     openGraph: {
       title,
       description,
-      ...(store.storeBanner ? { images: [{ url: store.storeBanner }] } : {}),
+      ...(store.banner ? { images: [{ url: store.banner }] } : {}),
       type: 'website',
     },
   };
@@ -46,21 +58,22 @@ export default async function StoreLayout({ children, params }: Props) {
     notFound();
   }
 
-  if (!store.storeEnabled) {
+  if (!store.enabled) {
+    const bi = store.tenant.businessInfo;
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4"
-            style={{ backgroundColor: store.storeThemeColor || '#2563eb' }}
+            style={{ backgroundColor: store.themeColor || '#2563eb' }}
           >
-            {store.storeName?.charAt(0)?.toUpperCase() || 'S'}
+            {store.name?.charAt(0)?.toUpperCase() || 'S'}
           </div>
-          <h1 className="text-xl font-bold text-gray-900">{store.storeName}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{store.name}</h1>
           <p className="text-gray-500 mt-2">This store is temporarily unavailable.</p>
-          {store.shareOwnerPhone && store.ownerPhone && (
+          {bi?.shareOwnerPhone && bi?.ownerPhone && (
             <a
-              href={`https://wa.me/${store.ownerPhone.replace(/^\+?/, '')}?text=Hi`}
+              href={`https://wa.me/${bi.ownerPhone.replace(/^\+?/, '')}?text=Hi`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"
@@ -75,19 +88,20 @@ export default async function StoreLayout({ children, params }: Props) {
 
   // Build whatsapp number
   let whatsappNumber: string | null = null;
-  if (store.shareOwnerPhone && store.ownerPhone) {
-    whatsappNumber = store.ownerPhone.replace(/^\+?/, '');
+  const bi = store.tenant.businessInfo;
+  if (bi?.shareOwnerPhone && bi?.ownerPhone) {
+    whatsappNumber = bi.ownerPhone.replace(/^\+?/, '');
   }
 
   const storeData = {
     tenantId: store.tenantId,
-    storeName: store.storeName || 'Store',
-    storeSlug: store.storeSlug!,
-    storeLogo: store.storeLogo,
-    storeBanner: store.storeBanner,
-    storeThemeColor: store.storeThemeColor || '#2563eb',
-    storeAccentColor: store.storeAccentColor || '#f59e0b',
-    storeDescription: store.storeDescription || store.description,
+    storeName: store.name || 'Store',
+    storeSlug: store.slug,
+    storeLogo: store.logo,
+    storeBanner: store.banner,
+    storeThemeColor: store.themeColor || '#2563eb',
+    storeAccentColor: store.accentColor || '#f59e0b',
+    storeDescription: store.description,
     deliveryFee: Number(store.deliveryFee),
     minOrderAmount: Number(store.minOrderAmount),
     codEnabled: store.codEnabled,

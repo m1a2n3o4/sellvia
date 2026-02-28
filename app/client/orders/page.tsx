@@ -30,9 +30,18 @@ export default function OrdersPage() {
   const [today, setToday] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [storeFilter, setStoreFilter] = useState('all');
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/client/stores')
+      .then((r) => r.json())
+      .then((data) => setStores(data.stores || []))
+      .catch(() => {});
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -43,6 +52,7 @@ export default function OrdersPage() {
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (paymentFilter !== 'all') params.set('paymentStatus', paymentFilter);
       if (deliveryFilter !== 'all') params.set('deliveryStatus', deliveryFilter);
+      if (storeFilter !== 'all') params.set('storeId', storeFilter);
       if (today) params.set('today', 'true');
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
@@ -56,7 +66,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, orderType, statusFilter, paymentFilter, deliveryFilter, today, dateFrom, dateTo]);
+  }, [page, search, orderType, statusFilter, paymentFilter, deliveryFilter, storeFilter, today, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchOrders();
@@ -152,6 +162,20 @@ export default function OrdersPage() {
           />
         </div>
         <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
+          {stores.length > 1 && (
+            <Select value={storeFilter} onValueChange={(v) => { setStoreFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-full md:w-[150px]">
+                <SelectValue placeholder="Store" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stores</SelectItem>
+                {stores.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Select value={orderType} onValueChange={(v) => { setOrderType(v); setPage(1); }}>
             <SelectTrigger className="w-full md:w-[130px]">
               <SelectValue placeholder="Type" />

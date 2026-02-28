@@ -47,6 +47,7 @@ model Tenant {
   whatsappChats    WhatsAppChat[]
   whatsappMessages WhatsAppMessage[]
   businessInfo     BusinessInfo?
+  stores           Store[]
 
   @@index([status])
   @@index([createdAt])
@@ -78,6 +79,7 @@ model OtpVerification {
 model Product {
   id                String        @id @default(uuid())
   tenantId          String        @map("tenant_id")
+  storeId           String?       @map("store_id")
   name              String
   brand             String?
   description       String?
@@ -93,6 +95,7 @@ model Product {
 
   // Relations
   tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store      Store?           @relation(fields: [storeId], references: [id], onDelete: SetNull)
   variants   ProductVariant[]
   orderItems OrderItem[]
   cartItems  CartItem[]
@@ -100,6 +103,8 @@ model Product {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt(sort: Desc)])
+  @@index([storeId])
+  @@index([storeId, status])
   @@index([sku])
   @@map("products")
 }
@@ -163,6 +168,7 @@ model Customer {
 model Order {
   id                    String         @id @default(uuid())
   tenantId              String         @map("tenant_id")
+  storeId               String?        @map("store_id")
   orderNumber           String         @map("order_number")
   customerId            String         @map("customer_id")
   orderDate             DateTime       @default(now()) @map("order_date")
@@ -190,12 +196,14 @@ model Order {
 
   // Relations
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store      Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
   customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
   orderItems OrderItem[]
 
   @@unique([tenantId, orderNumber])
   @@index([tenantId])
   @@index([customerId])
+  @@index([storeId])
   @@index([tenantId, status])
   @@index([tenantId, orderDate(sort: Desc)])
   @@index([tenantId, orderType])
@@ -393,6 +401,34 @@ model BusinessInfo {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("business_info")
+}
+
+model Store {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  name             String
+  slug             String   @unique
+  enabled          Boolean  @default(false)
+  logo             String?
+  banner           String?
+  themeColor       String   @default("#2563eb") @map("theme_color")
+  accentColor      String   @default("#f59e0b") @map("accent_color")
+  description      String?
+  deliveryFee      Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  minOrderAmount   Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
+  codEnabled       Boolean  @default(true) @map("cod_enabled")
+  onlinePayEnabled Boolean  @default(true) @map("online_pay_enabled")
+  isDefault        Boolean  @default(false) @map("is_default")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+  orders   Order[]
+
+  @@index([tenantId])
+  @@map("stores")
 }
 
 enum ConversationStep {

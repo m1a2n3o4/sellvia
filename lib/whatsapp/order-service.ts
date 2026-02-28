@@ -26,6 +26,7 @@ interface CreateOrderInput {
   state?: string;
   pincode?: string;
   shippingFee?: number;
+  storeId?: string;
 }
 
 function generateOrderNumber(): string {
@@ -53,6 +54,7 @@ export async function createOrder(input: CreateOrderInput) {
     state,
     pincode,
     shippingFee = 0,
+    storeId,
   } = input;
 
   // Normalize phone: strip +91 prefix, keep last 10 digits
@@ -109,6 +111,7 @@ export async function createOrder(input: CreateOrderInput) {
     const newOrder = await tx.order.create({
       data: {
         tenantId,
+        storeId: storeId || null,
         orderNumber,
         customerId: customer.id,
         orderType,

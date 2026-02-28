@@ -20,6 +20,7 @@ export const createProductSchema = z.object({
   images: z.array(z.string()).default([]),
   status: z.enum(['active', 'inactive']).default('active'),
   variants: z.array(variantSchema).default([]),
+  storeId: z.string().optional(),
 });
 
 export const updateProductSchema = createProductSchema.partial();

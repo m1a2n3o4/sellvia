@@ -25,6 +25,13 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = { tenantId };
 
+    const storeId = searchParams.get('storeId') || '';
+    if (storeId === 'unassigned') {
+      where.storeId = null;
+    } else if (storeId) {
+      where.storeId = storeId;
+    }
+
     if (search) {
       where.OR = [
         { orderNumber: { contains: search, mode: 'insensitive' } },

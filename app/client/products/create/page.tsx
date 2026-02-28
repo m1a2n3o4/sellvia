@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,23 @@ export default function CreateProductPage() {
 
   const [specs, setSpecs] = useState<SpecRow[]>([]);
   const [imageUrl, setImageUrl] = useState('');
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState('');
+
+  useEffect(() => {
+    fetch('/api/client/stores')
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data)) {
+          setStores(data.map((s) => ({ id: s.id, name: s.name })));
+          // Default to the default store
+          const def = data.find((s) => s.isDefault);
+          if (def) setSelectedStoreId(def.id);
+          else if (data.length > 0) setSelectedStoreId(data[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleAIResult = (result: AIAnalysisResult) => {
     setImageUrl(result.imageUrl);
@@ -102,6 +119,7 @@ export default function CreateProductPage() {
           lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
           images: imageUrl ? [imageUrl] : [],
           variants,
+          storeId: selectedStoreId || undefined,
         }),
       });
 
@@ -165,6 +183,23 @@ export default function CreateProductPage() {
             </div>
           )}
         </div>
+
+        {/* Store Selector */}
+        {stores.length > 0 && (
+          <div>
+            <Label htmlFor="store">Store</Label>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a store" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">

@@ -14,13 +14,13 @@ export async function GET(
   }
 
   try {
-    // Resolve tenant from slug
-    const businessInfo = await prisma.businessInfo.findUnique({
-      where: { storeSlug: params.slug },
-      select: { tenantId: true, storeEnabled: true },
+    // Resolve store from slug
+    const store = await prisma.store.findUnique({
+      where: { slug: params.slug },
+      select: { id: true, enabled: true, tenantId: true },
     });
 
-    if (!businessInfo || !businessInfo.storeEnabled) {
+    if (!store || !store.enabled) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 });
     }
 
@@ -34,7 +34,7 @@ export async function GET(
     // Single product lookup
     if (productId) {
       const product = await prisma.product.findFirst({
-        where: { id: productId, tenantId: businessInfo.tenantId, status: 'active' },
+        where: { id: productId, storeId: store.id, status: 'active' },
         include: { variants: { where: { status: 'active' }, orderBy: { variantName: 'asc' } } },
       });
 
@@ -42,11 +42,11 @@ export async function GET(
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
-      // Get related products (same category, exclude current)
+      // Get related products (same category, same store, exclude current)
       const related = product.category
         ? await prisma.product.findMany({
             where: {
-              tenantId: businessInfo.tenantId,
+              storeId: store.id,
               status: 'active',
               category: product.category,
               id: { not: product.id },
@@ -61,7 +61,7 @@ export async function GET(
 
     // Product listing with filters
     const where: any = {
-      tenantId: businessInfo.tenantId,
+      storeId: store.id,
       status: 'active',
     };
 

@@ -22,17 +22,17 @@ export async function GET(
   }
 
   try {
-    const businessInfo = await prisma.businessInfo.findUnique({
-      where: { storeSlug: params.slug },
+    const store = await prisma.store.findUnique({
+      where: { slug: params.slug },
       select: { tenantId: true },
     });
 
-    if (!businessInfo) {
+    if (!store) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 });
     }
 
     const order = await prisma.order.findFirst({
-      where: { id: orderId, tenantId: businessInfo.tenantId },
+      where: { id: orderId, tenantId: store.tenantId },
       select: {
         id: true,
         orderNumber: true,
@@ -91,22 +91,30 @@ export async function POST(
       return NextResponse.json({ orderId: 'ok', orderNumber: 'OK-000', total: 0, status: 'confirmed' });
     }
 
-    // Resolve tenant from slug
-    const businessInfo = await prisma.businessInfo.findUnique({
-      where: { storeSlug: params.slug },
+    // Resolve store from slug, include tenant's business info for payment credentials
+    const store = await prisma.store.findUnique({
+      where: { slug: params.slug },
+      include: {
+        tenant: {
+          include: {
+            businessInfo: true,
+          },
+        },
+      },
     });
 
-    if (!businessInfo || !businessInfo.storeEnabled) {
+    if (!store || !store.enabled) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 });
     }
 
-    const tenantId = businessInfo.tenantId;
+    const tenantId = store.tenantId;
+    const businessInfo = store.tenant.businessInfo;
 
-    // Validate payment method is enabled
-    if (data.paymentMethod === 'cod' && !businessInfo.codEnabled) {
+    // Validate payment method is enabled (from store settings)
+    if (data.paymentMethod === 'cod' && !store.codEnabled) {
       return NextResponse.json({ error: 'Cash on delivery is not available for this store' }, { status: 400 });
     }
-    if (data.paymentMethod === 'online' && !businessInfo.onlinePayEnabled) {
+    if (data.paymentMethod === 'online' && !store.onlinePayEnabled) {
       return NextResponse.json({ error: 'Online payment is not available for this store' }, { status: 400 });
     }
 
@@ -114,7 +122,7 @@ export async function POST(
     const orderItems = [];
     for (const item of data.items) {
       const product = await prisma.product.findFirst({
-        where: { id: item.productId, tenantId, status: 'active' },
+        where: { id: item.productId, storeId: store.id, status: 'active' },
         include: { variants: { where: { status: 'active' } } },
       });
 
@@ -146,9 +154,9 @@ export async function POST(
       });
     }
 
-    // Check minimum order amount
+    // Check minimum order amount (from store settings)
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const minOrder = Number(businessInfo.minOrderAmount);
+    const minOrder = Number(store.minOrderAmount);
     if (minOrder > 0 && subtotal < minOrder) {
       return NextResponse.json(
         { error: `Minimum order amount is Rs.${minOrder}. Your cart total is Rs.${subtotal}.` },
@@ -156,12 +164,13 @@ export async function POST(
       );
     }
 
-    const deliveryFee = Number(businessInfo.deliveryFee);
+    const deliveryFee = Number(store.deliveryFee);
     const fullAddress = `${data.deliveryAddress}, ${data.city}, ${data.state} - ${data.pincode}`;
 
-    // Create order
+    // Create order with storeId
     const order = await createOrder({
       tenantId,
+      storeId: store.id,
       customerPhone: data.customerPhone,
       customerName: data.customerName,
       customerEmail: data.customerEmail || undefined,
@@ -178,9 +187,9 @@ export async function POST(
 
     const totalAmount = subtotal + deliveryFee;
 
-    // Handle online payment
+    // Handle online payment (credentials from tenant's businessInfo)
     let paymentLinkUrl: string | null = null;
-    if (data.paymentMethod === 'online') {
+    if (data.paymentMethod === 'online' && businessInfo) {
       let gateway = businessInfo.paymentGateway || 'none';
       if (gateway === 'none') {
         if (businessInfo.cashfreeAppId && businessInfo.cashfreeSecretKey) gateway = 'cashfree';
@@ -231,7 +240,7 @@ export async function POST(
     }
 
     // Send WhatsApp confirmation to customer (fire-and-forget)
-    if (businessInfo.whatsappToken && businessInfo.whatsappPhoneNumberId) {
+    if (businessInfo?.whatsappToken && businessInfo?.whatsappPhoneNumberId) {
       const itemsSummary = orderItems.map((i) => `${i.productName} x${i.quantity}`).join(', ');
       const msg = paymentLinkUrl
         ? `Order Placed! 🛒\n\nOrder: ${order.orderNumber}\nItems: ${itemsSummary}\nTotal: Rs.${totalAmount}\n\nComplete payment here:\n${paymentLinkUrl}`

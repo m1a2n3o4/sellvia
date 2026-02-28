@@ -21,12 +21,12 @@ export async function POST(
     }
 
     // Verify store exists
-    const store = await prisma.businessInfo.findUnique({
-      where: { storeSlug: params.slug },
-      select: { storeEnabled: true, storeName: true },
+    const store = await prisma.store.findUnique({
+      where: { slug: params.slug },
+      select: { enabled: true, name: true },
     });
 
-    if (!store || !store.storeEnabled) {
+    if (!store || !store.enabled) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 });
     }
 

@@ -39,6 +39,7 @@ export type DeliveryStatus = 'pending' | 'dispatched' | 'in_transit' | 'delivere
 
 export interface Product {
   id: string;
+  storeId?: string | null;
   name: string;
   brand?: string;
   description?: string;

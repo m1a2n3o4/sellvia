@@ -14,23 +14,33 @@ export async function GET(
   }
 
   try {
-    const businessInfo = await prisma.businessInfo.findUnique({
-      where: { storeSlug: params.slug },
+    const store = await prisma.store.findUnique({
+      where: { slug: params.slug },
       include: {
-        tenant: { select: { id: true, status: true } },
+        tenant: {
+          select: {
+            status: true,
+            businessInfo: {
+              select: {
+                ownerPhone: true,
+                shareOwnerPhone: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!businessInfo || !businessInfo.storeEnabled || businessInfo.tenant.status !== 'active') {
+    if (!store || !store.enabled || store.tenant.status !== 'active') {
       return NextResponse.json(
-        { error: 'Store not found', storeDisabled: businessInfo?.storeEnabled === false },
+        { error: 'Store not found', storeDisabled: store?.enabled === false },
         { status: 404 }
       );
     }
 
-    // Get distinct categories from active products
+    // Get distinct categories from active products in this store
     const categories = await prisma.product.findMany({
-      where: { tenantId: businessInfo.tenantId, status: 'active', category: { not: null } },
+      where: { storeId: store.id, status: 'active', category: { not: null } },
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' },
@@ -38,23 +48,24 @@ export async function GET(
 
     // Build WhatsApp number for contact button
     let whatsappNumber: string | null = null;
-    if (businessInfo.shareOwnerPhone && businessInfo.ownerPhone) {
-      whatsappNumber = businessInfo.ownerPhone.replace(/^\+?/, '');
+    const bi = store.tenant.businessInfo;
+    if (bi?.shareOwnerPhone && bi?.ownerPhone) {
+      whatsappNumber = bi.ownerPhone.replace(/^\+?/, '');
     }
 
     return NextResponse.json({
-      tenantId: businessInfo.tenantId,
-      storeName: businessInfo.storeName,
-      storeSlug: businessInfo.storeSlug,
-      storeLogo: businessInfo.storeLogo,
-      storeBanner: businessInfo.storeBanner,
-      storeThemeColor: businessInfo.storeThemeColor || '#2563eb',
-      storeAccentColor: businessInfo.storeAccentColor || '#f59e0b',
-      storeDescription: businessInfo.storeDescription || businessInfo.description,
-      deliveryFee: Number(businessInfo.deliveryFee),
-      minOrderAmount: Number(businessInfo.minOrderAmount),
-      codEnabled: businessInfo.codEnabled,
-      onlinePayEnabled: businessInfo.onlinePayEnabled,
+      tenantId: store.tenantId,
+      storeName: store.name,
+      storeSlug: store.slug,
+      storeLogo: store.logo,
+      storeBanner: store.banner,
+      storeThemeColor: store.themeColor || '#2563eb',
+      storeAccentColor: store.accentColor || '#f59e0b',
+      storeDescription: store.description,
+      deliveryFee: Number(store.deliveryFee),
+      minOrderAmount: Number(store.minOrderAmount),
+      codEnabled: store.codEnabled,
+      onlinePayEnabled: store.onlinePayEnabled,
       whatsappNumber,
       categories: categories.map((c) => c.category).filter(Boolean),
     });

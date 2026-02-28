@@ -13,9 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload, Link2, CheckCircle } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload, Link2, CheckCircle, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types';
+
+interface StoreOption {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -23,9 +29,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [storeFilter, setStoreFilter] = useState('all');
+  const [stores, setStores] = useState<StoreOption[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [storeSlug, setStoreSlug] = useState('');
   const [copiedId, setCopiedId] = useState('');
 
   const fetchProducts = useCallback(async () => {
@@ -34,6 +41,7 @@ export default function ProductsPage() {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
       if (search) params.set('search', search);
       if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (storeFilter !== 'all') params.set('storeId', storeFilter);
 
       const res = await fetch(`/api/client/products?${params}`);
       const data = await res.json();
@@ -44,23 +52,31 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, storeFilter]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   useEffect(() => {
-    fetch('/api/client/business-info')
+    fetch('/api/client/stores')
       .then((r) => r.json())
-      .then((d) => { if (d.storeSlug) setStoreSlug(d.storeSlug); })
+      .then((data: any[]) => {
+        if (Array.isArray(data)) {
+          setStores(data.map((s) => ({ id: s.id, name: s.name, slug: s.slug })));
+        }
+      })
       .catch(() => {});
   }, []);
 
   const copyProductUrl = (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!storeSlug) return;
-    const url = `https://www.satyasell.com/store/${storeSlug}/product/${productId}`;
+    // Use the filtered store's slug, or the first store's slug
+    const slug = storeFilter !== 'all' && storeFilter !== 'unassigned'
+      ? stores.find((s) => s.id === storeFilter)?.slug
+      : stores[0]?.slug;
+    if (!slug) return;
+    const url = `https://www.satyasell.com/store/${slug}/product/${productId}`;
     navigator.clipboard.writeText(url);
     setCopiedId(productId);
     setTimeout(() => setCopiedId(''), 2000);
@@ -139,7 +155,7 @@ export default function ProductsPage() {
       header: 'Actions',
       render: (p: Product) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {storeSlug && (
+          {stores.length > 0 && (
             <Button
               variant="ghost"
               size="icon"
@@ -217,6 +233,20 @@ export default function ProductsPage() {
             className="pl-9"
           />
         </div>
+        {stores.length > 1 && (
+          <Select value={storeFilter} onValueChange={(v) => { setStoreFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Store" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stores</SelectItem>
+              {stores.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Status" />
@@ -268,7 +298,7 @@ export default function ProductsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                  {storeSlug && (
+                  {stores.length > 0 && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => copyProductUrl(p.id, e)}>
                       {copiedId === p.id ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : <Link2 className="h-3.5 w-3.5 text-blue-500" />}
                     </Button>
