@@ -21,6 +21,7 @@ interface SpecRow {
   key: string;
   value: string;
   price: string;
+  stock: string;
 }
 
 export default function EditProductPage() {
@@ -78,7 +79,7 @@ export default function EditProductPage() {
             p.variants.map((v) => {
               const entries = Object.entries(v.attributes || {});
               const [key, value] = entries.length > 0 ? entries[0] : ['', ''];
-              return { key, value, price: String(v.price) };
+              return { key, value, price: String(v.price), stock: String(v.stockQuantity || 0) };
             })
           );
         }
@@ -92,7 +93,7 @@ export default function EditProductPage() {
   }, [params.id]);
 
   const addSpec = () => {
-    setSpecs([...specs, { key: '', value: '', price: '' }]);
+    setSpecs([...specs, { key: '', value: '', price: '', stock: '' }]);
   };
 
   const updateSpec = (index: number, field: keyof SpecRow, value: string) => {
@@ -116,7 +117,7 @@ export default function EditProductPage() {
         .map((s) => ({
           variantName: `${s.key}: ${s.value}`,
           price: parseFloat(s.price) || parseFloat(form.basePrice) || 0,
-          stockQuantity: 0,
+          stockQuantity: parseInt(s.stock) || parseInt(form.stockQuantity) || 0,
           attributes: { [s.key]: s.value },
         }));
 
@@ -356,7 +357,15 @@ export default function EditProductPage() {
                 min="0"
                 value={spec.price}
                 onChange={(e) => updateSpec(index, 'price', e.target.value)}
-                className="w-28"
+                className="w-24"
+              />
+              <Input
+                placeholder="Stock"
+                type="number"
+                min="0"
+                value={spec.stock}
+                onChange={(e) => updateSpec(index, 'stock', e.target.value)}
+                className="w-20"
               />
               <Button
                 type="button"

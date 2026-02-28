@@ -20,6 +20,7 @@ interface SpecRow {
   key: string;
   value: string;
   price: string;
+  stock: string;
 }
 
 export default function CreateProductPage() {
@@ -55,15 +56,15 @@ export default function CreateProductPage() {
         basePrice: p.basePrice ? String(p.basePrice) : prev.basePrice,
       }));
       const newSpecs: SpecRow[] = [];
-      if (p.color) newSpecs.push({ key: 'Color', value: p.color, price: '' });
-      if (p.gender) newSpecs.push({ key: 'Gender', value: p.gender, price: '' });
-      if (p.material) newSpecs.push({ key: 'Material', value: p.material, price: '' });
+      if (p.color) newSpecs.push({ key: 'Color', value: p.color, price: '', stock: '' });
+      if (p.gender) newSpecs.push({ key: 'Gender', value: p.gender, price: '', stock: '' });
+      if (p.material) newSpecs.push({ key: 'Material', value: p.material, price: '', stock: '' });
       if (newSpecs.length > 0) setSpecs(newSpecs);
     }
   };
 
   const addSpec = () => {
-    setSpecs([...specs, { key: '', value: '', price: '' }]);
+    setSpecs([...specs, { key: '', value: '', price: '', stock: '' }]);
   };
 
   const updateSpec = (index: number, field: keyof SpecRow, value: string) => {
@@ -87,7 +88,7 @@ export default function CreateProductPage() {
         .map((s) => ({
           variantName: `${s.key}: ${s.value}`,
           price: parseFloat(s.price) || parseFloat(form.basePrice) || 0,
-          stockQuantity: 0,
+          stockQuantity: parseInt(s.stock) || parseInt(form.stockQuantity) || 0,
           attributes: { [s.key]: s.value },
         }));
 
@@ -313,7 +314,15 @@ export default function CreateProductPage() {
                 min="0"
                 value={spec.price}
                 onChange={(e) => updateSpec(index, 'price', e.target.value)}
-                className="w-28"
+                className="w-24"
+              />
+              <Input
+                placeholder="Stock"
+                type="number"
+                min="0"
+                value={spec.stock}
+                onChange={(e) => updateSpec(index, 'stock', e.target.value)}
+                className="w-20"
               />
               <Button
                 type="button"
