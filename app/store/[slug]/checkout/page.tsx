@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store-layout-client';
 import { useCart } from '@/lib/store/cart-context';
 
@@ -27,6 +27,21 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  // OTP state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
   // Redirect to cart if empty
   if (items.length === 0) {
     if (typeof window !== 'undefined') {
@@ -44,8 +59,87 @@ export default function CheckoutPage() {
     if (!form.city || form.city.length < 2) errs.city = 'City is required';
     if (!form.state || form.state.length < 2) errs.state = 'State is required';
     if (!/^\d{6}$/.test(form.pincode)) errs.pincode = 'Enter a valid 6-digit pincode';
+    if (!otpVerified) errs.otp = 'Please verify your phone number';
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const sendOtp = async () => {
+    if (!/^[6-9]\d{9}$/.test(form.customerPhone)) {
+      setErrors((e) => ({ ...e, customerPhone: 'Enter a valid 10-digit phone number' }));
+      return;
+    }
+
+    setOtpLoading(true);
+    setOtpError('');
+
+    try {
+      const res = await fetch(`/api/store/${store.storeSlug}/otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', mobile: form.customerPhone }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOtpError(data.error || 'Failed to send OTP');
+        return;
+      }
+
+      setOtpSent(true);
+      setCooldown(60);
+    } catch {
+      setOtpError('Network error. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      setOtpError('Enter a valid 6-digit OTP');
+      return;
+    }
+
+    setOtpLoading(true);
+    setOtpError('');
+
+    try {
+      const res = await fetch(`/api/store/${store.storeSlug}/otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', mobile: form.customerPhone, otp: otpCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOtpError(data.error || 'Invalid OTP');
+        return;
+      }
+
+      setOtpVerified(true);
+      setOtpError('');
+    } catch {
+      setOtpError('Network error. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Reset OTP if phone number changes
+  const handlePhoneChange = (value: string) => {
+    const phone = value.replace(/\D/g, '').slice(0, 10);
+    setForm((f) => ({ ...f, customerPhone: phone }));
+    if (errors.customerPhone) setErrors((e) => ({ ...e, customerPhone: '' }));
+    // Reset OTP state if phone changes after OTP was sent
+    if (otpSent && phone !== form.customerPhone) {
+      setOtpSent(false);
+      setOtpVerified(false);
+      setOtpCode('');
+      setOtpError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,7 +160,7 @@ export default function CheckoutPage() {
             variantId: i.variantId,
             quantity: i.quantity,
           })),
-          honeypot: '', // bot trap
+          honeypot: '',
         }),
       });
 
@@ -78,12 +172,8 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Clear cart on success
       clearCart();
 
-      // Redirect based on payment method
-      // Use window.location.href (not router.push) to prevent re-render
-      // that would redirect back to cart due to empty items check
       if (data.paymentLink) {
         window.location.href = data.paymentLink;
       } else {
@@ -127,19 +217,84 @@ export default function CheckoutPage() {
           {errors.customerName && <p className="text-xs text-red-500 mt-1">{errors.customerName}</p>}
         </div>
 
+        {/* Phone + OTP */}
         <div>
           <label className="block text-sm text-gray-600 mb-1">Phone Number *</label>
-          <input
-            type="tel"
-            value={form.customerPhone}
-            onChange={(e) => updateField('customerPhone', e.target.value.replace(/\D/g, '').slice(0, 10))}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
-            style={{ '--tw-ring-color': store.storeThemeColor } as any}
-            placeholder="10-digit phone number"
-            inputMode="tel"
-          />
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              value={form.customerPhone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              disabled={otpVerified}
+              className="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+              style={{ '--tw-ring-color': store.storeThemeColor } as any}
+              placeholder="10-digit phone number"
+              inputMode="tel"
+            />
+            {!otpVerified && (
+              <button
+                type="button"
+                onClick={sendOtp}
+                disabled={otpLoading || cooldown > 0 || form.customerPhone.length !== 10}
+                className="px-4 py-2.5 rounded-lg text-white text-sm font-medium whitespace-nowrap disabled:opacity-50 transition-colors"
+                style={{ backgroundColor: store.storeThemeColor }}
+              >
+                {otpLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : cooldown > 0 ? (
+                  `${cooldown}s`
+                ) : otpSent ? (
+                  'Resend'
+                ) : (
+                  'Send OTP'
+                )}
+              </button>
+            )}
+            {otpVerified && (
+              <div className="flex items-center gap-1 px-3 text-green-600">
+                <CheckCircle className="h-5 w-5" />
+                <span className="text-sm font-medium">Verified</span>
+              </div>
+            )}
+          </div>
           {errors.customerPhone && <p className="text-xs text-red-500 mt-1">{errors.customerPhone}</p>}
         </div>
+
+        {/* OTP Input */}
+        {otpSent && !otpVerified && (
+          <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 text-blue-700">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="text-sm font-medium">Enter OTP sent to {form.customerPhone}</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => {
+                  setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setOtpError('');
+                }}
+                className="flex-1 px-3 py-2.5 rounded-lg border border-blue-200 text-sm text-center tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="------"
+                inputMode="numeric"
+                maxLength={6}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={verifyOtp}
+                disabled={otpLoading || otpCode.length !== 6}
+                className="px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+              >
+                {otpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+              </button>
+            </div>
+            {otpError && <p className="text-xs text-red-500">{otpError}</p>}
+          </div>
+        )}
+
+        {errors.otp && !otpSent && <p className="text-xs text-red-500">{errors.otp}</p>}
 
         <div>
           <label className="block text-sm text-gray-600 mb-1">Email (optional)</label>
@@ -278,7 +433,7 @@ export default function CheckoutPage() {
         </div>
       </section>
 
-      {/* Honeypot - hidden from humans */}
+      {/* Honeypot */}
       <input
         type="text"
         name="website"
@@ -290,7 +445,7 @@ export default function CheckoutPage() {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !otpVerified}
         className="w-full py-3.5 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
         style={{ backgroundColor: store.storeThemeColor }}
       >
@@ -298,6 +453,8 @@ export default function CheckoutPage() {
           <>
             <Loader2 className="h-4 w-4 animate-spin" /> Placing Order...
           </>
+        ) : !otpVerified ? (
+          'Verify phone number to place order'
         ) : (
           `Place Order — ₹${grandTotal.toLocaleString('en-IN')}`
         )}

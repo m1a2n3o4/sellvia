@@ -14,6 +14,10 @@ export function newOrder(orderNumber: string, customerName: string, total: numbe
   return `New Order! ${orderNumber} from ${customerName} - ${itemCount} item(s), Total: Rs.${total.toFixed(2)}. Check your SatyaSell dashboard for details. - SatyaSell`;
 }
 
+export function checkoutOtp(otp: string, storeName: string): string {
+  return `Your OTP to place order on ${storeName} is: ${otp}. Valid for 5 minutes. Do not share. - SatyaSell`;
+}
+
 export function customerEscalation(customerName: string, customerPhone: string, reason: string): string {
   return `ALERT: Customer ${customerName} (${customerPhone}) needs help. Issue: ${reason}. Please check your SatyaSell WhatsApp dashboard. - SatyaSell`;
 }
