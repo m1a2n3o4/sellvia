@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { DemoForm } from '@/components/landing/DemoForm';
 import { FloatingWhatsApp } from '@/components/landing/FloatingWhatsApp';
 import { PageTracker } from '@/components/landing/PageTracker';
+import { HeroFlow } from '@/components/landing/HeroFlow';
 import {
   MessageCircle,
   ShoppingBag,
@@ -149,52 +150,62 @@ export default function HomePage() {
         <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
         <div className="absolute top-40 right-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-28">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-8">
-              <Zap className="w-3.5 h-3.5" />
-              WhatsApp Commerce for Indian Sellers
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            {/* Left: Text */}
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-6">
+                <Zap className="w-3.5 h-3.5" />
+                WhatsApp Commerce for Indian Sellers
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-gray-900 leading-[1.1] tracking-tight">
+                Turn WhatsApp into your{' '}
+                <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                  automated store
+                </span>
+              </h1>
+
+              <p className="mt-6 text-lg text-gray-600 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                Your customers message on WhatsApp. AI handles products, address, payment, and order —
+                <strong className="text-gray-900"> you just ship.</strong>
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-8">
+                <a
+                  href="#demo"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-200"
+                >
+                  Book a Free Demo
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold rounded-xl border-2 border-gray-200 text-gray-700 hover:border-violet-200 hover:bg-violet-50 transition-all"
+                >
+                  See How It Works
+                </a>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-sm text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  No credit card needed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  Free to start
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  Pay only when you earn
+                </span>
+              </div>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
-              Turn WhatsApp into your{' '}
-              <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                automated store
-              </span>
-            </h1>
-
-            <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Your customers message on WhatsApp. AI handles products, address, payment, and order —
-              <strong className="text-gray-900"> you just ship.</strong>
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-              <a
-                href="#demo"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-200"
-              >
-                Book a Free Demo
-                <ArrowRight className="w-4 h-4" />
-              </a>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl border-2 border-gray-200 text-gray-700 hover:border-violet-200 hover:bg-violet-50 transition-all"
-              >
-                See How It Works
-              </a>
-            </div>
-
-            <div className="mt-12 flex items-center justify-center gap-2 text-sm text-gray-500">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              No credit card needed
-              <span className="mx-2 text-gray-300">|</span>
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              Free to start
-              <span className="mx-2 text-gray-300 hidden sm:inline">|</span>
-              <span className="hidden sm:flex items-center gap-1">
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                Pay only when you earn
-              </span>
+            {/* Right: Animated WhatsApp Flow */}
+            <div className="flex justify-center lg:justify-end">
+              <HeroFlow />
             </div>
           </div>
         </div>
