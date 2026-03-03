@@ -26,6 +26,8 @@ export default function StoresPage() {
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
   const [newCity, setNewCity] = useState('');
+  const [newManagerName, setNewManagerName] = useState('');
+  const [newManagerMobile, setNewManagerMobile] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -59,7 +61,13 @@ export default function StoresPage() {
       const res = await fetch('/api/client/stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, slug: newSlug, city: newCity || undefined }),
+        body: JSON.stringify({
+          name: newName,
+          slug: newSlug,
+          city: newCity || undefined,
+          managerName: newManagerName || undefined,
+          managerMobile: newManagerMobile || undefined,
+        }),
       });
 
       const data = await res.json();
@@ -71,6 +79,8 @@ export default function StoresPage() {
       setNewName('');
       setNewSlug('');
       setNewCity('');
+      setNewManagerName('');
+      setNewManagerMobile('');
       router.push(`/client/stores/${data.id}`);
     } catch {
       setError('Network error');
@@ -193,6 +203,22 @@ export default function StoresPage() {
               placeholder="City / Location (e.g. Kukatpally)"
               value={newCity}
               onChange={(e) => setNewCity(e.target.value)}
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="Store Manager Name"
+              value={newManagerName}
+              onChange={(e) => setNewManagerName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="Manager Mobile (10 digits)"
+              type="tel"
+              maxLength={10}
+              value={newManagerMobile}
+              onChange={(e) => setNewManagerMobile(e.target.value.replace(/\D/g, ''))}
             />
           </div>
           <Button onClick={handleCreate} disabled={creating || !newName || !newSlug} className="w-full">

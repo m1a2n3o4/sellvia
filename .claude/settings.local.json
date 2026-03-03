@@ -29,7 +29,28 @@
       "Bash(npx prisma db push:*)",
       "Bash(npx next build:*)",
       "Bash(echo:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git status:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(vercel logs:*)",
+      "Bash(python3:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(vercel ls:*)",
+      "Bash(git -C /Users/manoharlotlapalli/Desktop/sellvia diff --stat)",
+      "Bash(git -C /Users/manoharlotlapalli/Desktop/sellvia status -s)",
+      "Bash(open:*)",
+      "WebSearch",
+      "Bash(npx prisma:*)",
+      "WebFetch(domain:www.shopwa.io)",
+      "WebFetch(domain:store.link)",
+      "WebFetch(domain:watskart.com)",
+      "WebFetch(domain:kripeshadwani.com)",
+      "WebFetch(domain:mydukaan.io)",
+      "Bash(wc:*)",
+      "Bash(git:*)",
+      "Bash(gh api:*)",
+      "Bash(gh api repos/m1a2n3o4/sellvia/deployments --jq '.[0].id' | xargs -I{} gh api repos/m1a2n3o4/sellvia/deployments/{}/statuses --jq '.[0] | {state, description, created_at}' 2>&1)",
+      "Bash(npx next:*)"
     ]
   }
 }

@@ -42,6 +42,8 @@ export default function StoreSettingsPage() {
     state: '',
     pincode: '',
     phone: '',
+    managerName: '',
+    managerMobile: '',
   });
 
   useEffect(() => {
@@ -71,6 +73,8 @@ export default function StoreSettingsPage() {
           state: data.state || '',
           pincode: data.pincode || '',
           phone: data.phone || '',
+          managerName: data.managerName || '',
+          managerMobile: data.managerMobile || '',
         });
       })
       .catch(() => setError('Failed to load store'))
@@ -273,6 +277,20 @@ export default function StoreSettingsPage() {
         <div>
           <Label>Branch Phone</Label>
           <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Contact number for this branch" className="mt-1" />
+        </div>
+      </div>
+
+      {/* Store Manager */}
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-4">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Store Manager</h2>
+        <p className="text-xs text-gray-500">Person responsible for managing this store.</p>
+        <div>
+          <Label>Manager Name</Label>
+          <Input value={form.managerName} onChange={(e) => setForm((f) => ({ ...f, managerName: e.target.value }))} placeholder="Manager name" className="mt-1" />
+        </div>
+        <div>
+          <Label>Manager Mobile</Label>
+          <Input value={form.managerMobile} onChange={(e) => setForm((f) => ({ ...f, managerMobile: e.target.value.replace(/\D/g, '') }))} placeholder="10-digit mobile number" type="tel" maxLength={10} className="mt-1" />
         </div>
       </div>
 

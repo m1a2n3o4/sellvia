@@ -96,7 +96,11 @@ export const DesktopSidebar = ({
         width: animate ? (open ? "300px" : "60px") : "300px",
       }}
       onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseLeave={() => {
+        // Don't close if a Radix portal (Select, DropdownMenu) is open
+        if (document.querySelector('[data-radix-select-content], [data-radix-popper-content-wrapper]')) return;
+        setOpen(false);
+      }}
       {...props}
     >
       {children}

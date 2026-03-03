@@ -422,6 +422,8 @@ model Store {
   state            String?
   pincode          String?
   phone            String?
+  managerName      String?  @map("manager_name")
+  managerMobile    String?  @map("manager_mobile")
   deliveryFee      Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
   minOrderAmount   Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
   codEnabled       Boolean  @default(true) @map("cod_enabled")

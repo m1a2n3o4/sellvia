@@ -57,6 +57,7 @@ export async function PUT(
       themeColor, accentColor, deliveryFee, minOrderAmount,
       codEnabled, onlinePayEnabled,
       address, city, state, pincode, phone,
+      managerName, managerMobile,
     } = body;
 
     // Validate slug if changed
@@ -94,6 +95,8 @@ export async function PUT(
         ...(state !== undefined && { state }),
         ...(pincode !== undefined && { pincode }),
         ...(phone !== undefined && { phone }),
+        ...(managerName !== undefined && { managerName }),
+        ...(managerMobile !== undefined && { managerMobile }),
       },
     });
 

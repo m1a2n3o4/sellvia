@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { BranchProvider } from '@/lib/store/branch-context';
 import { BranchPicker } from '@/components/client/branch-picker';
+import { StoreSelectorWrapper } from '@/components/client/store-selector-wrapper';
+import { DashboardHeader } from '@/components/client/dashboard-header';
 
 export default function ClientLayout({
   children,
@@ -34,6 +36,7 @@ export default function ClientLayout({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [showStoreSelector, setShowStoreSelector] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   useEffect(() => {
     // Show splash once per session (not on login/change-pin pages)
@@ -41,12 +44,23 @@ export default function ClientLayout({
     const seen = sessionStorage.getItem('splash_shown');
     if (!seen) {
       setShowSplash(true);
+    } else {
+      // Splash already shown this session, check store selector
+      const selectorSeen = localStorage.getItem('store_selector_shown');
+      if (!selectorSeen) {
+        setShowStoreSelector(true);
+      }
     }
   }, [pathname]);
 
   const handleSplashFinish = useCallback(() => {
     sessionStorage.setItem('splash_shown', '1');
     setShowSplash(false);
+    // After splash, check if store selector needs to show
+    const selectorSeen = localStorage.getItem('store_selector_shown');
+    if (!selectorSeen) {
+      setShowStoreSelector(true);
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -231,12 +245,14 @@ export default function ClientLayout({
           <div className="md:hidden mb-3">
             <BranchPicker />
           </div>
+          <DashboardHeader />
           {children}
         </div>
       </div>
 
       <BottomNav onMoreClick={() => setOpen(true)} />
     </div>
+    <StoreSelectorWrapper open={showStoreSelector} onDone={() => setShowStoreSelector(false)} />
     </BranchProvider>
   );
 }

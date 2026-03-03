@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, slug, description, logo, banner, themeColor, accentColor, deliveryFee, minOrderAmount, codEnabled, onlinePayEnabled, address, city, state, pincode, phone } = body;
+    const { name, slug, description, logo, banner, themeColor, accentColor, deliveryFee, minOrderAmount, codEnabled, onlinePayEnabled, address, city, state, pincode, phone, managerName, managerMobile } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ error: 'Store name and URL slug are required' }, { status: 400 });
@@ -85,6 +85,8 @@ export async function POST(request: NextRequest) {
         state: state || null,
         pincode: pincode || null,
         phone: phone || null,
+        managerName: managerName || null,
+        managerMobile: managerMobile || null,
         isDefault: storeCount === 0, // First store is default
       },
     });
