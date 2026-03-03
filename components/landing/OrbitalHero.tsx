@@ -159,16 +159,25 @@ function PillarCard({
 /* ── Main OrbitalHero Component ── */
 export function OrbitalHero() {
   const [activeIdx, setActiveIdx] = useState([0, 0, 0]);
+  const [mobileCard, setMobileCard] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setInterval(() => {
+    // Feature cycling timer (all screen sizes)
+    const featureTimer = setInterval(() => {
       setActiveIdx((prev) =>
         prev.map((v, i) => (v + 1) % pillars[i].features.length)
       );
     }, 2200);
-    return () => clearInterval(timer);
+    // Mobile card carousel timer
+    const cardTimer = setInterval(() => {
+      setMobileCard((prev) => (prev + 1) % 3);
+    }, 4500);
+    return () => {
+      clearInterval(featureTimer);
+      clearInterval(cardTimer);
+    };
   }, []);
 
   return (
@@ -376,28 +385,72 @@ export function OrbitalHero() {
         </div>
       </div>
 
-      {/* ══════ MOBILE LAYOUT ══════ */}
-      <div className="lg:hidden flex flex-col items-center">
-        {/* Center hub */}
-        <div className="flex flex-col items-center mb-5">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-1.5">
+      {/* ══════ MOBILE LAYOUT (Animated Carousel) ══════ */}
+      <div className="lg:hidden flex flex-col items-center w-full">
+        {/* ── Center Hub with Mini Orbital Ring ── */}
+        <div className="flex flex-col items-center mb-2">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2">
             Your Business
           </span>
-          <svg width="2" height="16">
-            <line
-              x1="1"
-              y1="0"
-              x2="1"
-              y2="16"
-              stroke="#A78BFA"
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
-            />
-          </svg>
-          <div className="relative mt-2">
-            <div className="absolute -inset-4 rounded-full bg-violet-400/10 blur-lg" />
+
+          <div className="relative">
+            {/* Mini rotating orbital ring */}
+            <svg
+              className="absolute -inset-[18px]"
+              viewBox="0 0 112 112"
+              style={{ animation: 'ss-orbit 28s linear infinite' }}
+            >
+              <defs>
+                <linearGradient id="m-orb" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                  <stop offset="50%" stopColor="#10B981" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.35" />
+                </linearGradient>
+              </defs>
+              <circle
+                cx="56"
+                cy="56"
+                r="50"
+                fill="none"
+                stroke="url(#m-orb)"
+                strokeWidth="1.2"
+                strokeDasharray="5 4"
+              />
+              {/* 3 orbiting dots */}
+              <circle r="2.5" fill="#8B5CF6" opacity="0.8">
+                <animateMotion
+                  dur="28s"
+                  repeatCount="indefinite"
+                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                />
+              </circle>
+              <circle r="2" fill="#10B981" opacity="0.7">
+                <animateMotion
+                  dur="28s"
+                  repeatCount="indefinite"
+                  begin="-9.3s"
+                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                />
+              </circle>
+              <circle r="2" fill="#3B82F6" opacity="0.7">
+                <animateMotion
+                  dur="28s"
+                  repeatCount="indefinite"
+                  begin="-18.6s"
+                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                />
+              </circle>
+            </svg>
+
+            {/* Glow pulse */}
             <div
-              className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex flex-col items-center justify-center shadow-xl shadow-violet-300/40"
+              className="absolute -inset-3 rounded-full bg-violet-400/15 blur-lg"
+              style={{ animation: 'ss-pulse-ring 3s ease-in-out infinite' }}
+            />
+
+            {/* Main SatyaSell circle */}
+            <div
+              className="relative w-[76px] h-[76px] rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex flex-col items-center justify-center shadow-xl"
               style={{ animation: 'ss-pulse-glow 3s ease-in-out infinite' }}
             >
               <Zap className="w-5 h-5 text-white mb-0.5" />
@@ -406,35 +459,121 @@ export function OrbitalHero() {
               </span>
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 mt-3">
+
+          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 mt-4">
             Get All 3 Free
           </span>
         </div>
 
-        {/* Connection arrow */}
-        <div className="flex justify-center mb-3">
-          <svg width="2" height="20">
+        {/* ── Animated Branch Lines ── */}
+        <svg className="w-[260px] h-[30px] my-1" viewBox="0 0 260 30">
+          {[
+            { x2: 43, idx: 0 },
+            { x2: 130, idx: 1 },
+            { x2: 217, idx: 2 },
+          ].map((line) => (
             <line
-              x1="1"
+              key={line.idx}
+              x1="130"
               y1="0"
-              x2="1"
-              y2="20"
-              stroke="#A78BFA"
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
+              x2={line.x2}
+              y2="26"
+              stroke={mobileCard === line.idx ? pillars[line.idx].dotColor : '#E5E7EB'}
+              strokeWidth={mobileCard === line.idx ? '1.5' : '1'}
+              strokeDasharray="4 3"
+              className="transition-all duration-500"
+              style={
+                mobileCard === line.idx
+                  ? { animation: 'ss-dash-flow 2s linear infinite' }
+                  : undefined
+              }
             />
-          </svg>
+          ))}
+        </svg>
+
+        {/* ── 3 Pillar Tabs (tappable) ── */}
+        <div className="flex items-end justify-center gap-10 mb-4">
+          {pillars.map((pillar, i) => {
+            const TabIcon = pillar.icon;
+            const isActive = mobileCard === i;
+            return (
+              <button
+                key={i}
+                onClick={() => setMobileCard(i)}
+                className="flex flex-col items-center gap-1.5 relative"
+              >
+                <div
+                  className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${pillar.gradient} flex items-center justify-center transition-all duration-400 ${
+                    isActive ? 'scale-110' : 'opacity-35 scale-90'
+                  }`}
+                  style={
+                    isActive
+                      ? { boxShadow: `0 4px 16px ${pillar.dotColor}45` }
+                      : undefined
+                  }
+                >
+                  <TabIcon className="w-[18px] h-[18px] text-white" />
+                  {/* Active ring indicator */}
+                  {isActive && (
+                    <div
+                      className="absolute -inset-[3px] rounded-full border-2 opacity-40"
+                      style={{ borderColor: pillar.dotColor }}
+                    />
+                  )}
+                </div>
+                <span
+                  className={`text-[9px] font-bold tracking-wide transition-all duration-300 ${
+                    isActive ? '' : 'text-gray-400'
+                  }`}
+                  style={isActive ? { color: pillar.dotColor } : undefined}
+                >
+                  {['Dashboard', 'WhatsApp', 'E-Com'][i]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Cards stacked */}
-        <div className="space-y-3 w-full max-w-[300px]">
+        {/* ── Card Carousel (one card at a time, fade + float) ── */}
+        <div className="relative w-full max-w-[300px]" style={{ minHeight: 195 }}>
           {pillars.map((pillar, i) => (
-            <PillarCard
+            <div
               key={i}
-              pillar={pillar}
-              activeFeature={activeIdx[i]}
-              num={i + 1}
-              mobile
+              className={`w-full transition-all duration-500 ${
+                mobileCard === i
+                  ? 'opacity-100 translate-y-0 relative'
+                  : 'opacity-0 translate-y-4 absolute inset-x-0 top-0 pointer-events-none'
+              }`}
+              style={
+                mobileCard === i
+                  ? { animation: 'ss-float-2 5s ease-in-out infinite' }
+                  : undefined
+              }
+            >
+              <PillarCard
+                pillar={pillar}
+                activeFeature={activeIdx[i]}
+                num={i + 1}
+                mobile
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* ── Carousel dots ── */}
+        <div className="flex items-center justify-center gap-1.5 mt-4">
+          {pillars.map((pillar, i) => (
+            <button
+              key={i}
+              onClick={() => setMobileCard(i)}
+              className={`rounded-full transition-all duration-300 ${
+                mobileCard === i ? 'w-6 h-2' : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+              }`}
+              style={
+                mobileCard === i
+                  ? { backgroundColor: pillar.dotColor }
+                  : undefined
+              }
             />
           ))}
         </div>
