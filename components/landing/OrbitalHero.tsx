@@ -535,7 +535,7 @@ export function OrbitalHero() {
         </div>
 
         {/* ── Card Carousel (one card at a time, fade + float) ── */}
-        <div className="relative w-full max-w-[340px] px-2" style={{ minHeight: 220 }}>
+        <div className="relative w-full px-3" style={{ minHeight: 220 }}>
           {pillars.map((pillar, i) => (
             <div
               key={i}
