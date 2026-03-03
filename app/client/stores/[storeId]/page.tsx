@@ -37,6 +37,11 @@ export default function StoreSettingsPage() {
     codEnabled: true,
     onlinePayEnabled: true,
     isDefault: false,
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    phone: '',
   });
 
   useEffect(() => {
@@ -61,6 +66,11 @@ export default function StoreSettingsPage() {
           codEnabled: data.codEnabled ?? true,
           onlinePayEnabled: data.onlinePayEnabled ?? true,
           isDefault: data.isDefault ?? false,
+          address: data.address || '',
+          city: data.city || '',
+          state: data.state || '',
+          pincode: data.pincode || '',
+          phone: data.phone || '',
         });
       })
       .catch(() => setError('Failed to load store'))
@@ -236,6 +246,34 @@ export default function StoreSettingsPage() {
             </a>
           </div>
         )}
+      </div>
+
+      {/* Location */}
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-4">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Location / Branch</h2>
+        <p className="text-xs text-gray-500">Physical location details for this branch.</p>
+        <div>
+          <Label>City</Label>
+          <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="e.g. Kukatpally" className="mt-1" />
+        </div>
+        <div>
+          <Label>Address</Label>
+          <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Full address" className="mt-1" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>State</Label>
+            <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} placeholder="e.g. Telangana" className="mt-1" />
+          </div>
+          <div>
+            <Label>Pincode</Label>
+            <Input value={form.pincode} onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value }))} placeholder="500072" className="mt-1" />
+          </div>
+        </div>
+        <div>
+          <Label>Branch Phone</Label>
+          <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="Contact number for this branch" className="mt-1" />
+        </div>
       </div>
 
       {/* Branding */}

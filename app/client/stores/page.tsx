@@ -13,8 +13,9 @@ interface StoreData {
   enabled: boolean;
   logo: string | null;
   themeColor: string;
+  city: string | null;
   isDefault: boolean;
-  _count: { products: number };
+  _count: { products: number; orders: number; customers: number };
 }
 
 export default function StoresPage() {
@@ -24,6 +25,7 @@ export default function StoresPage() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
+  const [newCity, setNewCity] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function StoresPage() {
       const res = await fetch('/api/client/stores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, slug: newSlug }),
+        body: JSON.stringify({ name: newName, slug: newSlug, city: newCity || undefined }),
       });
 
       const data = await res.json();
@@ -68,6 +70,7 @@ export default function StoresPage() {
 
       setNewName('');
       setNewSlug('');
+      setNewCity('');
       router.push(`/client/stores/${data.id}`);
     } catch {
       setError('Network error');
@@ -129,11 +132,16 @@ export default function StoresPage() {
                     {store.enabled ? 'Live' : 'Offline'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">satyasell.com/store/{store.slug}</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  satyasell.com/store/{store.slug}
+                  {store.city && <span className="ml-2 text-purple-500">({store.city})</span>}
+                </p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
                     <Package className="h-3 w-3" /> {store._count.products} products
                   </span>
+                  <span>{store._count.orders} orders</span>
+                  <span>{store._count.customers} customers</span>
                 </div>
               </div>
 
@@ -178,6 +186,13 @@ export default function StoresPage() {
               onChange={(e) => setNewSlug(slugify(e.target.value))}
               placeholder="store-url"
               className="rounded-l-none"
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="City / Location (e.g. Kukatpally)"
+              value={newCity}
+              onChange={(e) => setNewCity(e.target.value)}
             />
           </div>
           <Button onClick={handleCreate} disabled={creating || !newName || !newSlug} className="w-full">

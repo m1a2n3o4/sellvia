@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Plus, Minus, X } from 'lucide-react';
 import { Product, ProductVariant } from '@/types';
+import { useBranch } from '@/lib/store/branch-context';
 
 interface CartItem {
   productId: string;
@@ -42,6 +43,7 @@ export function CreateOfflineOrderModal({
   onOpenChange,
   onSuccess,
 }: CreateOfflineOrderModalProps) {
+  const { selectedBranchId } = useBranch();
   const [step, setStep] = useState<'products' | 'customer' | 'confirm'>('products');
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -146,6 +148,7 @@ export function CreateOfflineOrderModal({
           paymentMethod,
           paymentStatus,
           items: cart,
+          storeId: selectedBranchId || undefined,
         }),
       });
 

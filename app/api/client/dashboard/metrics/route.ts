@@ -7,10 +7,21 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const tenantId = await getTenantId(request);
+    const { searchParams } = new URL(request.url);
+    const storeId = searchParams.get('storeId') || '';
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const productWhere: Record<string, unknown> = { tenantId };
+    const orderWhere: Record<string, unknown> = { tenantId };
+    const customerWhere: Record<string, unknown> = { tenantId };
+    if (storeId) {
+      productWhere.storeId = storeId;
+      orderWhere.storeId = storeId;
+      customerWhere.storeId = storeId;
+    }
 
     const [
       totalProducts,
@@ -22,30 +33,30 @@ export async function GET(request: NextRequest) {
       todayRevenueResult,
       recentOrders,
     ] = await Promise.all([
-      prisma.product.count({ where: { tenantId } }),
-      prisma.product.count({ where: { tenantId, status: 'active' } }),
-      prisma.order.count({ where: { tenantId } }),
+      prisma.product.count({ where: productWhere }),
+      prisma.product.count({ where: { ...productWhere, status: 'active' } }),
+      prisma.order.count({ where: orderWhere }),
       prisma.order.count({
-        where: { tenantId, orderDate: { gte: startOfToday, lte: endOfToday } },
+        where: { ...orderWhere, orderDate: { gte: startOfToday, lte: endOfToday } },
       }),
-      prisma.customer.count({ where: { tenantId } }),
+      prisma.customer.count({ where: customerWhere }),
       prisma.product.count({
         where: {
-          tenantId,
+          ...productWhere,
           status: 'active',
           stockQuantity: { lte: 10 },
         },
       }),
       prisma.order.aggregate({
         where: {
-          tenantId,
+          ...orderWhere,
           orderDate: { gte: startOfToday, lte: endOfToday },
           status: { not: 'cancelled' },
         },
         _sum: { total: true },
       }),
       prisma.order.findMany({
-        where: { tenantId },
+        where: orderWhere,
         include: { customer: true, orderItems: true },
         orderBy: { createdAt: 'desc' },
         take: 5,

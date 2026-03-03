@@ -9,6 +9,7 @@ export const createCustomerSchema = z.object({
   state: z.string().optional(),
   pincode: z.string().optional(),
   notes: z.string().optional(),
+  storeId: z.string().optional().nullable(),
 });
 
 export const updateCustomerSchema = createCustomerSchema.partial().extend({

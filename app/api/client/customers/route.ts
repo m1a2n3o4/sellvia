@@ -11,11 +11,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const search = searchParams.get('search') || '';
+    const storeId = searchParams.get('storeId') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = { tenantId };
+
+    if (storeId === 'unassigned') {
+      where.storeId = null;
+    } else if (storeId) {
+      where.storeId = storeId;
+    }
 
     if (search) {
       where.OR = [
@@ -76,6 +83,7 @@ export async function POST(request: NextRequest) {
       data: {
         ...parsed.data,
         email: parsed.data.email || null,
+        storeId: parsed.data.storeId || null,
         tenantId,
       },
     });

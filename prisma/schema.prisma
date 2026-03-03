@@ -142,6 +142,7 @@ model ProductVariant {
 model Customer {
   id          String   @id @default(uuid())
   tenantId    String   @map("tenant_id")
+  storeId     String?  @map("store_id")
   name        String
   mobile      String
   email       String?
@@ -157,11 +158,13 @@ model Customer {
 
   // Relations
   tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store  Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
   orders Order[]
 
   @@unique([tenantId, mobile])
   @@index([tenantId])
   @@index([tenantId, createdAt(sort: Desc)])
+  @@index([storeId])
   @@map("customers")
 }
 
@@ -414,6 +417,11 @@ model Store {
   themeColor       String   @default("#2563eb") @map("theme_color")
   accentColor      String   @default("#f59e0b") @map("accent_color")
   description      String?
+  address          String?
+  city             String?
+  state            String?
+  pincode          String?
+  phone            String?
   deliveryFee      Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
   minOrderAmount   Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
   codEnabled       Boolean  @default(true) @map("cod_enabled")
@@ -423,9 +431,10 @@ model Store {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products Product[]
-  orders   Order[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products  Product[]
+  orders    Order[]
+  customers Customer[]
 
   @@index([tenantId])
   @@map("stores")

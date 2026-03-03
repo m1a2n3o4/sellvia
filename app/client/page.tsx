@@ -5,16 +5,21 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Users, Package, TrendingUp, AlertTriangle } from 'lucide-react';
 import { DashboardMetrics, Order } from '@/types';
+import { useBranch } from '@/lib/store/branch-context';
 
 export default function ClientDashboard() {
   const router = useRouter();
+  const { selectedBranchId, selectedBranch } = useBranch();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMetrics() {
+      setLoading(true);
       try {
-        const res = await fetch('/api/client/dashboard/metrics');
+        const params = new URLSearchParams();
+        if (selectedBranchId) params.set('storeId', selectedBranchId);
+        const res = await fetch(`/api/client/dashboard/metrics?${params}`);
         if (res.ok) {
           const data = await res.json();
           setMetrics(data);
@@ -26,7 +31,7 @@ export default function ClientDashboard() {
       }
     }
     fetchMetrics();
-  }, []);
+  }, [selectedBranchId]);
 
   const MetricCard = ({
     label,
@@ -73,6 +78,11 @@ export default function ClientDashboard() {
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
           Dashboard
+          {selectedBranch && (
+            <span className="text-sm font-normal text-purple-600 ml-2">
+              ({selectedBranch.name}{selectedBranch.city ? ` — ${selectedBranch.city}` : ''})
+            </span>
+          )}
         </h1>
         <p className="text-sm text-gray-700 dark:text-neutral-400 mt-1">
           Welcome back! Here&apos;s your business overview.

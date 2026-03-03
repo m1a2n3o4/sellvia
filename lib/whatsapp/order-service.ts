@@ -72,6 +72,7 @@ export async function createOrder(input: CreateOrderInput) {
           tenantId,
           name: customerName,
           mobile,
+          storeId: storeId || null,
           ...(customerEmail ? { email: customerEmail } : {}),
           ...(city ? { city } : {}),
           ...(state ? { state } : {}),

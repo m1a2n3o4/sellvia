@@ -17,7 +17,7 @@ export async function GET(
 
     const store = await prisma.store.findFirst({
       where: { id: params.storeId, tenantId },
-      include: { _count: { select: { products: true, orders: true } } },
+      include: { _count: { select: { products: true, orders: true, customers: true } } },
     });
 
     if (!store) {
@@ -56,6 +56,7 @@ export async function PUT(
       name, slug, enabled, description, logo, banner,
       themeColor, accentColor, deliveryFee, minOrderAmount,
       codEnabled, onlinePayEnabled,
+      address, city, state, pincode, phone,
     } = body;
 
     // Validate slug if changed
@@ -88,6 +89,11 @@ export async function PUT(
         ...(minOrderAmount !== undefined && { minOrderAmount }),
         ...(codEnabled !== undefined && { codEnabled }),
         ...(onlinePayEnabled !== undefined && { onlinePayEnabled }),
+        ...(address !== undefined && { address }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state }),
+        ...(pincode !== undefined && { pincode }),
+        ...(phone !== undefined && { phone }),
       },
     });
 

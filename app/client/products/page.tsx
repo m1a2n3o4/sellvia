@@ -16,6 +16,7 @@ import {
 import { Plus, Search, Pencil, Trash2, ToggleLeft, ToggleRight, Sparkles, Package, Upload, Link2, CheckCircle, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types';
+import { useBranch } from '@/lib/store/branch-context';
 
 interface StoreOption {
   id: string;
@@ -25,6 +26,7 @@ interface StoreOption {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { selectedBranchId } = useBranch();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -68,6 +70,12 @@ export default function ProductsPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Sync store filter with global branch selection
+  useEffect(() => {
+    setStoreFilter(selectedBranchId || 'all');
+    setPage(1);
+  }, [selectedBranchId]);
 
   const copyProductUrl = (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -233,7 +241,7 @@ export default function ProductsPage() {
             className="pl-9"
           />
         </div>
-        {stores.length > 1 && (
+        {!selectedBranchId && stores.length > 1 && (
           <Select value={storeFilter} onValueChange={(v) => { setStoreFilter(v); setPage(1); }}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Store" />

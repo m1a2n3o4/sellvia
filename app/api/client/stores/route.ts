@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const stores = await prisma.store.findMany({
       where: { tenantId },
-      include: { _count: { select: { products: true } } },
+      include: { _count: { select: { products: true, orders: true, customers: true } } },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, slug, description, logo, banner, themeColor, accentColor, deliveryFee, minOrderAmount, codEnabled, onlinePayEnabled } = body;
+    const { name, slug, description, logo, banner, themeColor, accentColor, deliveryFee, minOrderAmount, codEnabled, onlinePayEnabled, address, city, state, pincode, phone } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ error: 'Store name and URL slug are required' }, { status: 400 });
@@ -80,6 +80,11 @@ export async function POST(request: NextRequest) {
         minOrderAmount: minOrderAmount || 0,
         codEnabled: codEnabled !== undefined ? codEnabled : true,
         onlinePayEnabled: onlinePayEnabled !== undefined ? onlinePayEnabled : true,
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        pincode: pincode || null,
+        phone: phone || null,
         isDefault: storeCount === 0, // First store is default
       },
     });

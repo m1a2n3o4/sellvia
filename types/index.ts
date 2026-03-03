@@ -68,6 +68,7 @@ export interface ProductVariant {
 
 export interface Customer {
   id: string;
+  storeId?: string | null;
   name: string;
   mobile: string;
   email?: string;

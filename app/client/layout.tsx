@@ -22,6 +22,8 @@ import {
   LogOut,
   Globe,
 } from 'lucide-react';
+import { BranchProvider } from '@/lib/store/branch-context';
+import { BranchPicker } from '@/components/client/branch-picker';
 
 export default function ClientLayout({
   children,
@@ -181,6 +183,7 @@ export default function ClientLayout({
   }
 
   return (
+    <BranchProvider>
     <div
       className={cn(
         'flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1',
@@ -191,6 +194,11 @@ export default function ClientLayout({
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             {open ? <Logo /> : <LogoIcon />}
+            {open && (
+              <div className="mt-3 mb-1">
+                <BranchPicker />
+              </div>
+            )}
             <div className="mt-4 flex flex-col gap-2">
               {links.map((link, idx) => (
                 <SidebarLink key={idx} link={link} />
@@ -220,12 +228,16 @@ export default function ClientLayout({
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <div className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
+          <div className="md:hidden mb-3">
+            <BranchPicker />
+          </div>
           {children}
         </div>
       </div>
 
       <BottomNav onMoreClick={() => setOpen(true)} />
     </div>
+    </BranchProvider>
   );
 }
 

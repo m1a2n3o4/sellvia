@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { Plus, Search } from 'lucide-react';
 import { Customer } from '@/types';
+import { useBranch } from '@/lib/store/branch-context';
 
 export default function CustomersPage() {
   const router = useRouter();
+  const { selectedBranchId } = useBranch();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -21,6 +23,7 @@ export default function CustomersPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
       if (search) params.set('search', search);
+      if (selectedBranchId) params.set('storeId', selectedBranchId);
 
       const res = await fetch(`/api/client/customers?${params}`);
       const data = await res.json();
@@ -31,7 +34,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, selectedBranchId]);
 
   useEffect(() => {
     fetchCustomers();

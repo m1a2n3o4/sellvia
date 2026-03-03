@@ -17,9 +17,11 @@ import {
 import { CreateOfflineOrderModal } from '@/components/client/create-offline-order-modal';
 import { Plus, Search } from 'lucide-react';
 import { Order } from '@/types';
+import { useBranch } from '@/lib/store/branch-context';
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { selectedBranchId } = useBranch();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -42,6 +44,12 @@ export default function OrdersPage() {
       .then((data) => setStores(data.stores || []))
       .catch(() => {});
   }, []);
+
+  // Sync store filter with global branch selection
+  useEffect(() => {
+    setStoreFilter(selectedBranchId || 'all');
+    setPage(1);
+  }, [selectedBranchId]);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -162,7 +170,7 @@ export default function OrdersPage() {
           />
         </div>
         <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
-          {stores.length > 1 && (
+          {!selectedBranchId && stores.length > 1 && (
             <Select value={storeFilter} onValueChange={(v) => { setStoreFilter(v); setPage(1); }}>
               <SelectTrigger className="w-full md:w-[150px]">
                 <SelectValue placeholder="Store" />
