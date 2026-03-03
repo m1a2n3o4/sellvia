@@ -1,8 +1,5 @@
 import Link from 'next/link';
-import { SketchBox } from '@/components/landing/SketchBox';
-import { SketchUnderline } from '@/components/landing/SketchUnderline';
 import { DemoForm } from '@/components/landing/DemoForm';
-import { VisionFlow } from '@/components/landing/VisionFlow';
 import { FloatingWhatsApp } from '@/components/landing/FloatingWhatsApp';
 import { PageTracker } from '@/components/landing/PageTracker';
 import {
@@ -17,384 +14,514 @@ import {
   LayoutDashboard,
   Users,
   Megaphone,
-  Lock,
   Shield,
-  Server,
-  ChevronDown,
+  ArrowRight,
   Phone,
   Mail,
+  Zap,
+  Clock,
+  TrendingUp,
+  Store,
+  ChevronRight,
+  Menu,
 } from 'lucide-react';
+import { MobileNav } from '@/components/landing/MobileNav';
 
-const flowSteps = [
+const steps = [
   {
     icon: MessageCircle,
-    title: 'Customer messages on WhatsApp',
-    desc: 'Your customer sends a message to your WhatsApp number',
+    title: 'Customer messages you',
+    desc: 'A customer sends a WhatsApp message to your business number.',
   },
   {
     icon: ShoppingBag,
-    title: 'Shows your products instantly',
-    desc: 'Instantly replies with your product details and prices',
+    title: 'AI shows your products',
+    desc: 'Smart assistant instantly replies with your catalog and prices.',
   },
   {
     icon: Package,
-    title: 'Customer picks a product',
-    desc: 'Customer says which product they want to order',
-  },
-  {
-    icon: MapPin,
-    title: 'Collects delivery address',
-    desc: 'Asks for their delivery address automatically',
+    title: 'Customer picks & orders',
+    desc: 'They choose a product, share address — all inside WhatsApp.',
   },
   {
     icon: CreditCard,
-    title: 'Payment link sent automatically',
-    desc: 'Secure payment link is sent right inside WhatsApp',
+    title: 'Payment & confirmation',
+    desc: 'Secure payment link sent automatically. Order lands on your dashboard.',
   },
-  {
-    icon: CheckCircle,
-    title: 'Order placed on your Dashboard!',
-    desc: 'Payment done! Order appears on your dashboard instantly',
-  },
-];
-
-const painPoints = [
-  'Sending payment links manually to every customer?',
-  'Sharing QR codes one by one?',
-  'Losing customers because you replied too late?',
-  'Spending your whole day on WhatsApp just for orders?',
-  'Missing orders because you forgot to reply?',
 ];
 
 const features = [
   {
     icon: ImagePlus,
-    title: 'Smart Product Upload',
-    desc: 'Just upload product images — auto fills name, price, brand automatically. Add 20 products in minutes!',
+    title: 'AI Product Upload',
+    desc: 'Upload product images — AI auto-fills name, price, and brand. Add 20 products in minutes.',
+    color: 'bg-violet-100 text-violet-600',
   },
   {
     icon: Bot,
-    title: '24/7 WhatsApp Assistant',
-    desc: 'Answers all your customer questions 24/7. No customer lost. Even when you are sleeping!',
+    title: '24/7 WhatsApp AI',
+    desc: 'Never miss a customer. AI answers questions, takes orders, even while you sleep.',
+    color: 'bg-emerald-100 text-emerald-600',
   },
   {
     icon: CreditCard,
     title: 'Auto Payment Links',
-    desc: "India's most secure payment gateway. Links sent automatically — no manual effort from you.",
+    desc: 'Secure payment links sent automatically inside WhatsApp. No manual effort needed.',
+    color: 'bg-amber-100 text-amber-600',
   },
   {
     icon: LayoutDashboard,
-    title: 'Order Dashboard',
-    desc: 'See all your orders, payments, history in one place. Online + Offline orders together.',
+    title: 'Smart Dashboard',
+    desc: 'All orders, payments, and analytics in one place. Online + offline orders together.',
+    color: 'bg-blue-100 text-blue-600',
   },
   {
     icon: Users,
-    title: 'Customer Data',
-    desc: 'All your customer details saved safely. Never lose a customer again. Complete order history.',
+    title: 'Customer CRM',
+    desc: 'Every customer detail saved automatically. Order history, addresses, preferences.',
+    color: 'bg-pink-100 text-pink-600',
   },
   {
     icon: Megaphone,
-    title: 'Bulk WhatsApp Messages',
-    desc: 'Send promotions, offers, and ads to all your customers at once. Grow your business!',
+    title: 'Bulk Broadcasts',
+    desc: 'Send offers, deals, and updates to all your customers at once via WhatsApp.',
+    color: 'bg-orange-100 text-orange-600',
   },
+];
+
+const stats = [
+  { value: '500+', label: 'Sellers Onboarded' },
+  { value: '10K+', label: 'Orders Processed' },
+  { value: '24/7', label: 'AI Availability' },
+  { value: '1%', label: 'Only Per Order Fee' },
+];
+
+const painPoints = [
+  { text: 'Manually sending payment links to every customer', icon: Clock },
+  { text: 'Losing customers because you replied too late', icon: TrendingUp },
+  { text: 'Spending your entire day on WhatsApp for orders', icon: MessageCircle },
+  { text: 'Forgetting orders and missing payments', icon: Package },
 ];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 antialiased">
       <PageTracker />
       <FloatingWhatsApp />
 
       {/* ===== NAVBAR ===== */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-2 border-blue-200">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <span className="font-hand text-3xl text-blue-600 font-bold border-2 border-red-500 rounded-lg px-3 py-0.5">SatyaSell</span>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-700 rounded-lg flex items-center justify-center">
+              <Zap className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-gray-900">SatyaSell</span>
           </Link>
-          <div className="flex items-center gap-5">
-            <a href="#features" className="font-hand text-lg font-bold text-blue-600 hover:text-red-600 transition-colors hidden sm:block">
+          <div className="flex items-center gap-6">
+            <a href="#features" className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors hidden md:block">
               Features
             </a>
-            <a href="#how-it-works" className="font-hand text-lg font-bold text-blue-600 hover:text-red-600 transition-colors hidden sm:block">
+            <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors hidden md:block">
               How It Works
             </a>
-            <a href="#demo" className="font-hand text-lg font-bold text-blue-600 hover:text-red-600 transition-colors hidden sm:block">
-              Demo
+            <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors hidden md:block">
+              Pricing
+            </a>
+            <a href="#demo" className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors hidden md:block">
+              Contact
             </a>
             <Link
               href="/client/login"
-              className="font-hand px-5 py-2 text-lg font-bold rounded-lg border-2 border-red-500 text-red-600 hover:bg-red-50 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shadow-sm"
             >
               Login
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+            <MobileNav />
           </div>
         </div>
       </nav>
 
       {/* ===== HERO ===== */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Text Content */}
-          <div className="text-center lg:text-left">
-            <h1 className="font-hand text-4xl sm:text-5xl lg:text-6xl text-blue-600 leading-tight">
-              Smart WhatsApp
-              <br />
-              Auto Ordering System
-            </h1>
-            <p className="mt-6 font-hand text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Your customers message on WhatsApp. System handles the rest — products, address, payment, order.
-              <strong className="text-gray-900"> You just sit back.</strong>
-            </p>
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-emerald-50" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+        <div className="absolute top-40 right-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
 
-            {/* Highlight Badges */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4 mt-10">
-              <SketchBox strokeColor="#dc2626" roughness={2} strokeWidth={2.5} padding="px-5 py-3">
-                <span className="font-hand text-xl sm:text-2xl text-red-600 font-bold">NO PRICING PLANS</span>
-              </SketchBox>
-              <SketchBox strokeColor="#dc2626" roughness={2} strokeWidth={2.5} padding="px-5 py-3">
-                <span className="font-hand text-xl sm:text-2xl text-red-600 font-bold">NO SUBSCRIPTION</span>
-              </SketchBox>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-28">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-8">
+              <Zap className="w-3.5 h-3.5" />
+              WhatsApp Commerce for Indian Sellers
             </div>
-            <p className="mt-6 font-hand text-lg text-gray-700">
-              Pay only <SketchUnderline strokeColor="#dc2626"><strong className="text-red-600 text-xl">1% per order</strong></SketchUnderline> when you get an order.
-              No order? Pay <strong className="text-blue-600">&#8377;0</strong>. Nothing.
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
+              Turn WhatsApp into your{' '}
+              <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                automated store
+              </span>
+            </h1>
+
+            <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Your customers message on WhatsApp. AI handles products, address, payment, and order —
+              <strong className="text-gray-900"> you just ship.</strong>
             </p>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-10">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
               <a
                 href="#demo"
-                className="font-hand px-8 py-3.5 text-lg font-bold rounded-xl border-2 border-red-500 text-red-600 hover:bg-red-50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-200"
               >
                 Book a Free Demo
+                <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="#how-it-works"
-                className="font-hand px-8 py-3.5 text-lg font-bold rounded-xl border-2 border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl border-2 border-gray-200 text-gray-700 hover:border-violet-200 hover:bg-violet-50 transition-all"
               >
                 See How It Works
-                <ChevronDown className="h-4 w-4" />
               </a>
             </div>
+
+            <div className="mt-12 flex items-center justify-center gap-2 text-sm text-gray-500">
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              No credit card needed
+              <span className="mx-2 text-gray-300">|</span>
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              Free to start
+              <span className="mx-2 text-gray-300 hidden sm:inline">|</span>
+              <span className="hidden sm:flex items-center gap-1">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                Pay only when you earn
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== STATS BAR ===== */}
+      <section className="border-y border-gray-100 bg-gray-50/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, i) => (
+              <div key={i} className="text-center">
+                <p className="text-3xl sm:text-4xl font-extrabold text-violet-600">{stat.value}</p>
+                <p className="mt-1 text-sm text-gray-500 font-medium">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== PROBLEM ===== */}
+      <section className="py-20 sm:py-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Still managing orders <span className="text-red-500">manually?</span>
+            </h2>
+            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+              Most Indian sellers waste hours every day on these problems
+            </p>
           </div>
 
-          {/* Right: Vision Flow Diagram */}
-          <div className="flex justify-center lg:justify-end">
-            <VisionFlow />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {painPoints.map((point, i) => (
+              <div key={i} className="flex items-center gap-4 p-5 rounded-xl bg-red-50 border border-red-100">
+                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <point.icon className="w-5 h-5 text-red-500" />
+                </div>
+                <p className="text-gray-700 font-medium text-sm">{point.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-white">
+              SatyaSell automates everything.{' '}
+              <span className="text-emerald-300">Save 99% of your time.</span>
+            </p>
+            <a
+              href="#demo"
+              className="inline-flex items-center gap-2 mt-5 px-6 py-2.5 rounded-lg bg-white text-violet-700 font-semibold text-sm hover:bg-violet-50 transition-colors"
+            >
+              Get Started Free
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section id="how-it-works" className="py-8 sm:py-12">
+      <section id="how-it-works" className="py-20 sm:py-24 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-blue-600 text-center mb-4">
-            How It Works
-          </h2>
-          <p className="text-center font-hand text-lg text-gray-600 mb-12 max-w-xl mx-auto">
-            From customer message to order on your dashboard — all automatic
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {flowSteps.map((step, i) => (
-              <SketchBox
-                key={i}
-                roughness={1.2 + (i % 3) * 0.3}
-                strokeColor="#2563EB"
-                className="bg-white"
-                padding="p-6"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-11 h-11 rounded-full bg-red-100 border-2 border-red-400 flex items-center justify-center">
-                      <span className="font-hand text-xl text-red-600 font-bold">{i + 1}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <step.icon className="h-7 w-7 text-blue-600" strokeWidth={1.5} />
-                      <h3 className="font-hand font-bold text-blue-800 text-base">{step.title}</h3>
-                    </div>
-                    <p className="font-hand text-sm text-gray-500">{step.desc}</p>
-                  </div>
-                </div>
-              </SketchBox>
-            ))}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+              Simple 4-Step Flow
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              How it works
+            </h2>
+            <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
+              From customer message to order on your dashboard — fully automated
+            </p>
           </div>
 
-          <p className="text-center mt-10 font-hand text-2xl sm:text-3xl text-blue-600 font-bold">
-            All of this happens automatically. No effort from you!
-          </p>
-        </div>
-      </section>
-
-      {/* ===== PAIN POINTS ===== */}
-      <section className="py-8 sm:py-12">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-red-600 text-center mb-10">
-            Are You Tired Of...
-          </h2>
-
-          <div className="space-y-4">
-            {painPoints.map((point, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className="font-hand text-red-500 font-bold text-xl flex-shrink-0 mt-0.5">&#10007;</span>
-                <p className="font-hand text-gray-700 text-lg line-through decoration-red-400 decoration-2">{point}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.map((step, i) => (
+              <div key={i} className="relative">
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm mb-4">
+                    {i + 1}
+                  </div>
+                  <step.icon className="w-6 h-6 text-violet-600 mb-3" />
+                  <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                </div>
+                {i < steps.length - 1 && (
+                  <div className="hidden lg:flex absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
+                    <ChevronRight className="w-5 h-5 text-violet-300" />
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-
-          <div className="mt-10">
-            <SketchBox strokeColor="#2563EB" roughness={1.8} strokeWidth={3} className="bg-white" padding="p-6 sm:p-8">
-              <p className="text-center font-hand text-2xl sm:text-3xl text-blue-600">
-                SatyaSell handles all of this.
-                <br />
-                <SketchUnderline strokeColor="#dc2626" strokeWidth={3}>
-                  <span className="text-red-600 font-bold">Save 99% of your time.</span>
-                </SketchUnderline>
-              </p>
-            </SketchBox>
           </div>
         </div>
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section id="features" className="py-8 sm:py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-blue-600 text-center mb-4">
-            What You Get
-          </h2>
-          <p className="text-center font-hand text-lg text-gray-600 mb-12 max-w-xl mx-auto">
-            Everything you need to sell on WhatsApp without any effort
-          </p>
+      <section id="features" className="py-20 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              Everything You Need
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Powerful features, zero complexity
+            </h2>
+            <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
+              Built for Indian sellers who want to sell more and work less
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
-              <SketchBox
+              <div
                 key={i}
-                roughness={1.3 + (i % 3) * 0.2}
-                strokeColor="#2563EB"
-                className="bg-white hover:bg-blue-50/50 transition-colors"
-                padding="p-6"
+                className="group p-6 rounded-2xl border border-gray-100 bg-white hover:border-violet-200 hover:shadow-lg hover:shadow-violet-50 transition-all"
               >
-                <feature.icon className="h-10 w-10 text-blue-600 mb-3" strokeWidth={1.5} />
-                <h3 className="font-hand text-xl text-blue-600 mb-2 font-bold">{feature.title}</h3>
-                <p className="font-hand text-sm text-gray-600 leading-relaxed">{feature.desc}</p>
-              </SketchBox>
+                <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-lg mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== PRICING ===== */}
-      <section className="py-8 sm:py-12">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-blue-600 text-center mb-10">
-            Simplest Pricing Ever
-          </h2>
-
-          <SketchBox strokeColor="#dc2626" roughness={1.5} strokeWidth={3} padding="p-8 sm:p-12">
-            <div className="text-center">
-              <p className="font-hand text-5xl sm:text-6xl text-red-600 mb-4">100% FREE</p>
-              <p className="font-hand text-lg text-gray-700 mb-6">to use. No charges to start.</p>
-
-              <div className="space-y-3 text-left max-w-sm mx-auto">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                  <p className="font-hand text-gray-700">We charge only <strong className="text-red-600">1% per order</strong> — and only when a customer actually pays.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                  <p className="font-hand text-gray-700">No order? You pay <strong className="text-blue-600">&#8377;0</strong>. Zero. Nothing.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                  <p className="font-hand text-gray-700">No monthly plans. No yearly plans. No hidden charges.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
-                  <p className="font-hand text-gray-700">No credit card or debit card needed to start.</p>
-                </div>
+      {/* ===== MULTI-STORE ===== */}
+      <section className="py-20 sm:py-24 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+                Multi-Store Support
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                One account, multiple stores
+              </h2>
+              <p className="mt-4 text-gray-500 leading-relaxed">
+                Manage all your stores from a single dashboard. Each store gets its own e-commerce website, branding, products, and analytics.
+              </p>
+              <div className="mt-6 space-y-3">
+                {['Separate branding & themes per store', 'Individual store analytics & reports', 'Dedicated e-commerce website for each store', 'Switch between stores instantly'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <span className="text-gray-700 text-sm font-medium">{item}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </SketchBox>
-        </div>
-      </section>
-
-      {/* ===== SECURITY ===== */}
-      <section className="py-8 sm:py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-blue-600 text-center mb-10">
-            Your Data is Safe
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <SketchBox roughness={1.3} strokeColor="#2563EB" className="bg-white" padding="p-6">
-              <div className="text-center">
-                <Lock className="h-10 w-10 text-blue-600 mx-auto mb-3" strokeWidth={1.5} />
-                <p className="font-hand text-base text-gray-700">Your data is stored in a world-class <strong className="text-blue-600">secure database</strong></p>
-              </div>
-            </SketchBox>
-            <SketchBox roughness={1.5} strokeColor="#2563EB" className="bg-white" padding="p-6">
-              <div className="text-center">
-                <Shield className="h-10 w-10 text-blue-600 mx-auto mb-3" strokeWidth={1.5} />
-                <p className="font-hand text-base text-gray-700">No one has access to your data — <strong className="text-blue-600">only you</strong></p>
-              </div>
-            </SketchBox>
-            <SketchBox roughness={1.7} strokeColor="#2563EB" className="bg-white" padding="p-6">
-              <div className="text-center">
-                <Server className="h-10 w-10 text-blue-600 mx-auto mb-3" strokeWidth={1.5} />
-                <p className="font-hand text-base text-gray-700">India&apos;s best and most <strong className="text-red-600">secure payment gateway</strong></p>
-              </div>
-            </SketchBox>
+            <div className="grid grid-cols-2 gap-4">
+              {['Store A', 'Store B', 'Store C', 'Master View'].map((name, i) => (
+                <div key={i} className={`p-5 rounded-2xl border ${i === 3 ? 'border-violet-200 bg-violet-50 col-span-2' : 'border-gray-200 bg-white'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${i === 3 ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{name}</p>
+                      <p className="text-xs text-gray-400">{i === 3 ? 'All stores combined' : 'satyasell.com/store/...'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ===== UPCOMING ===== */}
-      <section className="py-6 sm:py-8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <p className="font-hand text-2xl text-blue-600 mb-3 font-bold">Coming Soon</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <span className="font-hand px-4 py-2 border-2 border-blue-300 text-blue-700 rounded-full text-base">Product promotions with discounts</span>
-            <span className="font-hand px-4 py-2 border-2 border-blue-300 text-blue-700 rounded-full text-base">More smart tools to grow your business</span>
+      {/* ===== PRICING ===== */}
+      <section id="pricing" className="py-20 sm:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              Transparent Pricing
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              The simplest pricing ever
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">
+              No plans. No subscriptions. No surprises.
+            </p>
+          </div>
+
+          <div className="relative rounded-3xl border-2 border-violet-200 bg-gradient-to-b from-violet-50 to-white p-8 sm:p-12 overflow-hidden">
+            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
+              MOST POPULAR
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium text-violet-600 uppercase tracking-wide mb-2">Pay Per Order</p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-6xl sm:text-7xl font-extrabold text-gray-900">1%</span>
+                <span className="text-xl text-gray-400 font-medium">per order</span>
+              </div>
+              <p className="mt-3 text-gray-500">Only charged when a customer actually pays</p>
+            </div>
+
+            <div className="mt-10 space-y-4 max-w-sm mx-auto">
+              {[
+                'Everything included — no hidden fees',
+                'No order = you pay ₹0. Nothing.',
+                'No monthly or yearly plans',
+                'No credit card needed to start',
+                'Unlimited products, orders & customers',
+                'WhatsApp AI assistant included',
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  </div>
+                  <span className="text-gray-700 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 text-center">
+              <a
+                href="#demo"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all shadow-lg shadow-violet-200"
+              >
+                Start Free Today
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== TRUST ===== */}
+      <section className="py-20 sm:py-24 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Your data, your control
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">Enterprise-grade security for every seller</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { icon: Shield, title: 'Bank-grade Security', desc: 'Your data stored in world-class secure Supabase databases with encryption at rest.' },
+              { icon: MapPin, title: 'India-hosted Servers', desc: 'All data stays in India. Compliant with local data protection standards.' },
+              { icon: CreditCard, title: 'Secure Payments', desc: "India's most trusted payment gateway. Payments directly to your bank account." },
+            ].map((item, i) => (
+              <div key={i} className="p-6 rounded-2xl bg-white border border-gray-100 text-center">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-6 h-6 text-violet-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ===== DEMO FORM ===== */}
-      <section id="demo" className="py-8 sm:py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="font-hand text-3xl sm:text-4xl text-blue-600 text-center mb-3">
-            Want to Talk? Book a Free Demo
-          </h2>
-          <p className="text-center font-hand text-lg text-gray-600 mb-10 max-w-md mx-auto">
-            Fill the form below and we will contact you soon
-          </p>
-          <SketchBox roughness={1.2} strokeColor="#2563EB" strokeWidth={2} className="bg-white max-w-xl mx-auto" padding="p-6 sm:p-10">
-            <DemoForm />
-          </SketchBox>
+      <section id="demo" className="py-20 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className="lg:sticky lg:top-24">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+                Get Started
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                Ready to automate your WhatsApp sales?
+              </h2>
+              <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                Book a free demo and we&apos;ll set up everything for you. No technical knowledge needed.
+              </p>
+              <div className="mt-8 space-y-4">
+                {[
+                  'Free setup — we do everything for you',
+                  'Live demo of your own store',
+                  'Start selling in under 30 minutes',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+              <DemoForm />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t-2 border-blue-200 py-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <span className="font-hand text-2xl text-blue-600 font-bold border-2 border-red-500 rounded-lg px-3 py-0.5">SatyaSell</span>
+      <footer className="border-t border-gray-100 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <Zap className="w-4.5 h-4.5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">SatyaSell</span>
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-6">
-              <a href="tel:9515456891" className="flex items-center gap-2 font-hand text-base text-blue-600 hover:text-red-600 transition-colors">
-                <Phone className="h-5 w-5" strokeWidth={1.5} />
+              <a href="tel:9515456891" className="flex items-center gap-2 text-sm text-gray-600 hover:text-violet-600 transition-colors">
+                <Phone className="w-4 h-4" />
                 9515456891
               </a>
-              <a href="mailto:admin@satyasell.com" className="flex items-center gap-2 font-hand text-base text-blue-600 hover:text-red-600 transition-colors">
-                <Mail className="h-5 w-5" strokeWidth={1.5} />
+              <a href="mailto:admin@satyasell.com" className="flex items-center gap-2 text-sm text-gray-600 hover:text-violet-600 transition-colors">
+                <Mail className="w-4 h-4" />
                 admin@satyasell.com
               </a>
             </div>
           </div>
-          <p className="text-center font-hand text-base text-gray-400 mt-6">
-            &copy; 2026 SatyaSell. All rights reserved.
-          </p>
+          <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-400">
+              &copy; 2026 SatyaSell. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6">
+              <Link href="/client/login" className="text-sm text-gray-500 hover:text-violet-600 transition-colors">
+                Seller Login
+              </Link>
+              <a href="#features" className="text-sm text-gray-500 hover:text-violet-600 transition-colors">
+                Features
+              </a>
+              <a href="#pricing" className="text-sm text-gray-500 hover:text-violet-600 transition-colors">
+                Pricing
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
