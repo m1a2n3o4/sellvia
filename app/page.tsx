@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { DemoForm } from '@/components/landing/DemoForm';
 import { FloatingWhatsApp } from '@/components/landing/FloatingWhatsApp';
 import { PageTracker } from '@/components/landing/PageTracker';
-import { HeroFlow } from '@/components/landing/HeroFlow';
+import { OrbitalHero } from '@/components/landing/OrbitalHero';
 import {
   MessageCircle,
   ShoppingBag,
@@ -147,11 +147,12 @@ export default function HomePage() {
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-emerald-50" />
-        <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute top-40 right-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
+        <div className="absolute top-40 right-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
+        <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-12 sm:pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-6 items-center">
             {/* Left: Text */}
             <div className="text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-6">
@@ -203,9 +204,53 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right: Animated WhatsApp Flow */}
+            {/* Right: Orbital Ecosystem Animation */}
             <div className="flex justify-center lg:justify-end">
-              <HeroFlow />
+              <OrbitalHero />
+            </div>
+          </div>
+        </div>
+
+        {/* ── "NO NEED" Banner (from sketch) ── */}
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/60 shadow-sm p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+              {/* NO NEED badges */}
+              <div className="text-center sm:text-left">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  To use all above — No need of
+                </p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                  {['Subscription', 'Trial / Demo', 'Credit Card'].map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-600 text-xs font-semibold"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden sm:block w-px h-16 bg-gray-200" />
+
+              {/* Pricing highlight */}
+              <div className="text-center sm:text-left flex-1">
+                <p className="text-sm text-gray-600">
+                  <span className="font-bold text-emerald-600">Free till your first 51 orders</span>
+                  {' '}&mdash; feel the magic first!
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Then just <span className="font-bold text-violet-600">0.9% per order</span> when you get paid via SatyaSell.
+                </p>
+                <p className="text-xs text-gray-400 mt-2 font-medium">
+                  You just need a mobile number. That&apos;s it.
+                </p>
+              </div>
             </div>
           </div>
         </div>
