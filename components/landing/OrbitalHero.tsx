@@ -109,41 +109,41 @@ function PillarCard({
       className={`${mobile ? 'w-full' : 'w-[192px]'} bg-white/90 backdrop-blur-sm rounded-xl border ${pillar.border} shadow-lg shadow-gray-200/60 overflow-hidden`}
     >
       {/* Top gradient strip */}
-      <div className={`h-1 bg-gradient-to-r ${pillar.gradient}`} />
-      <div className="p-3.5">
+      <div className={`${mobile ? 'h-1.5' : 'h-1'} bg-gradient-to-r ${pillar.gradient}`} />
+      <div className={mobile ? 'p-4' : 'p-3.5'}>
         {/* Header */}
-        <div className="flex items-center gap-2.5 mb-2.5">
+        <div className={`flex items-center ${mobile ? 'gap-3 mb-3' : 'gap-2.5 mb-2.5'}`}>
           <div
-            className={`w-8 h-8 rounded-lg bg-gradient-to-br ${pillar.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}
+            className={`${mobile ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg bg-gradient-to-br ${pillar.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}
           >
-            <Icon className="w-4 h-4 text-white" />
+            <Icon className={`${mobile ? 'w-5 h-5' : 'w-4 h-4'} text-white`} />
           </div>
           <div className="min-w-0">
-            <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">
+            <span className={`${mobile ? 'text-[10px]' : 'text-[9px]'} text-gray-400 font-semibold uppercase tracking-wider`}>
               0{num}
             </span>
-            <h4 className="text-[13px] font-bold text-gray-900 leading-tight truncate">
+            <h4 className={`${mobile ? 'text-base' : 'text-[13px]'} font-extrabold text-gray-900 leading-tight truncate`}>
               {pillar.title}
             </h4>
           </div>
         </div>
         {/* Feature list with cycling highlight */}
-        <div className="space-y-0.5">
+        <div className={mobile ? 'space-y-1' : 'space-y-0.5'}>
           {pillar.features.map((f, i) => {
             const FIcon = f.icon;
             const isActive = activeFeature === i;
             return (
               <div
                 key={i}
-                className={`flex items-center gap-1.5 px-2 py-[5px] rounded-md transition-all duration-500 ${
+                className={`flex items-center ${mobile ? 'gap-2.5 px-3 py-[7px]' : 'gap-1.5 px-2 py-[5px]'} rounded-md transition-all duration-500 ${
                   isActive
                     ? `${pillar.activeBg} ${pillar.activeText} scale-[1.02]`
-                    : 'text-gray-400'
+                    : mobile ? 'text-gray-500' : 'text-gray-400'
                 }`}
               >
-                <FIcon className="w-3 h-3 flex-shrink-0" />
+                <FIcon className={`${mobile ? 'w-4 h-4' : 'w-3 h-3'} flex-shrink-0`} />
                 <span
-                  className={`text-[10px] leading-tight ${isActive ? 'font-semibold' : 'font-medium'}`}
+                  className={`${mobile ? 'text-[13px]' : 'text-[10px]'} leading-tight ${isActive ? 'font-bold' : mobile ? 'font-semibold' : 'font-medium'} ${isActive ? '' : mobile ? 'text-gray-700' : ''}`}
                 >
                   {f.label}
                 </span>
@@ -389,15 +389,15 @@ export function OrbitalHero() {
       <div className="lg:hidden flex flex-col items-center w-full">
         {/* ── Center Hub with Mini Orbital Ring ── */}
         <div className="flex flex-col items-center mb-2">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2">
+          <span className="text-xs font-bold text-gray-900 uppercase tracking-[0.15em] mb-2">
             Your Business
           </span>
 
           <div className="relative">
             {/* Mini rotating orbital ring */}
             <svg
-              className="absolute -inset-[18px]"
-              viewBox="0 0 112 112"
+              className="absolute -inset-[22px]"
+              viewBox="0 0 132 132"
               style={{ animation: 'ss-orbit 28s linear infinite' }}
             >
               <defs>
@@ -408,36 +408,36 @@ export function OrbitalHero() {
                 </linearGradient>
               </defs>
               <circle
-                cx="56"
-                cy="56"
-                r="50"
+                cx="66"
+                cy="66"
+                r="58"
                 fill="none"
                 stroke="url(#m-orb)"
                 strokeWidth="1.2"
                 strokeDasharray="5 4"
               />
               {/* 3 orbiting dots */}
-              <circle r="2.5" fill="#8B5CF6" opacity="0.8">
+              <circle r="3" fill="#8B5CF6" opacity="0.8">
                 <animateMotion
                   dur="28s"
                   repeatCount="indefinite"
-                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                  path="M66,8 A58,58 0 0,1 66,124 A58,58 0 0,1 66,8"
                 />
               </circle>
-              <circle r="2" fill="#10B981" opacity="0.7">
+              <circle r="2.5" fill="#10B981" opacity="0.7">
                 <animateMotion
                   dur="28s"
                   repeatCount="indefinite"
                   begin="-9.3s"
-                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                  path="M66,8 A58,58 0 0,1 66,124 A58,58 0 0,1 66,8"
                 />
               </circle>
-              <circle r="2" fill="#3B82F6" opacity="0.7">
+              <circle r="2.5" fill="#3B82F6" opacity="0.7">
                 <animateMotion
                   dur="28s"
                   repeatCount="indefinite"
                   begin="-18.6s"
-                  path="M56,6 A50,50 0 0,1 56,106 A50,50 0 0,1 56,6"
+                  path="M66,8 A58,58 0 0,1 66,124 A58,58 0 0,1 66,8"
                 />
               </circle>
             </svg>
@@ -450,17 +450,17 @@ export function OrbitalHero() {
 
             {/* Main SatyaSell circle */}
             <div
-              className="relative w-[76px] h-[76px] rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex flex-col items-center justify-center shadow-xl"
+              className="relative w-[88px] h-[88px] rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 flex flex-col items-center justify-center shadow-xl"
               style={{ animation: 'ss-pulse-glow 3s ease-in-out infinite' }}
             >
-              <Zap className="w-5 h-5 text-white mb-0.5" />
-              <span className="text-white font-extrabold text-[10px] tracking-wide">
+              <Zap className="w-6 h-6 text-white mb-0.5" />
+              <span className="text-white font-extrabold text-xs tracking-wide">
                 SatyaSell
               </span>
             </div>
           </div>
 
-          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 mt-4">
+          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 mt-4">
             Get All 3 Free
           </span>
         </div>
@@ -492,7 +492,7 @@ export function OrbitalHero() {
         </svg>
 
         {/* ── 3 Pillar Tabs (tappable) ── */}
-        <div className="flex items-end justify-center gap-10 mb-4">
+        <div className="flex items-end justify-center gap-8 mb-5">
           {pillars.map((pillar, i) => {
             const TabIcon = pillar.icon;
             const isActive = mobileCard === i;
@@ -503,7 +503,7 @@ export function OrbitalHero() {
                 className="flex flex-col items-center gap-1.5 relative"
               >
                 <div
-                  className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${pillar.gradient} flex items-center justify-center transition-all duration-400 ${
+                  className={`relative w-12 h-12 rounded-full bg-gradient-to-br ${pillar.gradient} flex items-center justify-center transition-all duration-400 ${
                     isActive ? 'scale-110' : 'opacity-35 scale-90'
                   }`}
                   style={
@@ -512,7 +512,7 @@ export function OrbitalHero() {
                       : undefined
                   }
                 >
-                  <TabIcon className="w-[18px] h-[18px] text-white" />
+                  <TabIcon className="w-5 h-5 text-white" />
                   {/* Active ring indicator */}
                   {isActive && (
                     <div
@@ -522,8 +522,8 @@ export function OrbitalHero() {
                   )}
                 </div>
                 <span
-                  className={`text-[9px] font-bold tracking-wide transition-all duration-300 ${
-                    isActive ? '' : 'text-gray-400'
+                  className={`text-[11px] font-extrabold tracking-wide transition-all duration-300 ${
+                    isActive ? 'text-gray-900' : 'text-gray-400'
                   }`}
                   style={isActive ? { color: pillar.dotColor } : undefined}
                 >
@@ -535,7 +535,7 @@ export function OrbitalHero() {
         </div>
 
         {/* ── Card Carousel (one card at a time, fade + float) ── */}
-        <div className="relative w-full max-w-[300px]" style={{ minHeight: 195 }}>
+        <div className="relative w-full max-w-[340px] px-2" style={{ minHeight: 220 }}>
           {pillars.map((pillar, i) => (
             <div
               key={i}
