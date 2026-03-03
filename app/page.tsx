@@ -27,6 +27,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { MobileNav } from '@/components/landing/MobileNav';
+import { ScrollReveal, StaggerReveal } from '@/components/landing/ScrollReveal';
 
 const steps = [
   {
@@ -212,6 +213,7 @@ export default function HomePage() {
         </div>
 
         {/* ── "NO NEED" Banner (from sketch) ── */}
+        <ScrollReveal delay={300}>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/60 shadow-sm p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
@@ -254,35 +256,38 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* ===== STATS BAR ===== */}
       <section className="border-y border-gray-100 bg-gray-50/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <StaggerReveal direction="up" staggerDelay={120} className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
                 <p className="text-3xl sm:text-4xl font-extrabold text-violet-600">{stat.value}</p>
                 <p className="mt-1 text-sm text-gray-500 font-medium">{stat.label}</p>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 
       {/* ===== PROBLEM ===== */}
       <section className="py-20 sm:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              Still managing orders <span className="text-red-500">manually?</span>
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-              Most Indian sellers waste hours every day on these problems
-            </p>
-          </div>
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                Still managing orders <span className="text-red-500">manually?</span>
+              </h2>
+              <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+                Most Indian sellers waste hours every day on these problems
+              </p>
+            </div>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StaggerReveal direction="up" staggerDelay={100} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {painPoints.map((point, i) => (
               <div key={i} className="flex items-center gap-4 p-5 rounded-xl bg-red-50 border border-red-100">
                 <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -291,40 +296,44 @@ export default function HomePage() {
                 <p className="text-gray-700 font-medium text-sm">{point.text}</p>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
 
-          <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 text-center">
-            <p className="text-xl sm:text-2xl font-bold text-white">
-              SatyaSell automates everything.{' '}
-              <span className="text-emerald-300">Save 99% of your time.</span>
-            </p>
-            <a
-              href="#demo"
-              className="inline-flex items-center gap-2 mt-5 px-6 py-2.5 rounded-lg bg-white text-violet-700 font-semibold text-sm hover:bg-violet-50 transition-colors"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
+          <ScrollReveal delay={300}>
+            <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-white">
+                SatyaSell automates everything.{' '}
+                <span className="text-emerald-300">Save 99% of your time.</span>
+              </p>
+              <a
+                href="#demo"
+                className="inline-flex items-center gap-2 mt-5 px-6 py-2.5 rounded-lg bg-white text-violet-700 font-semibold text-sm hover:bg-violet-50 transition-colors"
+              >
+                Get Started Free
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
       <section id="how-it-works" className="py-20 sm:py-24 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
-              Simple 4-Step Flow
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+                Simple 4-Step Flow
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                How it works
+              </h2>
+              <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
+                From customer message to order on your dashboard — fully automated
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              How it works
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
-              From customer message to order on your dashboard — fully automated
-            </p>
-          </div>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StaggerReveal direction="up" staggerDelay={150} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step, i) => (
               <div key={i} className="relative">
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow h-full">
@@ -342,26 +351,28 @@ export default function HomePage() {
                 )}
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 
       {/* ===== FEATURES ===== */}
       <section id="features" className="py-20 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
-              Everything You Need
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+                Everything You Need
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                Powerful features, zero complexity
+              </h2>
+              <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
+                Built for Indian sellers who want to sell more and work less
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              Powerful features, zero complexity
-            </h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
-              Built for Indian sellers who want to sell more and work less
-            </p>
-          </div>
+          </ScrollReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StaggerReveal direction="up" staggerDelay={100} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
               <div
                 key={i}
@@ -374,7 +385,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 
@@ -382,40 +393,44 @@ export default function HomePage() {
       <section className="py-20 sm:py-24 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
-                Multi-Store Support
+            <ScrollReveal direction="left">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+                  Multi-Store Support
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                  One account, multiple stores
+                </h2>
+                <p className="mt-4 text-gray-500 leading-relaxed">
+                  Manage all your stores from a single dashboard. Each store gets its own e-commerce website, branding, products, and analytics.
+                </p>
+                <div className="mt-6 space-y-3">
+                  {['Separate branding & themes per store', 'Individual store analytics & reports', 'Dedicated e-commerce website for each store', 'Switch between stores instantly'].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm font-medium">{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                One account, multiple stores
-              </h2>
-              <p className="mt-4 text-gray-500 leading-relaxed">
-                Manage all your stores from a single dashboard. Each store gets its own e-commerce website, branding, products, and analytics.
-              </p>
-              <div className="mt-6 space-y-3">
-                {['Separate branding & themes per store', 'Individual store analytics & reports', 'Dedicated e-commerce website for each store', 'Switch between stores instantly'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                    <span className="text-gray-700 text-sm font-medium">{item}</span>
+            </ScrollReveal>
+            <ScrollReveal direction="right" delay={200}>
+              <div className="grid grid-cols-2 gap-4">
+                {['Store A', 'Store B', 'Store C', 'Master View'].map((name, i) => (
+                  <div key={i} className={`p-5 rounded-2xl border ${i === 3 ? 'border-violet-200 bg-violet-50 col-span-2' : 'border-gray-200 bg-white'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${i === 3 ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                        <Store className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{name}</p>
+                        <p className="text-xs text-gray-400">{i === 3 ? 'All stores combined' : 'satyasell.com/store/...'}</p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {['Store A', 'Store B', 'Store C', 'Master View'].map((name, i) => (
-                <div key={i} className={`p-5 rounded-2xl border ${i === 3 ? 'border-violet-200 bg-violet-50 col-span-2' : 'border-gray-200 bg-white'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${i === 3 ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                      <Store className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">{name}</p>
-                      <p className="text-xs text-gray-400">{i === 3 ? 'All stores combined' : 'satyasell.com/store/...'}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -423,18 +438,21 @@ export default function HomePage() {
       {/* ===== PRICING ===== */}
       <section id="pricing" className="py-20 sm:py-24">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
-              Transparent Pricing
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+                Transparent Pricing
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                The simplest pricing ever
+              </h2>
+              <p className="mt-4 text-lg text-gray-500">
+                No plans. No subscriptions. No surprises.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              The simplest pricing ever
-            </h2>
-            <p className="mt-4 text-lg text-gray-500">
-              No plans. No subscriptions. No surprises.
-            </p>
-          </div>
+          </ScrollReveal>
 
+          <ScrollReveal delay={150}>
           <div className="relative rounded-3xl border-2 border-violet-200 bg-gradient-to-b from-violet-50 to-white p-8 sm:p-12 overflow-hidden">
             <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
               MOST POPULAR
@@ -476,25 +494,28 @@ export default function HomePage() {
               </a>
             </div>
           </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ===== TRUST ===== */}
       <section className="py-20 sm:py-24 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              Your data, your control
-            </h2>
-            <p className="mt-4 text-lg text-gray-500">Enterprise-grade security for every seller</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                Your data, your control
+              </h2>
+              <p className="mt-4 text-lg text-gray-500">Enterprise-grade security for every seller</p>
+            </div>
+          </ScrollReveal>
+          <StaggerReveal direction="up" staggerDelay={150} className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
               { icon: Shield, title: 'Bank-grade Security', desc: 'Your data stored in world-class secure Supabase databases with encryption at rest.' },
               { icon: MapPin, title: 'India-hosted Servers', desc: 'All data stays in India. Compliant with local data protection standards.' },
               { icon: CreditCard, title: 'Secure Payments', desc: "India's most trusted payment gateway. Payments directly to your bank account." },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-white border border-gray-100 text-center">
+              <div key={i} className="p-8 rounded-2xl bg-white border border-gray-100 text-center">
                 <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
                   <item.icon className="w-6 h-6 text-violet-600" />
                 </div>
@@ -502,7 +523,7 @@ export default function HomePage() {
                 <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 
@@ -510,33 +531,37 @@ export default function HomePage() {
       <section id="demo" className="py-20 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <div className="lg:sticky lg:top-24">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
-                Get Started
+            <ScrollReveal direction="left">
+              <div className="lg:sticky lg:top-24">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+                  Get Started
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                  Ready to automate your WhatsApp sales?
+                </h2>
+                <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                  Book a free demo and we&apos;ll set up everything for you. No technical knowledge needed.
+                </p>
+                <div className="mt-8 space-y-4">
+                  {[
+                    'Free setup — we do everything for you',
+                    'Live demo of your own store',
+                    'Start selling in under 30 minutes',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-                Ready to automate your WhatsApp sales?
-              </h2>
-              <p className="mt-4 text-lg text-gray-500 leading-relaxed">
-                Book a free demo and we&apos;ll set up everything for you. No technical knowledge needed.
-              </p>
-              <div className="mt-8 space-y-4">
-                {[
-                  'Free setup — we do everything for you',
-                  'Live demo of your own store',
-                  'Start selling in under 30 minutes',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                    <span className="text-gray-700 font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            </ScrollReveal>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-              <DemoForm />
-            </div>
+            <ScrollReveal direction="right" delay={200}>
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                <DemoForm />
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
