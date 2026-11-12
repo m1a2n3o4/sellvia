@@ -46,14 +46,14 @@ export function DemoForm() {
   if (status === 'success') {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-emerald-600" />
+        <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h3>
-        <p className="text-gray-500">We&apos;ll contact you within 24 hours to set up your demo.</p>
+        <h3 className="text-2xl font-bold text-white mb-2">Thank You!</h3>
+        <p className="text-gray-400">We&apos;ll contact you within 24 hours to set up your demo.</p>
         <button
           onClick={() => setStatus('idle')}
-          className="mt-6 text-violet-600 hover:text-violet-700 text-sm font-medium underline underline-offset-4"
+          className="mt-6 text-violet-400 hover:text-violet-300 text-sm font-medium underline underline-offset-4"
         >
           Send another request
         </button>
@@ -64,8 +64,8 @@ export function DemoForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Your Name <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
+          Your Name <span className="text-red-400">*</span>
         </label>
         <input
           type="text"
@@ -74,13 +74,13 @@ export function DemoForm() {
           value={form.name}
           onChange={handleChange}
           placeholder="Enter your name"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:outline-none text-gray-900 bg-white transition-all text-sm"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-white bg-gray-800/50 placeholder-gray-500 transition-all text-sm"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Mobile Number <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
+          Mobile Number <span className="text-red-400">*</span>
         </label>
         <input
           type="tel"
@@ -91,12 +91,12 @@ export function DemoForm() {
           value={form.mobile}
           onChange={handleChange}
           placeholder="10-digit mobile number"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:outline-none text-gray-900 bg-white transition-all text-sm"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-white bg-gray-800/50 placeholder-gray-500 transition-all text-sm"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
           Instagram Page Link
         </label>
         <input
@@ -105,12 +105,12 @@ export function DemoForm() {
           value={form.instagramLink}
           onChange={handleChange}
           placeholder="https://instagram.com/yourpage"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:outline-none text-gray-900 bg-white transition-all text-sm"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-white bg-gray-800/50 placeholder-gray-500 transition-all text-sm"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
           Website (if any)
         </label>
         <input
@@ -119,12 +119,12 @@ export function DemoForm() {
           value={form.website}
           onChange={handleChange}
           placeholder="https://yourwebsite.com"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:outline-none text-gray-900 bg-white transition-all text-sm"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-white bg-gray-800/50 placeholder-gray-500 transition-all text-sm"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-gray-300 mb-1.5">
           Anything you want to tell us?
         </label>
         <textarea
@@ -133,12 +133,12 @@ export function DemoForm() {
           value={form.message}
           onChange={handleChange}
           placeholder="Questions, ideas, or just say hi..."
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:outline-none text-gray-900 bg-white resize-none transition-all text-sm"
+          className="w-full px-4 py-3 border border-gray-700 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-white bg-gray-800/50 placeholder-gray-500 resize-none transition-all text-sm"
         />
       </div>
 
       {status === 'error' && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm">
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
           {errorMsg}
         </div>
       )}
@@ -146,7 +146,7 @@ export function DemoForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="w-full py-3.5 px-6 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 shadow-sm"
+        className="w-full py-3.5 px-6 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 shadow-sm shadow-violet-500/20"
       >
         {status === 'submitting' ? (
           <>
@@ -160,6 +160,11 @@ export function DemoForm() {
           </>
         )}
       </button>
+      <p className="text-xs text-gray-500 text-center">
+        By submitting, you agree to be contacted about SatyaSell and accept our{' '}
+        <a href="/privacy-policy" className="text-violet-400 hover:underline">Privacy Policy</a> and{' '}
+        <a href="/terms" className="text-violet-400 hover:underline">Terms</a>.
+      </p>
     </form>
   );
 }
