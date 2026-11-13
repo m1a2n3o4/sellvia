@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db/prisma';
 import { sendSms } from './fast2sms';
 import { otpLogin } from './templates';
+import { isPlatformWhatsAppConfigured, sendPlatformOtp } from '@/lib/whatsapp/platform';
 
 export function generatePin(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -31,6 +32,14 @@ export async function sendOtp(mobile: string): Promise<{ success: boolean; error
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
     },
   });
+
+  // Prefer SatyaSell's platform WhatsApp number; fall back to SMS if it is
+  // not configured or the send fails (e.g. template not yet approved).
+  if (isPlatformWhatsAppConfigured()) {
+    const wa = await sendPlatformOtp(mobile, otp);
+    if (wa.success) return { success: true };
+    console.warn('[OTP] WhatsApp send failed, falling back to SMS:', wa.error);
+  }
 
   const result = await sendSms({ mobile, message: otpLogin(otp) });
 
