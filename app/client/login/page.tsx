@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { SITE } from '@/lib/site';
 
 type LoginMode = 'pin' | 'otp';
 
@@ -232,7 +233,7 @@ export default function ClientLoginPage() {
         <p className="text-center mt-5 text-sm text-gray-500">
           Want an account?{' '}
           <a
-            href="https://wa.me/917780225235?text=Hi%20SatyaSell%20-%20I%20need%20an%20account%2C%20you%20can%20create%20it%20for%20me%20free%3F"
+            href={SITE.whatsappUrl("Hi SatyaSell - I need an account, you can create it for me free?")}
             target="_blank"
             rel="noopener noreferrer"
             className="text-green-400 hover:text-green-300 font-medium underline underline-offset-2"

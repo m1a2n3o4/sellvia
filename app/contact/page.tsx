@@ -19,7 +19,7 @@ export default function ContactPage() {
         <li><strong>Website:</strong> <a href={SITE.url}>{SITE.url}</a></li>
       </ul>
       <p>
-        Prefer to talk to a person? <a href={`https://wa.me/${SITE.whatsappNumber}`}>Message us on WhatsApp</a>.
+        Prefer to talk to a person? <a href={SITE.whatsappUrl()}>Chat on WhatsApp</a>.
         We usually reply within one business day.
       </p>
     </LegalLayout>

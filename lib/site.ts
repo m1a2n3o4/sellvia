@@ -12,5 +12,7 @@ export const SITE = {
     country: 'India',
   },
   addressOneLine: 'B-3705, Candeur40, Miyapur, Hyderabad, Telangana, India',
+  whatsappUrl: (text = 'Hi SatyaSell, I want to know more') =>
+    `https://wa.me/917780225235?text=${encodeURIComponent(text)}`,
   effectiveDate: '12 November 2026',
 };

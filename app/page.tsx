@@ -134,6 +134,15 @@ export default function HomePage() {
             <a href="#demo" className="text-sm font-medium text-gray-400 hover:text-violet-400 transition-colors hidden md:block">
               Contact
             </a>
+            <a
+              href={SITE.whatsappUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden lg:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Chat on WhatsApp
+            </a>
             <Link
               href="/client/login"
               className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 transition-colors shadow-sm shadow-violet-500/20"
@@ -181,6 +190,15 @@ export default function HomePage() {
                 >
                   Book a Free Demo
                   <ArrowRight className="w-4 h-4" />
+                </a>
+                <a
+                  href={SITE.whatsappUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/25"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Chat on WhatsApp
                 </a>
                 <a
                   href="#how-it-works"
@@ -589,6 +607,10 @@ export default function HomePage() {
                 <a href={`tel:${SITE.phoneTel}`} className="flex items-center gap-2 hover:text-violet-400 transition-colors">
                   <Phone className="w-4 h-4 shrink-0" />
                   {SITE.phoneDisplay}
+                </a>
+                <a href={SITE.whatsappUrl()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
+                  <MessageCircle className="w-4 h-4 shrink-0" />
+                  Chat on WhatsApp
                 </a>
                 <a href={`mailto:${SITE.email}`} className="flex items-center gap-2 hover:text-violet-400 transition-colors">
                   <Mail className="w-4 h-4 shrink-0" />

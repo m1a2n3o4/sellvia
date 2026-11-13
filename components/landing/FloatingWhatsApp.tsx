@@ -1,11 +1,10 @@
 'use client';
 
 import { MessageCircle } from 'lucide-react';
+import { SITE } from '@/lib/site';
 
 export function FloatingWhatsApp() {
-  const phoneNumber = '917780225235';
-  const preText = encodeURIComponent('Hey, I want to know more about SatyaSell!');
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${preText}`;
+  const whatsappUrl = SITE.whatsappUrl('Hey, I want to know more about SatyaSell!');
 
   return (
     <a

@@ -39,7 +39,8 @@ export function LegalLayout({
           <p>{SITE.addressOneLine}</p>
           <p>
             Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a> &middot; Phone:{' '}
-            <a href={`tel:${SITE.phoneTel}`}>{SITE.phoneDisplay}</a>
+            <a href={`tel:${SITE.phoneTel}`}>{SITE.phoneDisplay}</a>{' '}
+            &middot; <a href={SITE.whatsappUrl()}>Chat on WhatsApp</a>
           </p>
         </div>
       </main>
