@@ -154,13 +154,24 @@ async function processIncomingMessage(msg: IncomingMessage) {
   // Messages sent to SatyaSell's own platform number are not tenant chats
   if (phoneNumberId && phoneNumberId === getPlatformPhoneNumberId()) {
     console.log('[Webhook] Inbound on platform number from', customerPhone);
+    // Blue ticks + "typing..." (one Meta call does both; shows until we reply, max ~25s)
+    const platformToken = process.env.PLATFORM_WHATSAPP_TOKEN;
+    const typingStart = Date.now();
+    if (platformToken && waMessageId) {
+      await sendTypingIndicator({ phoneNumberId, accessToken: platformToken, messageId: waMessageId });
+    }
     const reply = await handlePlatformMessage({
       from: customerPhone,
       name: customerName || undefined,
       text: messageContent || '',
       messageType,
     });
-    if (reply) await sendPlatformText(customerPhone, reply);
+    if (reply) {
+      // Keep "typing..." visible for at least ~1.5s so quick replies still feel natural
+      const wait = 1500 - (Date.now() - typingStart);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      await sendPlatformText(customerPhone, reply);
+    }
     return;
   }
 
