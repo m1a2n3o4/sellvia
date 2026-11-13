@@ -649,9 +649,10 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-sm text-gray-600">
-              &copy; 2026 SatyaSell. All rights reserved.
-            </p>
+            <div className="text-sm text-gray-600 text-center sm:text-left">
+              <p>&copy; 2026 SatyaSell. All rights reserved.</p>
+              <p className="text-xs text-gray-500 mt-1">{SITE.registrationLine}</p>
+            </div>
             <p className="text-xs text-gray-600">
               Uses the WhatsApp Business Platform. WhatsApp is a trademark of Meta Platforms, Inc.
             </p>

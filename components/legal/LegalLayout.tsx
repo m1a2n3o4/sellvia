@@ -36,6 +36,7 @@ export function LegalLayout({
 
         <div className="mt-12 rounded-xl border border-gray-800 bg-gray-900/50 p-5 text-sm">
           <p className="font-semibold text-white">{SITE.name}</p>
+          <p className="text-gray-400">{SITE.registrationLine}</p>
           <p>{SITE.addressOneLine}</p>
           <p>
             Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a> &middot; Phone:{' '}

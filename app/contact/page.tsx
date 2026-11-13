@@ -4,7 +4,7 @@ import { SITE } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Contact Us | SatyaSell',
-  description: 'Contact SatyaSell by phone, WhatsApp, email or visit our Hyderabad office.',
+  description: 'Contact SatyaSell by phone, WhatsApp, email or find our registered address.',
 };
 
 export default function ContactPage() {
@@ -12,7 +12,8 @@ export default function ContactPage() {
     <LegalLayout title="Contact Us">
       <p>We&apos;re happy to help with questions about SatyaSell, onboarding, billing or your data.</p>
       <ul>
-        <li><strong>Business name:</strong> SatyaSell</li>
+        <li><strong>Business name:</strong> {SITE.legalName} ({SITE.entityType})</li>
+        <li><strong>Registration:</strong> Udyam Reg. No. {SITE.udyamNo}</li>
         <li><strong>Address:</strong> {SITE.addressOneLine}</li>
         <li><strong>Phone / WhatsApp:</strong> <a href={`tel:${SITE.phoneTel}`}>{SITE.phoneDisplay}</a></li>
         <li><strong>Email:</strong> <a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>

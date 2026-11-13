@@ -90,7 +90,7 @@ export default function TermsPage() {
 
       <h2>12. Governing law</h2>
       <p>
-        These Terms are governed by the laws of India. Courts at Hyderabad, Telangana have exclusive jurisdiction,
+        These Terms are governed by the laws of India. Courts at Nalgonda, Telangana have exclusive jurisdiction,
         subject to applicable law.
       </p>
 

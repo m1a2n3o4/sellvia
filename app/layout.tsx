@@ -59,8 +59,9 @@ export default function RootLayout({
               address: {
                 '@type': 'PostalAddress',
                 streetAddress: SITE.address.line1,
-                addressLocality: 'Miyapur, Hyderabad',
-                addressRegion: SITE.address.region,
+                addressLocality: SITE.address.locality,
+                addressRegion: SITE.address.stateOnly,
+                postalCode: SITE.address.postalCode,
                 addressCountry: 'IN',
               },
             }),
