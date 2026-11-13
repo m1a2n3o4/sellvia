@@ -568,3 +568,19 @@ model PageView {
   @@index([country])
   @@map("page_views")
 }
+
+// ============================================
+// SATYASELL PLATFORM NUMBER (our own WhatsApp number, not a tenant)
+// ============================================
+
+model PlatformMessage {
+  id        String   @id @default(uuid())
+  phone     String
+  role      String // user | assistant | optout | optin
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@index([createdAt])
+  @@map("platform_messages")
+}

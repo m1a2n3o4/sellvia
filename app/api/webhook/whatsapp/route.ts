@@ -7,7 +7,8 @@ import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-security';
 import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp/commerce';
 import { getActiveCartForChat, formatCartMessage } from '@/lib/cart/cart-service';
 import { downloadWhatsAppMedia, transcribeAudio } from '@/lib/whatsapp/media';
-import { getPlatformPhoneNumberId, sendPlatformText, platformAutoReply } from '@/lib/whatsapp/platform';
+import { getPlatformPhoneNumberId, sendPlatformText } from '@/lib/whatsapp/platform';
+import { handlePlatformMessage } from '@/lib/whatsapp/platform-ai';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Allow up to 30 seconds on Vercel Pro
@@ -153,11 +154,13 @@ async function processIncomingMessage(msg: IncomingMessage) {
   // Messages sent to SatyaSell's own platform number are not tenant chats
   if (phoneNumberId && phoneNumberId === getPlatformPhoneNumberId()) {
     console.log('[Webhook] Inbound on platform number from', customerPhone);
-    if (messageType === 'text' || messageType === 'button' || messageType === 'interactive') {
-      await sendPlatformText(customerPhone, platformAutoReply(msg.messageContent || ''));
-    } else {
-      await sendPlatformText(customerPhone, platformAutoReply(''));
-    }
+    const reply = await handlePlatformMessage({
+      from: customerPhone,
+      name: customerName || undefined,
+      text: messageContent || '',
+      messageType,
+    });
+    if (reply) await sendPlatformText(customerPhone, reply);
     return;
   }
 

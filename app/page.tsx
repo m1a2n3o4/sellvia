@@ -513,7 +513,7 @@ export default function HomePage() {
           <StaggerReveal direction="up" staggerDelay={150} className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
               { icon: Shield, title: 'Bank-grade Security', desc: 'Your data stored in world-class secure Supabase databases with encryption at rest.' },
-              { icon: MapPin, title: 'India-hosted Servers', desc: 'All data stays in India. Compliant with local data protection standards.' },
+              { icon: MapPin, title: 'Secure Cloud Infrastructure', desc: 'Hosted on trusted cloud platforms with encrypted connections and strict access controls. Read our Privacy Policy for details.' },
               { icon: CreditCard, title: 'Secure Payments', desc: "India's most trusted payment gateway. Payments directly to your bank account." },
             ].map((item, i) => (
               <div key={i} className="p-8 rounded-2xl bg-gray-800/50 border border-gray-700/50 text-center">
