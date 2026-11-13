@@ -46,6 +46,7 @@ export async function sendPlatformTemplate({
   const token = process.env.PLATFORM_WHATSAPP_TOKEN;
   const phoneNumberId = getPlatformPhoneNumberId();
   if (!token || !phoneNumberId) {
+    console.error('[PlatformWhatsApp] Not configured: token', token ? 'set' : 'MISSING', '/ phone id', phoneNumberId ? 'set' : 'MISSING');
     return { success: false, error: 'Platform WhatsApp not configured' };
   }
 
@@ -109,7 +110,13 @@ export function sendPlatformOtp(mobile: string, otp: string) {
 export async function sendPlatformText(to: string, message: string): Promise<{ success: boolean; error?: string }> {
   const token = process.env.PLATFORM_WHATSAPP_TOKEN;
   const phoneNumberId = getPlatformPhoneNumberId();
-  if (!token || !phoneNumberId) return { success: false, error: 'Platform WhatsApp not configured' };
+  if (!token || !phoneNumberId) {
+    console.error('[PlatformWhatsApp] Not configured:', {
+      PLATFORM_WHATSAPP_TOKEN: token ? 'set' : 'MISSING',
+      PLATFORM_WHATSAPP_PHONE_NUMBER_ID: phoneNumberId ? 'set' : 'MISSING',
+    });
+    return { success: false, error: 'Platform WhatsApp not configured' };
+  }
   try {
     const res = await fetch(`${GRAPH_URL}/${phoneNumberId}/messages`, {
       method: 'POST',
@@ -122,6 +129,7 @@ export async function sendPlatformText(to: string, message: string): Promise<{ s
       }),
     });
     const data = await res.json();
+    console.log('[PlatformWhatsApp] Text send status:', res.status);
     if (!res.ok) {
       console.error('[PlatformWhatsApp] Text failed:', { code: data.error?.code, message: data.error?.message });
       return { success: false, error: data.error?.message };
