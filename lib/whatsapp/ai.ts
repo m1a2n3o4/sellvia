@@ -124,6 +124,62 @@ const commerceFunctions: OpenAI.ChatCompletionTool[] = [
   },
 ];
 
+const STOP_WORDS = new Set([
+  'the','a','an','is','are','do','you','have','has','any','i','me','my','want','need','show','see','buy',
+  'price','cost','of','for','to','in','on','and','or','with','please','hi','hello','available','stock',
+  'what','which','how','much','can','get','looking','look','there','this','that','it','your','details',
+]);
+
+/**
+ * Pull products relevant to the customer's message (name/brand/category/description/variant match),
+ * then pad with the newest products so the AI always has some catalog context.
+ */
+async function fetchRelevantProducts(tenantId: string, message: string, selectedProductId?: string) {
+  const include = { variants: { where: { status: 'active' as const }, take: 3 } };
+  const keywords = (message || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w))
+    .slice(0, 6);
+
+  const matched = keywords.length
+    ? await prisma.product.findMany({
+        where: {
+          tenantId,
+          status: 'active',
+          OR: keywords.flatMap((k) => [
+            { name: { contains: k, mode: 'insensitive' as const } },
+            { brand: { contains: k, mode: 'insensitive' as const } },
+            { category: { contains: k, mode: 'insensitive' as const } },
+            { description: { contains: k, mode: 'insensitive' as const } },
+            { variants: { some: { variantName: { contains: k, mode: 'insensitive' as const } } } },
+          ]),
+        },
+        include,
+        take: 10,
+      })
+    : [];
+
+  const ids = new Set(matched.map((p) => p.id));
+  const extraIds = selectedProductId && !ids.has(selectedProductId) ? [selectedProductId] : [];
+  const extras = extraIds.length
+    ? await prisma.product.findMany({ where: { tenantId, id: { in: extraIds } }, include })
+    : [];
+  extras.forEach((p) => ids.add(p.id));
+
+  const fill =
+    matched.length + extras.length < 10
+      ? await prisma.product.findMany({
+          where: { tenantId, status: 'active', id: { notIn: [...ids] } },
+          include,
+          orderBy: { createdAt: 'desc' },
+          take: 10 - matched.length - extras.length,
+        })
+      : [];
+
+  return [...matched, ...extras, ...fill];
+}
+
 export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> {
   const openai = new OpenAI({ apiKey: ctx.openaiKey });
 
@@ -134,11 +190,7 @@ export async function processMessageWithAI(ctx: AIContext): Promise<AIResponse> 
       ? Promise.resolve(ctx.businessInfo)
       : prisma.businessInfo.findUnique({ where: { tenantId: ctx.tenantId } }),
     // Products (limit 10 for faster OpenAI processing)
-    prisma.product.findMany({
-      where: { tenantId: ctx.tenantId, status: 'active' },
-      include: { variants: { where: { status: 'active' }, take: 3 } },
-      take: 10,
-    }),
+    fetchRelevantProducts(ctx.tenantId, ctx.customerMessage, ctx.conversationProductId),
     // Customer with recent orders
     prisma.customer.findFirst({
       where: {
