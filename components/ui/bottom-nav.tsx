@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, Package, ShoppingCart, MessageCircle, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBrand } from '@/lib/store/brand-context';
 
 interface BottomNavProps {
   onMoreClick: () => void;
@@ -18,6 +19,7 @@ const tabs = [
 
 export function BottomNav({ onMoreClick }: BottomNavProps) {
   const pathname = usePathname();
+  const brand = useBrand();
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -35,8 +37,9 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
               href={tab.href}
               className={cn(
                 'flex flex-col items-center justify-center flex-1 h-full min-w-0 gap-0.5 transition-colors',
-                active ? 'text-purple-600' : 'text-gray-500'
+                active ? 'font-semibold' : 'text-gray-500'
               )}
+              style={active ? { color: brand.theme } : undefined}
             >
               <tab.icon className="h-5 w-5" />
               <span className={cn('text-[10px] leading-tight', active ? 'font-semibold' : 'font-normal')}>

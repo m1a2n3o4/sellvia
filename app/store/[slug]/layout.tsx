@@ -116,6 +116,9 @@ export default async function StoreLayout({ children, params }: Props) {
     onlinePayEnabled: store.onlinePayEnabled,
     whatsappNumber,
     isDemo: store.tenant.isDemo,
+    phone: store.phone || bi?.ownerPhone || null,
+    instagramUrl: store.instagramUrl,
+    city: store.city,
   };
 
   return <StoreLayoutClient store={storeData}>{children}</StoreLayoutClient>;

@@ -1,7 +1,9 @@
 'use client';
 
 import { useBranch } from '@/lib/store/branch-context';
-import { ExternalLink, ChevronDown, Store } from 'lucide-react';
+import { useBrand } from '@/lib/store/brand-context';
+import { shade } from '@/lib/store/colors';
+import { ExternalLink, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,14 @@ import {
 
 export function DashboardHeader() {
   const { selectedBranch, branches, loading } = useBranch();
+  const brand = useBrand();
+  const shell = 'relative overflow-hidden flex items-center justify-between gap-3 mb-5 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 text-white shadow-lg';
+  const shellStyle = { background: `linear-gradient(120deg, ${shade(brand.theme, -0.4)}, ${brand.theme} 60%, ${shade(brand.accent, -0.05)} 140%)` };
+  const mark = brand.logo ? (
+    <img src={brand.logo} alt={brand.name} className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover bg-white ring-2 ring-white/80 shadow-md flex-shrink-0" />
+  ) : (
+    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/90 flex items-center justify-center font-extrabold text-2xl flex-shrink-0" style={{ color: brand.theme }}>{(brand.name || 'B').charAt(0).toUpperCase()}</div>
+  );
 
   if (loading) return null;
 
@@ -18,21 +28,23 @@ export function DashboardHeader() {
   if (selectedBranch) {
     const storeUrl = `/store/${selectedBranch.slug}`;
     return (
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 dark:border-neutral-700">
-        <div className="flex items-center gap-2 min-w-0">
-          <Store className="h-4 w-4 text-purple-600 flex-shrink-0" />
-          <h2 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-            {selectedBranch.name}
-          </h2>
-          {selectedBranch.city && (
-            <span className="text-xs text-gray-500 flex-shrink-0">({selectedBranch.city})</span>
-          )}
+      <div className={shell} style={shellStyle}>
+        <div className="flex items-center gap-3 min-w-0">
+          {mark}
+          <div className="min-w-0">
+            <h2 className="font-extrabold text-lg sm:text-2xl leading-tight truncate drop-shadow">
+              {brand.name || selectedBranch.name}
+            </h2>
+            <p className="text-xs sm:text-sm text-white/80 truncate">
+              {selectedBranch.name}{selectedBranch.city ? ` · ${selectedBranch.city}` : ''}
+            </p>
+          </div>
         </div>
         <a
           href={storeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-white/20 hover:bg-white/30 px-3.5 py-2 rounded-full transition-colors flex-shrink-0"
         >
           <ExternalLink className="h-3.5 w-3.5" />
           Visit Store
@@ -45,17 +57,20 @@ export function DashboardHeader() {
   const enabledBranches = branches.filter((b) => b.enabled);
 
   return (
-    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 dark:border-neutral-700">
-      <div className="flex items-center gap-2">
-        <Store className="h-4 w-4 text-purple-600" />
-        <h2 className="font-semibold text-gray-900 dark:text-white text-sm">
-          Master Dashboard
-        </h2>
+    <div className={shell} style={shellStyle}>
+      <div className="flex items-center gap-3 min-w-0">
+        {mark}
+        <div className="min-w-0">
+          <h2 className="font-extrabold text-lg sm:text-2xl leading-tight truncate drop-shadow">
+            {brand.name || 'Master Dashboard'}
+          </h2>
+          <p className="text-xs sm:text-sm text-white/80">Master Dashboard</p>
+        </div>
       </div>
 
       {enabledBranches.length > 0 && (
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors outline-none">
+          <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-white/20 hover:bg-white/30 px-3.5 py-2 rounded-full transition-colors outline-none">
             <ExternalLink className="h-3.5 w-3.5" />
             Store Links
             <ChevronDown className="h-3 w-3" />

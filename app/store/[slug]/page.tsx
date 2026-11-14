@@ -8,6 +8,8 @@ import { ProductGrid } from '@/components/store/product-grid';
 import { CategoryTabs } from '@/components/store/category-tabs';
 import { ProductQuickView } from '@/components/store/product-quick-view';
 import Link from 'next/link';
+import { Phone, Instagram } from 'lucide-react';
+import { shade, telHref, prettyPhone, instagramHandle } from '@/lib/store/colors';
 
 export default function StoreHomePage() {
   const store = useStore();
@@ -81,24 +83,81 @@ export default function StoreHomePage() {
 
   const isEmpty = !loading && products.length === 0 && !search && !category;
 
+  const [theme, accent] = [store.storeThemeColor, store.storeAccentColor];
+
   return (
-    <div className="space-y-4">
-      {/* Banner */}
-      {store.storeBanner && (
-        <div className="relative -mx-4 -mt-4 mb-2">
-          <img
-            src={store.storeBanner}
-            alt={store.storeName}
-            className="w-full h-36 sm:h-48 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-          {store.storeDescription && (
-            <p className="absolute bottom-3 left-4 right-4 text-white text-sm font-medium drop-shadow-md line-clamp-2">
-              {store.storeDescription}
-            </p>
+    <div>
+      {/* ===== HERO ===== */}
+      <section
+        className="relative overflow-hidden text-white"
+        style={{ background: `linear-gradient(135deg, ${shade(theme, -0.45)} 0%, ${theme} 55%, ${shade(accent, -0.05)} 130%)` }}
+      >
+        {store.storeBanner && (
+          <>
+            <img src={store.storeBanner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-overlay" />
+          </>
+        )}
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-40" style={{ backgroundColor: accent }} />
+        <div className="absolute -bottom-28 -left-16 h-72 w-72 rounded-full blur-3xl opacity-30 bg-white" />
+        <div className="relative max-w-6xl mx-auto px-4 py-10 sm:py-16 flex flex-col sm:flex-row items-center gap-6 sm:gap-10 text-center sm:text-left">
+          {store.storeLogo ? (
+            <img src={store.storeLogo} alt={store.storeName} className="h-28 w-28 sm:h-40 sm:w-40 rounded-full object-cover bg-white ring-4 ring-white/80 shadow-2xl flex-shrink-0" />
+          ) : (
+            <div className="h-28 w-28 sm:h-40 sm:w-40 rounded-full bg-white flex items-center justify-center text-5xl font-extrabold shadow-2xl flex-shrink-0" style={{ color: theme }}>
+              {store.storeName.charAt(0).toUpperCase()}
+            </div>
           )}
+          <div className="min-w-0">
+            <p className="inline-block text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] px-3 py-1 rounded-full bg-white/15 backdrop-blur">
+              {store.city ? `${store.city} · ` : ''}Order online
+            </p>
+            <h1 className="mt-3 text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight drop-shadow-lg">{store.storeName}</h1>
+            {store.storeDescription && (
+              <p className="mt-3 max-w-2xl text-sm sm:text-base text-white/85 line-clamp-3">{store.storeDescription}</p>
+            )}
+            <div className="mt-5 flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+              <a href="#shop" className="px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-[1.03] transition-transform" style={{ backgroundColor: accent, color: '#fff' }}>
+                Shop now →
+              </a>
+              {store.phone && (
+                <a href={telHref(store.phone)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-white/15 hover:bg-white/25 backdrop-blur">
+                  <Phone className="h-4 w-4" /> {prettyPhone(store.phone)}
+                </a>
+              )}
+              {store.instagramUrl && (
+                <a href={store.instagramUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bg-white/15 hover:bg-white/25 backdrop-blur">
+                  <Instagram className="h-4 w-4" /> {instagramHandle(store.instagramUrl)}
+                </a>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+        {/* wave */}
+        <svg viewBox="0 0 1440 40" preserveAspectRatio="none" className="relative block w-full h-6 sm:h-10" aria-hidden>
+          <path d="M0,40 C240,0 480,0 720,20 C960,40 1200,40 1440,10 L1440,40 Z" fill="white" fillOpacity="0.9" />
+        </svg>
+      </section>
+
+      {/* highlights */}
+      <section className="max-w-6xl mx-auto px-4 -mt-1 grid grid-cols-3 gap-2 sm:gap-4 text-center">
+        {[
+          { t: 'Fresh & genuine', d: 'Quality you can trust', e: '✨' },
+          { t: 'Easy ordering', d: 'Cart or WhatsApp', e: '🛒' },
+          { t: 'Cash on delivery', d: 'Pay when it arrives', e: '🚚' },
+        ].map((x) => (
+          <div key={x.t} className="rounded-2xl bg-white/90 border border-white shadow-sm px-2 py-3 sm:py-4">
+            <div className="text-xl sm:text-2xl">{x.e}</div>
+            <div className="text-[11px] sm:text-sm font-bold text-gray-900 mt-1">{x.t}</div>
+            <div className="hidden sm:block text-xs text-gray-500">{x.d}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* ===== SHOP ===== */}
+      <div id="shop" className="max-w-6xl mx-auto px-4 pt-8 space-y-4 scroll-mt-28">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+          Our <span style={{ color: theme }}>products</span>
+        </h2>
 
       {/* Search Bar */}
       <div className="relative">
@@ -108,8 +167,8 @@ export default function StoreHomePage() {
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:border-transparent"
-          style={{ '--tw-ring-color': store.storeThemeColor } as any}
+          className="w-full pl-10 pr-4 py-3 rounded-2xl border border-white bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+          style={{ '--tw-ring-color': theme } as any}
         />
       </div>
 
@@ -119,7 +178,7 @@ export default function StoreHomePage() {
           categories={categories}
           selected={category}
           onSelect={setCategory}
-          themeColor={store.storeThemeColor}
+          themeColor={theme}
         />
       )}
 
@@ -169,6 +228,27 @@ export default function StoreHomePage() {
           )}
         </>
       )}
+
+      </div>
+
+      {/* ===== ABOUT ===== */}
+      <section id="about" className="max-w-6xl mx-auto px-4 pt-12 scroll-mt-28">
+        <div className="rounded-3xl p-6 sm:p-10 text-white shadow-xl" style={{ background: `linear-gradient(135deg, ${theme}, ${shade(theme, -0.4)})` }}>
+          <h2 className="text-2xl sm:text-3xl font-extrabold">About {store.storeName}</h2>
+          <p className="mt-3 text-white/85 max-w-3xl text-sm sm:text-base leading-relaxed">
+            {store.storeDescription || `Welcome to ${store.storeName}. Browse our products, add what you like to the cart and order in a minute.`}
+          </p>
+          {categories.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <button key={c} onClick={() => { setCategory(c); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }} className="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-white/15 hover:bg-white/25">
+                  {c}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Sticky Cart Bar */}
       {totalItems > 0 && (

@@ -23,6 +23,8 @@ import {
   Globe,
 } from 'lucide-react';
 import { BranchProvider } from '@/lib/store/branch-context';
+import { BrandProvider, useBrand } from '@/lib/store/brand-context';
+import { rgba } from '@/lib/store/colors';
 import { BranchPicker } from '@/components/client/branch-picker';
 import { StoreSelectorWrapper } from '@/components/client/store-selector-wrapper';
 import { DashboardHeader } from '@/components/client/dashboard-header';
@@ -197,7 +199,9 @@ export default function ClientLayout({
   }
 
   return (
+    <BrandProvider>
     <BranchProvider>
+    <BrandedShell>
     <div
       className={cn(
         'flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1',
@@ -241,35 +245,65 @@ export default function ClientLayout({
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        <div className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto">
+        <MainPane>
           <div className="md:hidden mb-3">
             <BranchPicker />
           </div>
           <DashboardHeader />
           {children}
-        </div>
+        </MainPane>
       </div>
 
       <BottomNav onMoreClick={() => setOpen(true)} />
     </div>
     <StoreSelectorWrapper open={showStoreSelector} onDone={() => setShowStoreSelector(false)} />
+    </BrandedShell>
     </BranchProvider>
+    </BrandProvider>
+  );
+}
+
+/** Applies the business's colours to the whole CRM (soft gradient behind the content). */
+function BrandedShell({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+function MainPane({ children }: { children: React.ReactNode }) {
+  const brand = useBrand();
+  return (
+    <div
+      className="p-4 md:p-8 pb-20 md:pb-8 rounded-tl-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col flex-1 w-full h-full overflow-y-auto"
+      style={{ backgroundImage: `linear-gradient(180deg, ${rgba(brand.theme, 0.10)} 0%, ${rgba(brand.accent, 0.05)} 35%, transparent 70%)` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function BrandMark({ size }: { size: number }) {
+  const brand = useBrand();
+  const initial = (brand.name || 'B').charAt(0).toUpperCase();
+  return brand.logo ? (
+    <img src={brand.logo} alt={brand.name} style={{ height: size, width: size }} className="rounded-full object-cover flex-shrink-0 bg-white ring-2 shadow-md" />
+  ) : (
+    <div style={{ height: size, width: size, background: `linear-gradient(135deg, ${brand.theme}, ${brand.accent})` }} className="rounded-full flex items-center justify-center text-white font-extrabold flex-shrink-0 shadow-md">
+      {initial}
+    </div>
   );
 }
 
 const Logo = () => {
+  const brand = useBrand();
   return (
-    <Link
-      href="/client"
-      className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
-    >
-      <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
+    <Link href="/client" className="flex items-center gap-3 py-1 relative z-20">
+      <BrandMark size={44} />
       <motion.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="font-medium text-black dark:text-white whitespace-pre"
+        className="font-extrabold text-base leading-tight whitespace-normal break-words"
+        style={{ color: brand.theme }}
       >
-        BizManager
+        {brand.name || 'BizManager'}
       </motion.span>
     </Link>
   );
@@ -277,11 +311,8 @@ const Logo = () => {
 
 const LogoIcon = () => {
   return (
-    <Link
-      href="/client"
-      className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
-    >
-      <div className="h-5 w-6 bg-black dark:bg-white rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm flex-shrink-0" />
+    <Link href="/client" className="flex items-center py-1 relative z-20">
+      <BrandMark size={36} />
     </Link>
   );
 };
