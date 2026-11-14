@@ -268,3 +268,16 @@ ${catalog}`;
 
   return { reply, images, handoff: !!p.handoff, handoffNote: String(p.handoffNote || args.text) };
 }
+
+/** Greeting reply for the shared number: SatyaSell intro + the store's product categories (no LLM call). */
+export async function greetingWithCategories(): Promise<string | null> {
+  const tenantId = process.env.PLATFORM_STORE_TENANT_ID || DEFAULT_STORE_TENANT_ID;
+  const [info, cats] = await Promise.all([
+    prisma.businessInfo.findUnique({ where: { tenantId } }),
+    prisma.product.groupBy({ by: ['category'], where: { tenantId, status: 'active', category: { not: null } }, _count: { _all: true }, orderBy: { _count: { category: 'desc' } }, take: 8 }),
+  ]);
+  const names = cats.map((c) => (c.category || '').trim()).filter(Boolean);
+  if (!names.length) return null;
+  const storeName = (info as any)?.storeName || 'our store';
+  return `Hello! 👋 Welcome to SatyaSell.\n\nYou can shop at ${storeName} right here - we have:\n${names.map((n) => `• ${n}`).join('\n')}\n\nJust type what you're looking for (e.g. "${names[0]}"). For questions about SatyaSell for your own business, ask me anything!`;
+}

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { SITE } from '@/lib/site';
 import { PLATFORM_SYSTEM_PROMPT } from './platform-kb';
 import { platformAutoReply, sendPlatformImage } from './platform';
-import { findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore, answerFromTenantProducts } from './demo-ai';
+import { findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore, answerFromTenantProducts, greetingWithCategories } from './demo-ai';
 
 /** Cost / abuse limits for the platform number. Tune here. */
 export const PLATFORM_LIMITS = {
@@ -146,6 +146,19 @@ export async function handlePlatformMessage(input: {
         // Photos are sent after the text reply by the caller via this deferred hook
         pendingImages.set(phone, ans.images);
         return ans.reply;
+      }
+    }
+
+    // --- Plain greeting: introduce the store categories ----------------------
+    if (!active && /^(hi+|hello+|hey+|hii+|namaste|namaskar|hola|good (morning|afternoon|evening))[\s!.]*$/i.test(text)) {
+      try {
+        const greet = await greetingWithCategories();
+        if (greet) {
+          await prisma.platformMessage.create({ data: { phone, role: 'assistant', content: greet } });
+          return greet;
+        }
+      } catch (e) {
+        console.error('[PlatformAI] Greeting categories failed, using normal assistant:', e);
       }
     }
 
