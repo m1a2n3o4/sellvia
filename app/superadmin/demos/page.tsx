@@ -10,7 +10,17 @@ interface Demo {
   logo: string | null; themeColor: string; accentColor: string; sample: { name: string; price: number }[];
 }
 
+const PIN_KEY = 'satyasell_demo_pins';
+function readPins(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(PIN_KEY) || '{}'); } catch { return {}; }
+}
+function writePin(id: string, pin: string) {
+  try { localStorage.setItem(PIN_KEY, JSON.stringify({ ...readPins(), [id]: pin })); } catch { /* ignore */ }
+}
+
 export default function DemosPage() {
+  const [pins, setPins] = useState<Record<string, string>>({});
+  useEffect(() => { setPins(readPins()); }, []);
   const [demos, setDemos] = useState<Demo[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
@@ -87,6 +97,7 @@ export default function DemosPage() {
                 <td className="px-4 py-3">
                   <div className="font-medium text-gray-900">{d.businessName}</div>
                   <div className="text-xs text-gray-500">{d.mobile} · {d.products} products</div>
+                  <div className="text-xs text-gray-700">PIN: {pins[d.id] ? <span className="font-mono bg-yellow-100 px-1 rounded">{pins[d.id]}</span> : <span className="text-gray-400">not saved on this browser</span>}</div>
                   {d.isPlatformAgent && <span className="mt-1 inline-flex px-2 text-xs rounded-full bg-purple-100 text-purple-800">AI ordering agent</span>}
                 </td>
                 <td className="px-4 py-3">
@@ -99,9 +110,14 @@ export default function DemosPage() {
                   <div>WhatsApp orders: {d.whatsappOrders ? 'on' : 'off'}</div>
                 </td>
                 <td className="px-4 py-3 space-x-3 space-y-1">
-                  <button className="text-blue-600" onClick={async () => { if (await ensureAgent(d)) copy(buildMessage(d), 'Message copied - replace <PIN> (or use Reset PIN + copy)'); }}>Copy message</button>
+                  <button className="text-blue-600" onClick={async () => { if (!(await ensureAgent(d))) return; const pin = pins[d.id]; copy(buildMessage(d, pin || '<PIN>'), pin ? `Message copied with PIN ${pin}` : 'Message copied, but no PIN is saved here - press "New PIN + copy message" first'); }}>Copy message</button>
                   <button className="text-pink-600" onClick={() => setPosterFor(d)}>Poster</button>
-                  <button className="text-blue-600" onClick={async () => { if (!(await ensureAgent(d))) return; const r = await patch(d.id, { action: 'resetPin' }); if (r) { await copy(buildMessage(d).replace('<PIN>', r.pin), `New PIN ${r.pin} - full message copied`); } }}>Reset PIN + copy message</button>
+                  <button className="text-blue-600" onClick={async () => {
+                    if (!confirm(`Create a NEW PIN for ${d.businessName}? The old PIN (in any message already sent) will stop working.`)) return;
+                    if (!(await ensureAgent(d))) return;
+                    const r = await patch(d.id, { action: 'resetPin' });
+                    if (r) { writePin(d.id, r.pin); setPins(readPins()); await copy(buildMessage(d, r.pin), `New PIN ${r.pin} saved - full message copied`); }
+                  }}>New PIN + copy message</button>
                   <button className="text-blue-600" onClick={() => patch(d.id, { action: 'whatsappOrders', enabled: !d.whatsappOrders })}>{d.whatsappOrders ? 'WhatsApp orders off' : 'WhatsApp orders on'}</button>
                   <button className="text-purple-600" onClick={() => setAgent(d.id, !d.isPlatformAgent)}>{d.isPlatformAgent ? 'Remove AI agent' : 'Make AI agent'}</button>
                   <button className="text-orange-600" onClick={() => patch(d.id, { action: d.enabled ? 'takedown' : 'restore' })}>{d.enabled ? 'Take down' : 'Restore'}</button>

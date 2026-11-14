@@ -103,6 +103,7 @@ export default function OnboardPage() {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed');
       setDone(d);
+      try { const k = 'satyasell_demo_pins'; localStorage.setItem(k, JSON.stringify({ ...JSON.parse(localStorage.getItem(k) || '{}'), [d.tenantId]: d.loginPin })); } catch { /* ignore */ }
       setStatus('');
     } catch (err: any) { setStatus(err.message); }
     setBusy(false);
