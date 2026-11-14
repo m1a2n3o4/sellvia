@@ -157,3 +157,25 @@ export function platformAutoReply(text: string): string {
     'Website: https://www.satyasell.com\nOr call us: +91 77802 25235'
   );
 }
+
+/** Send an image (by public URL) on the platform number. Only valid within 24h of the user's last message. */
+export async function sendPlatformImage(to: string, imageUrl: string, caption?: string): Promise<boolean> {
+  const token = process.env.PLATFORM_WHATSAPP_TOKEN;
+  const phoneNumberId = getPlatformPhoneNumberId();
+  if (!token || !phoneNumberId) return false;
+  try {
+    const res = await fetch(`${GRAPH_URL}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: to.replace(/\D/g, ''),
+        type: 'image',
+        image: { link: imageUrl, ...(caption ? { caption: caption.slice(0, 900) } : {}) },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

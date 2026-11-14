@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Transcript } from '@/components/superadmin/transcript';
 
 interface Enquiry {
   id: string;
@@ -13,6 +14,9 @@ interface Enquiry {
   createdAt: string;
 }
 
+const isWhatsApp = (e: Enquiry) => !!e.message?.startsWith('[WhatsApp]');
+const cleanMessage = (m: string | null) => (m || '').replace(/^\[WhatsApp\]\s*/, '');
+
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   contacted: 'bg-blue-100 text-blue-800',
@@ -24,6 +28,7 @@ export default function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Enquiry | null>(null);
 
   const fetchEnquiries = async () => {
     try {
@@ -89,6 +94,7 @@ export default function EnquiriesPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instagram</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
@@ -100,6 +106,11 @@ export default function EnquiriesPage() {
                 {enquiries.map((e) => (
                   <tr key={e.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{e.name}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${isWhatsApp(e) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
+                        {isWhatsApp(e) ? 'WhatsApp' : 'Website'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       <a href={`tel:${e.mobile}`} className="text-blue-600 hover:underline">{e.mobile}</a>
                     </td>
@@ -110,8 +121,11 @@ export default function EnquiriesPage() {
                         </a>
                       ) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">
-                      {e.message || '-'}
+                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[260px]">
+                      <button onClick={() => setSelected(e)} className="text-left hover:text-blue-700 w-full">
+                        <span className="block truncate">{cleanMessage(e.message) || '-'}</span>
+                        <span className="text-xs text-blue-600">View full details{isWhatsApp(e) ? ' & AI chat' : ''}</span>
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <select
@@ -132,6 +146,43 @@ export default function EnquiriesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6" onClick={(ev) => ev.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{selected.name}</h2>
+                <p className="text-sm text-gray-500">
+                  <a href={`tel:${selected.mobile}`} className="text-blue-600 hover:underline">{selected.mobile}</a>
+                  {' · '}{isWhatsApp(selected) ? 'via WhatsApp' : 'via Website form'}{' · '}{new Date(selected.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+            <div className="mt-4 space-y-3 text-sm">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase">Message</p>
+                <p className="whitespace-pre-wrap text-gray-900">{cleanMessage(selected.message) || '-'}</p>
+              </div>
+              {selected.instagramLink && (
+                <p><span className="text-xs font-medium text-gray-500 uppercase">Instagram </span>
+                  <a href={selected.instagramLink} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{selected.instagramLink}</a></p>
+              )}
+              {selected.website && <p><span className="text-xs font-medium text-gray-500 uppercase">Website </span>{selected.website}</p>}
+              <a href={`https://wa.me/91${selected.mobile.replace(/\D/g, '').slice(-10)}`} target="_blank" rel="noreferrer" className="inline-block text-sm text-green-700 hover:underline">
+                Message on WhatsApp
+              </a>
+            </div>
+            {isWhatsApp(selected) && (
+              <div className="mt-5">
+                <p className="text-xs font-medium text-gray-500 uppercase mb-2">Full WhatsApp conversation with AI</p>
+                <Transcript phone={selected.mobile} />
+              </div>
+            )}
           </div>
         </div>
       )}

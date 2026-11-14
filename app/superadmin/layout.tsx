@@ -62,6 +62,26 @@ export default function SuperAdminLayout({
               >
                 Enquiries
               </Link>
+              <Link
+                href="/superadmin/platform-chats"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                  pathname?.startsWith('/superadmin/platform-chats')
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                WhatsApp Chats
+              </Link>
+              <Link
+                href="/superadmin/demo-stores"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                  pathname?.startsWith('/superadmin/demo-stores')
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Demo Stores
+              </Link>
             </div>
 
             <div className="flex items-center">

@@ -584,3 +584,49 @@ model PlatformMessage {
   @@index([createdAt])
   @@map("platform_messages")
 }
+
+// ============================================
+// DEMO STORES (shared SatyaSell number answers on behalf of a prospect's shop)
+// ============================================
+
+model DemoStore {
+  id         String   @id @default(uuid())
+  slug       String   @unique
+  name       String
+  tagline    String? // e.g. "Second-hand laptops, monitors & desktops"
+  city       String?
+  shopPhone  String?  @map("shop_phone")
+  triggers   String[] @default([]) // extra phrases that open this store, e.g. "vr tech"
+  extraRules String?  @map("extra_rules") // free-text instructions for the assistant
+  status     String   @default("active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  items DemoItem[]
+
+  @@map("demo_stores")
+}
+
+model DemoItem {
+  id        String   @id @default(uuid())
+  storeId   String   @map("store_id")
+  category  String   @default("other") // laptop | desktop | monitor | accessory | other
+  brand     String?
+  model     String?
+  cpu       String?
+  ram       String?
+  storage   String?
+  screen    String?
+  color     String?
+  condition String?
+  price     Int?
+  quantity  Int?
+  notes     String?
+  imageUrl  String?  @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store DemoStore @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("demo_items")
+}

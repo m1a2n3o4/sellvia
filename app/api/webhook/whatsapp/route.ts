@@ -8,7 +8,7 @@ import { handleCommerceFlow, getOrCreateConversationState } from '@/lib/whatsapp
 import { getActiveCartForChat, formatCartMessage } from '@/lib/cart/cart-service';
 import { downloadWhatsAppMedia, transcribeAudio } from '@/lib/whatsapp/media';
 import { getPlatformPhoneNumberId, sendPlatformText } from '@/lib/whatsapp/platform';
-import { handlePlatformMessage } from '@/lib/whatsapp/platform-ai';
+import { handlePlatformMessage, sendPendingImages } from '@/lib/whatsapp/platform-ai';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Allow up to 30 seconds on Vercel Pro
@@ -171,6 +171,7 @@ async function processIncomingMessage(msg: IncomingMessage) {
       const wait = 1500 - (Date.now() - typingStart);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       await sendPlatformText(customerPhone, reply);
+      await sendPendingImages(customerPhone);
     }
     return;
   }
