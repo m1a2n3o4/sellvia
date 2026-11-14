@@ -20,6 +20,7 @@ export interface StoreData {
   codEnabled: boolean;
   onlinePayEnabled: boolean;
   whatsappNumber: string | null;
+  isDemo?: boolean;
 }
 
 const StoreContext = createContext<StoreData | null>(null);
@@ -35,6 +36,11 @@ export function StoreLayoutClient({ store, children }: { store: StoreData; child
     <StoreContext.Provider value={store}>
       <CartProvider slug={store.storeSlug}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
+          {store.isDemo && (
+            <div className="bg-amber-100 text-amber-900 text-xs sm:text-sm text-center px-3 py-2">
+              Demo store prepared by SatyaSell from public information - orders placed here are tests and are not fulfilled.
+            </div>
+          )}
           <StoreHeader
             slug={store.storeSlug}
             storeName={store.storeName}

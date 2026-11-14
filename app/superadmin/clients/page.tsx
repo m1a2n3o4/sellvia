@@ -11,6 +11,7 @@ interface Tenant {
   mobile: string;
   address: string;
   status: 'active' | 'inactive';
+  isPlatformAgent?: boolean;
   features: {
     inventory: boolean;
     orders: boolean;
@@ -44,6 +45,21 @@ export default function ClientsPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const setAgent = async (id: string, enabled: boolean) => {
+    try {
+      const res = await fetch(`/api/superadmin/clients/${id}/agent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) throw new Error('failed');
+      fetchClients();
+    } catch (err) {
+      alert('Failed to update AI agent');
+      console.error(err);
     }
   };
 
@@ -135,6 +151,11 @@ export default function ClientsPage() {
                     <div className="text-sm font-medium text-gray-900">
                       {tenant.businessName}
                     </div>
+                    {tenant.isPlatformAgent && (
+                      <span className="mt-1 inline-flex px-2 text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                        AI ordering agent
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{tenant.clientName}</div>
@@ -157,6 +178,12 @@ export default function ClientsPage() {
                     {new Date(tenant.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => setAgent(tenant.id, !tenant.isPlatformAgent)}
+                      className="text-purple-600 hover:text-purple-900 mr-4"
+                    >
+                      {tenant.isPlatformAgent ? 'Remove AI agent' : 'Make AI agent'}
+                    </button>
                     <Link
                       href={`/superadmin/clients/${tenant.id}/edit`}
                       className="text-blue-600 hover:text-blue-900 mr-4"

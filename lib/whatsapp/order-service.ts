@@ -27,6 +27,7 @@ interface CreateOrderInput {
   pincode?: string;
   shippingFee?: number;
   storeId?: string;
+  isDemo?: boolean; // demo business: flag the order and never SMS the owner
 }
 
 function generateOrderNumber(): string {
@@ -55,6 +56,7 @@ export async function createOrder(input: CreateOrderInput) {
     pincode,
     shippingFee = 0,
     storeId,
+    isDemo = false,
   } = input;
 
   // Normalize phone: strip +91 prefix, keep last 10 digits
@@ -115,6 +117,7 @@ export async function createOrder(input: CreateOrderInput) {
         storeId: storeId || null,
         orderNumber,
         customerId: customer.id,
+        isDemo,
         orderType,
         paymentMethod: paymentMethod || (orderType === 'website' ? 'cod' : 'razorpay'),
         paymentStatus,
@@ -167,8 +170,8 @@ export async function createOrder(input: CreateOrderInput) {
     return newOrder;
   });
 
-  // Send SMS notification to owner (fire-and-forget)
-  sendOrderNotificationSms({
+  // Send SMS notification to owner (fire-and-forget) - never for demo businesses
+  if (!isDemo) sendOrderNotificationSms({
     tenantId,
     orderNumber: order.orderNumber,
     customerName: order.customer.name,

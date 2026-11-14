@@ -180,6 +180,8 @@ export async function POST(
       pincode: data.pincode,
       items: orderItems,
       orderType: 'website',
+      isDemo: store.tenant.isDemo,
+      notes: store.tenant.isDemo ? 'DEMO ORDER - not fulfilled' : undefined,
       paymentMethod: data.paymentMethod === 'online' ? undefined : 'cod',
       paymentStatus: data.paymentMethod === 'cod' ? 'unpaid' : 'pending',
       shippingFee: deliveryFee,

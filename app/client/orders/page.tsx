@@ -92,7 +92,12 @@ export default function OrdersPage() {
     {
       key: 'orderNumber',
       header: 'Order #',
-      render: (o: Order) => <span className="font-medium">{o.orderNumber}</span>,
+      render: (o: Order) => (
+        <span className="font-medium">
+          {o.orderNumber}
+          {o.isDemo && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">SAMPLE</span>}
+        </span>
+      ),
     },
     {
       key: 'customer',

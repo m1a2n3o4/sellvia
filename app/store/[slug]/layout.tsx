@@ -15,6 +15,7 @@ async function getStoreInfo(slug: string) {
       tenant: {
         select: {
           status: true,
+          isDemo: true,
           businessInfo: {
             select: {
               ownerPhone: true,
@@ -37,11 +38,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 
   const title = `${store.name || 'Store'} | SatyaSell`;
+  const robots = store.tenant.isDemo ? { index: false, follow: false } : undefined;
   const description = store.description || `Shop at ${store.name}`;
 
   return {
     title,
     description,
+    ...(robots ? { robots } : {}),
     openGraph: {
       title,
       description,
@@ -86,6 +89,11 @@ export default async function StoreLayout({ children, params }: Props) {
     );
   }
 
+  if (store.tenant.isDemo) {
+    // Count demo page opens for the Super Admin "Demo businesses" view
+    prisma.pageView.create({ data: { page: `/store/${store.slug}` } }).catch(() => {});
+  }
+
   // Build whatsapp number
   let whatsappNumber: string | null = null;
   const bi = store.tenant.businessInfo;
@@ -107,6 +115,7 @@ export default async function StoreLayout({ children, params }: Props) {
     codEnabled: store.codEnabled,
     onlinePayEnabled: store.onlinePayEnabled,
     whatsappNumber,
+    isDemo: store.tenant.isDemo,
   };
 
   return <StoreLayoutClient store={storeData}>{children}</StoreLayoutClient>;

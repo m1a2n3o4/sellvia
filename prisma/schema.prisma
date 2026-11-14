@@ -32,6 +32,8 @@ model Tenant {
   mobile            String       @unique
   passwordHash      String       @map("password_hash")
   pinChangeRequired Boolean      @default(true) @map("pin_change_required")
+  isPlatformAgent   Boolean      @default(false) @map("is_platform_agent") // the one business the SatyaSell WhatsApp number answers for
+  isDemo            Boolean      @default(false) @map("is_demo") // onboarded on behalf of a prospect (demo page, unlisted)
   address           String
   status            TenantStatus
   features          Json         @default("{\"inventory\":true,\"orders\":true,\"customers\":true,\"broadcasting\":false,\"whatsapp\":false}")
@@ -151,6 +153,7 @@ model Customer {
   state       String?
   pincode     String?
   notes       String?
+  isDemo      Boolean  @default(false) @map("is_demo")
   totalOrders Int      @default(0) @map("total_orders")
   totalSpent  Decimal  @default(0) @map("total_spent") @db.Decimal(10, 2)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -174,6 +177,7 @@ model Order {
   storeId               String?        @map("store_id")
   orderNumber           String         @map("order_number")
   customerId            String         @map("customer_id")
+  isDemo                Boolean        @default(false) @map("is_demo")
   orderDate             DateTime       @default(now()) @map("order_date")
   status                OrderStatus    @default(pending)
   paymentMethod         String?        @map("payment_method")
@@ -422,6 +426,7 @@ model Store {
   state            String?
   pincode          String?
   phone            String?
+  instagramUrl     String?  @map("instagram_url")
   managerName      String?  @map("manager_name")
   managerMobile    String?  @map("manager_mobile")
   deliveryFee      Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)

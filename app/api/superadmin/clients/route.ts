@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         address: true,
         status: true,
         features: true,
+        isPlatformAgent: true,
         createdAt: true,
         updatedAt: true,
       },

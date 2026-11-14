@@ -113,6 +113,7 @@ export async function handlePlatformMessage(input: {
     // --- Demo store mode (e.g. "Hi VR Tech") --------------------------------
     if (/^(MENU|EXIT|BACK)$/.test(upper)) {
       await clearActiveStore(phone);
+      await prisma.platformMessage.create({ data: { phone, role: 'tenantstore', content: '' } });
       await prisma.platformMessage.create({ data: { phone, role: 'assistant', content: MENU_MSG } });
       return MENU_MSG;
     }
@@ -162,12 +163,26 @@ export async function handlePlatformMessage(input: {
       }
     }
 
-    // --- Tenant store products (dashboard catalog) ---------------------------
+    // --- Tenant store products + ordering (dashboard catalog) -----------------
     if (!active && globalCount < PLATFORM_LIMITS.maxGlobalAiRepliesPerDay && apiKey) {
       try {
-        const tAns = await answerFromTenantProducts({ history: [], text });
-        if (tAns) {
+        const sticky = await prisma.platformMessage.findFirst({
+          where: { phone, role: 'tenantstore', createdAt: { gte: new Date(now - 30 * 60 * 1000) } },
+          orderBy: { createdAt: 'desc' },
+        });
+        const inSession = sticky?.content === '1';
+        const recent = await prisma.platformMessage.findMany({
+          where: { phone, role: { in: ['user', 'assistant'] }, createdAt: { gte: new Date(now - 30 * 60 * 1000) } },
+          orderBy: { createdAt: 'desc' },
+          take: 9,
+        });
+        const hist = recent.reverse().slice(0, -1).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+        const tAns = await answerFromTenantProducts({ history: inSession ? hist : [], text, phone, customerName: name, inSession });
+        if (tAns?.offTopic) {
+          await prisma.platformMessage.create({ data: { phone, role: 'tenantstore', content: '' } });
+        } else if (tAns) {
           await prisma.platformMessage.create({ data: { phone, role: 'assistant', content: tAns.reply } });
+          await prisma.platformMessage.create({ data: { phone, role: 'tenantstore', content: tAns.orderPlaced ? '' : '1' } });
           if (tAns.handoff) {
             await createHandoff(phone, name, tAns.handoffNote, 'Store').catch(() => {});
           }

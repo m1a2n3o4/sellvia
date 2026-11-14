@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid phone' }, { status: 400 });
       }
       const messages = await prisma.platformMessage.findMany({
-        where: { phone: { endsWith: last10 } },
+        where: { phone: { endsWith: last10 }, role: { notIn: ['store', 'tenantstore'] } },
         orderBy: { createdAt: 'asc' },
         take: 500,
         select: { id: true, role: true, content: true, createdAt: true },

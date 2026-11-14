@@ -88,6 +88,7 @@ export interface Order {
   customerId: string;
   customer?: Customer;
   orderDate: string;
+  isDemo?: boolean;
   orderType: OrderType;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod?: string;
@@ -128,5 +129,12 @@ export interface DashboardMetrics {
   lowStockCount: number;
   todayRevenue: number;
   thisMonthRevenue: number;
+  deliveredOrders?: number;
+  pendingOrders?: number;
+  cancelledOrders?: number;
+  totalRevenue?: number;
+  amountReceived?: number;
+  amountPending?: number;
+  last7Days?: { label: string; revenue: number; orders: number }[];
   recentOrders: Order[];
 }

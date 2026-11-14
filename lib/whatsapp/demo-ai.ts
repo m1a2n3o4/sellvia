@@ -176,65 +176,129 @@ ${catalog || '(no items uploaded yet)'}`;
 // ---------------------------------------------------------------------------
 // Tenant-store fallback: the shared SatyaSell number answers from a real
 // tenant's product table (dashboard products) when the message matches them.
-// Tenant is PLATFORM_STORE_TENANT_ID (env), default: Brandz Bazar.
+// Tenant is chosen by resolveAgentTenantId().
 // ---------------------------------------------------------------------------
-const DEFAULT_STORE_TENANT_ID = 'ec33fd63-a419-46c8-90c7-fdabd3a3892b';
+
+/**
+ * The business the shared SatyaSell number answers for:
+ * 1) the tenant flagged isPlatformAgent (Super Admin -> Clients), else
+ * 2) the oldest active tenant that has active products.
+ */
+export async function resolveAgentTenantId(): Promise<string | null> {
+  const flagged = await prisma.tenant.findFirst({ where: { isPlatformAgent: true, status: 'active' }, select: { id: true } });
+  if (flagged) return flagged.id;
+  const first = await prisma.tenant.findFirst({
+    where: { status: 'active', products: { some: { status: 'active' } } },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  return first?.id ?? null;
+}
 const TENANT_STOP = new Set([
   'the','and','for','you','have','has','any','want','need','show','see','buy','price','cost','with','please',
   'hello','available','stock','what','which','how','much','can','get','looking','look','there','this','that',
   'your','details','satyasell','satya','sell','plan','plans','pricing','demo','whatsapp','business','shop','store',
 ]);
 
+const tenantTool: OpenAI.ChatCompletionTool = {
+  type: 'function',
+  function: {
+    name: 'store_reply',
+    description: 'Reply to the customer on WhatsApp, optionally placing an order.',
+    parameters: {
+      type: 'object',
+      properties: {
+        reply: { type: 'string', description: 'Plain-text WhatsApp reply, max 130 words.' },
+        showItems: { type: 'array', items: { type: 'integer' }, description: 'Product numbers (#) whose photo should be sent, max 3.' },
+        handoff: { type: 'boolean', description: 'True if the customer wants to talk to a person / negotiate / visit.' },
+        handoffNote: { type: 'string' },
+        offTopic: { type: 'boolean', description: 'True if the message is NOT about this store (e.g. asks about SatyaSell itself, pricing plans, how to start selling).' },
+        placeOrder: { type: 'boolean', description: 'True ONLY when the customer has clearly confirmed the items+quantities AND given their name and full delivery address.' },
+        orderItems: {
+          type: 'array',
+          items: { type: 'object', properties: { n: { type: 'integer' }, quantity: { type: 'integer' } }, required: ['n', 'quantity'] },
+          description: 'Items to order, using product numbers (#) from the PRODUCTS list.',
+        },
+        customerName: { type: 'string' },
+        deliveryAddress: { type: 'string', description: 'Full address incl. city and pincode as given by the customer.' },
+      },
+      required: ['reply', 'handoff'],
+    },
+  },
+};
+
+export interface TenantAnswer extends StoreAnswer {
+  offTopic?: boolean;
+  orderPlaced?: boolean;
+}
+
 export async function answerFromTenantProducts(args: {
   history: { role: 'user' | 'assistant'; content: string }[];
   text: string;
-}): Promise<StoreAnswer | null> {
+  phone: string;
+  customerName?: string;
+  inSession?: boolean; // customer is already chatting with the store -> don't require keyword match
+}): Promise<TenantAnswer | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
-  const tenantId = process.env.PLATFORM_STORE_TENANT_ID || DEFAULT_STORE_TENANT_ID;
+  const tenantId = await resolveAgentTenantId();
+  if (!tenantId) return null;
 
-  const keywords = args.text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !TENANT_STOP.has(w)).slice(0, 6);
-  if (!keywords.length) return null;
+  const context = [...args.history.slice(-4).map((h) => h.content), args.text].join(' ');
+  const kw = (t: string) => t.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !TENANT_STOP.has(w));
+  const keywords = Array.from(new Set(kw(context))).slice(0, 8);
+  if (!keywords.length && !args.inSession) return null;
 
-  const products = await prisma.product.findMany({
-    where: {
-      tenantId,
-      status: 'active',
-      OR: keywords.flatMap((k) => [
-        { name: { contains: k, mode: 'insensitive' as const } },
-        { brand: { contains: k, mode: 'insensitive' as const } },
-        { category: { contains: k, mode: 'insensitive' as const } },
-        { description: { contains: k, mode: 'insensitive' as const } },
-        { variants: { some: { variantName: { contains: k, mode: 'insensitive' as const } } } },
-      ]),
-    },
-    include: { variants: { where: { status: 'active' }, take: 5 } },
-    take: 12,
-  });
-  if (!products.length) return null; // not a product question -> normal platform assistant
+  const include = { variants: { where: { status: 'active' as const }, take: 5 } };
+  let products = keywords.length
+    ? await prisma.product.findMany({
+        where: {
+          tenantId,
+          status: 'active',
+          OR: keywords.flatMap((k) => [
+            { name: { contains: k, mode: 'insensitive' as const } },
+            { brand: { contains: k, mode: 'insensitive' as const } },
+            { category: { contains: k, mode: 'insensitive' as const } },
+            { description: { contains: k, mode: 'insensitive' as const } },
+            { variants: { some: { variantName: { contains: k, mode: 'insensitive' as const } } } },
+          ]),
+        },
+        include,
+        take: 12,
+      })
+    : [];
+  if (!products.length) {
+    if (!args.inSession) return null; // not a product question -> normal platform assistant
+    products = await prisma.product.findMany({ where: { tenantId, status: 'active' }, include, orderBy: { createdAt: 'desc' }, take: 12 });
+  }
+  if (!products.length) return null;
 
-  const [info, tenant] = await Promise.all([
+  const [info, tenant, store] = await Promise.all([
     prisma.businessInfo.findUnique({ where: { tenantId } }),
     prisma.tenant.findUnique({ where: { id: tenantId } }),
+    prisma.store.findFirst({ where: { tenantId }, orderBy: { isDefault: 'desc' } }),
   ]);
-  const storeName = (info as any)?.storeName || (tenant as any)?.name || 'our store';
+  const storeName = (info as any)?.storeName || (tenant as any)?.businessName || 'our store';
+  const deliveryFee = Number(store?.deliveryFee || 0);
 
   const catalog = products
     .map((p, idx) => {
       const vars = p.variants
         .map((v) => `   - ${v.variantName} ${Object.entries((v.attributes || {}) as Record<string, string>).map(([k, x]) => `${k}: ${x}`).join(', ')} Rs ${v.price}`)
         .join('\n');
-      return `#${idx + 1} ${p.name}${p.brand ? ` (${p.brand})` : ''}${p.category ? ` | ${p.category}` : ''} | Rs ${p.basePrice} | ${p.stockQuantity > 0 ? 'in stock' : 'out of stock'}${p.description ? ` | ${p.description.slice(0, 150)}` : ''}${vars ? '\n' + vars : ''}`;
+      return `#${idx + 1} ${p.name}${p.brand ? ` (${p.brand})` : ''}${p.category ? ` | ${p.category}` : ''} | Rs ${p.basePrice} | ${p.stockQuantity > 0 ? `in stock (${p.stockQuantity})` : 'out of stock'}${p.description ? ` | ${p.description.slice(0, 150)}` : ''}${vars ? '\n' + vars : ''}`;
     })
     .join('\n');
 
-  const system = `You are the WhatsApp assistant of "${storeName}". Customers ask about products. Answer ONLY from the PRODUCTS below.
+  const system = `You are the WhatsApp ordering assistant of "${storeName}". Customers ask about products and place orders. Answer ONLY from the PRODUCTS below.
 
 RULES:
 - Never invent products, specs, prices or stock. If it is not listed, say so and suggest the closest listed items.
 - Prices are in Indian Rupees as listed. Recommend at most 3-4 best matches with key details and price.
 - Reply in the customer's language. Plain text, short, use line breaks and "•". No markdown. Max 130 words.
-- If the customer wants to buy, visit or talk to someone: set handoff=true and say the store team will contact them shortly; ask for their name if not given.
+- If the message is not about this store's products/orders (e.g. asks what SatyaSell is, its pricing, how to start selling), set offTopic=true.
+- TAKING AN ORDER: when the customer wants to buy, confirm items and quantities, then ask for their name and full delivery address (with city and pincode) - one question at a time. Delivery fee Rs ${deliveryFee}. Payment: cash on delivery. When you have items, name and full address, summarise (items, total) and ask "Reply YES to confirm". ONLY when the customer replies yes/confirms, set placeOrder=true with orderItems (use # numbers), customerName and deliveryAddress. Never set placeOrder before explicit confirmation.
+- If the customer wants to negotiate, visit or talk to a person: handoff=true.
 - showItems: numbers (#) of recommended products whose photo should be sent (max 3).${info?.aiCustomInstructions ? `\n\nSTORE RULES:\n${info.aiCustomInstructions}` : ''}
 
 PRODUCTS:
@@ -244,20 +308,56 @@ ${catalog}`;
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.2,
-    max_tokens: 450,
+    max_tokens: 500,
     messages: [
       { role: 'system', content: system },
       ...args.history.map((h) => ({ role: h.role, content: h.content })),
       { role: 'user', content: args.text },
     ],
-    tools: [tool],
+    tools: [tenantTool],
     tool_choice: { type: 'function', function: { name: 'store_reply' } },
   });
   const call = completion.choices[0]?.message?.tool_calls?.[0] as { function: { arguments: string } } | undefined;
   if (!call?.function?.arguments) return null;
   const p = JSON.parse(call.function.arguments);
-  const reply = String(p.reply || '').trim().slice(0, 1000);
+  if (p.offTopic) return { reply: '', images: [], handoff: false, handoffNote: '', offTopic: true };
+
+  let reply = String(p.reply || '').trim().slice(0, 1000);
   if (!reply) return null;
+  let orderPlaced = false;
+
+  if (p.placeOrder && Array.isArray(p.orderItems) && p.orderItems.length && p.customerName && p.deliveryAddress) {
+    try {
+      const lines: { productId: string; variantId?: string; productName: string; price: number; quantity: number }[] = [];
+      for (const it of p.orderItems.slice(0, 20)) {
+        const pr = products[Number(it.n) - 1];
+        const qty = Math.max(1, Math.min(100, Math.round(Number(it.quantity) || 1)));
+        if (!pr || pr.stockQuantity < qty) throw new Error(`unavailable: ${pr?.name ?? it.n}`);
+        lines.push({ productId: pr.id, productName: pr.name, price: Number(pr.basePrice), quantity: qty });
+      }
+      const { createOrder } = await import('./order-service');
+      const order = await createOrder({
+        tenantId,
+        storeId: store?.id,
+        customerPhone: args.phone,
+        customerName: String(p.customerName).slice(0, 80),
+        deliveryAddress: String(p.deliveryAddress).slice(0, 300),
+        items: lines,
+        orderType: 'whatsapp',
+        paymentMethod: 'cod',
+        paymentStatus: 'unpaid',
+        shippingFee: deliveryFee,
+        isDemo: !!(tenant as any)?.isDemo,
+        notes: (tenant as any)?.isDemo ? 'DEMO ORDER - not fulfilled (placed via SatyaSell WhatsApp)' : undefined,
+      });
+      const total = Number(order.total);
+      reply = `✅ Order placed!\n\nOrder: ${order.orderNumber}\n${lines.map((l) => `• ${l.productName} x${l.quantity}`).join('\n')}\nTotal: Rs ${total}${deliveryFee ? ` (incl. delivery Rs ${deliveryFee})` : ''}\nPayment: Cash on delivery\n\n${storeName} will confirm delivery shortly. Thank you!${(tenant as any)?.isDemo ? '\n\n(This is a demo order - it will not be delivered.)' : ''}`;
+      orderPlaced = true;
+    } catch (e) {
+      console.error('[PlatformAI] Order creation failed:', e);
+      reply = "Sorry, I couldn't place that order - an item may be out of stock. Please tell me the items and quantities again.";
+    }
+  }
 
   const images = (Array.isArray(p.showItems) ? p.showItems : [])
     .slice(0, 3)
@@ -266,12 +366,13 @@ ${catalog}`;
     .map((pr: (typeof products)[number]) => ({ url: ((pr.images as string[]) || [])[0], caption: `${pr.name} - Rs ${pr.basePrice}` }))
     .filter((i: { url: string }) => !!i.url);
 
-  return { reply, images, handoff: !!p.handoff, handoffNote: String(p.handoffNote || args.text) };
+  return { reply, images: orderPlaced ? [] : images, handoff: !!p.handoff, handoffNote: String(p.handoffNote || args.text), orderPlaced };
 }
 
 /** Greeting reply for the shared number: SatyaSell intro + the store's product categories (no LLM call). */
 export async function greetingWithCategories(): Promise<string | null> {
-  const tenantId = process.env.PLATFORM_STORE_TENANT_ID || DEFAULT_STORE_TENANT_ID;
+  const tenantId = await resolveAgentTenantId();
+  if (!tenantId) return null;
   const [info, cats] = await Promise.all([
     prisma.businessInfo.findUnique({ where: { tenantId } }),
     prisma.product.groupBy({ by: ['category'], where: { tenantId, status: 'active', category: { not: null } }, _count: { _all: true }, orderBy: { _count: { category: 'desc' } }, take: 8 }),

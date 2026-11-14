@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Users, Package, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Users, Package, TrendingUp, AlertTriangle, CheckCircle2, Clock, Wallet } from 'lucide-react';
 import { DashboardMetrics, Order } from '@/types';
 import { useBranch } from '@/lib/store/branch-context';
 
@@ -119,6 +119,35 @@ export default function ClientDashboard() {
           bgColor="bg-green-50 dark:bg-green-900/20"
           iconColor="text-green-600"
         />
+      </div>
+
+      {/* Order & money overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard label="Delivered" value={metrics?.deliveredOrders ?? 0} icon={<CheckCircle2 className="h-5 w-5" />} bgColor="bg-green-50 dark:bg-green-900/20" iconColor="text-green-600" />
+        <MetricCard label="In progress" value={metrics?.pendingOrders ?? 0} icon={<Clock className="h-5 w-5" />} bgColor="bg-amber-50 dark:bg-amber-900/20" iconColor="text-amber-600" />
+        <MetricCard label="Amount received" value={`₹${(metrics?.amountReceived ?? 0).toLocaleString()}`} icon={<Wallet className="h-5 w-5" />} bgColor="bg-emerald-50 dark:bg-emerald-900/20" iconColor="text-emerald-600" />
+        <MetricCard label="Amount pending" value={`₹${(metrics?.amountPending ?? 0).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} bgColor="bg-orange-50 dark:bg-orange-900/20" iconColor="text-orange-600" />
+      </div>
+
+      {/* Last 7 days */}
+      <div className="bg-white dark:bg-neutral-800 border border-neutral-400 dark:border-neutral-600 rounded-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Last 7 days</h2>
+          <span className="text-xs text-gray-600 dark:text-neutral-400">
+            {metrics?.thisWeekOrders ?? 0} orders · ₹{(metrics?.last7Days ?? []).reduce((s, d) => s + d.revenue, 0).toLocaleString()} · {metrics?.cancelledOrders ?? 0} cancelled
+          </span>
+        </div>
+        <div className="flex items-end gap-2 h-32">
+          {(metrics?.last7Days ?? Array.from({ length: 7 }, () => ({ label: '', revenue: 0, orders: 0 }))).map((d, i, arr) => {
+            const max = Math.max(1, ...arr.map((x) => x.revenue));
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`₹${d.revenue} · ${d.orders} orders`}>
+                <div className="w-full rounded-t bg-blue-500/80" style={{ height: `${Math.max(4, (d.revenue / max) * 100)}%` }} />
+                <span className="text-[10px] text-gray-600 dark:text-neutral-400 mt-1">{d.label}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Secondary Stats */}
