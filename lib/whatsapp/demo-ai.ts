@@ -172,3 +172,99 @@ ${catalog || '(no items uploaded yet)'}`;
   return { reply, images, handoff: !!p.handoff, handoffNote: String(p.handoffNote || text) };
 }
 
+
+// ---------------------------------------------------------------------------
+// Tenant-store fallback: the shared SatyaSell number answers from a real
+// tenant's product table (dashboard products) when the message matches them.
+// Tenant is PLATFORM_STORE_TENANT_ID (env), default: Brandz Bazar.
+// ---------------------------------------------------------------------------
+const DEFAULT_STORE_TENANT_ID = 'ec33fd63-a419-46c8-90c7-fdabd3a3892b';
+const TENANT_STOP = new Set([
+  'the','and','for','you','have','has','any','want','need','show','see','buy','price','cost','with','please',
+  'hello','available','stock','what','which','how','much','can','get','looking','look','there','this','that',
+  'your','details','satyasell','satya','sell','plan','plans','pricing','demo','whatsapp','business','shop','store',
+]);
+
+export async function answerFromTenantProducts(args: {
+  history: { role: 'user' | 'assistant'; content: string }[];
+  text: string;
+}): Promise<StoreAnswer | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  const tenantId = process.env.PLATFORM_STORE_TENANT_ID || DEFAULT_STORE_TENANT_ID;
+
+  const keywords = args.text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !TENANT_STOP.has(w)).slice(0, 6);
+  if (!keywords.length) return null;
+
+  const products = await prisma.product.findMany({
+    where: {
+      tenantId,
+      status: 'active',
+      OR: keywords.flatMap((k) => [
+        { name: { contains: k, mode: 'insensitive' as const } },
+        { brand: { contains: k, mode: 'insensitive' as const } },
+        { category: { contains: k, mode: 'insensitive' as const } },
+        { description: { contains: k, mode: 'insensitive' as const } },
+        { variants: { some: { variantName: { contains: k, mode: 'insensitive' as const } } } },
+      ]),
+    },
+    include: { variants: { where: { status: 'active' }, take: 5 } },
+    take: 12,
+  });
+  if (!products.length) return null; // not a product question -> normal platform assistant
+
+  const [info, tenant] = await Promise.all([
+    prisma.businessInfo.findUnique({ where: { tenantId } }),
+    prisma.tenant.findUnique({ where: { id: tenantId } }),
+  ]);
+  const storeName = (info as any)?.storeName || (tenant as any)?.name || 'our store';
+
+  const catalog = products
+    .map((p, idx) => {
+      const vars = p.variants
+        .map((v) => `   - ${v.variantName} ${Object.entries((v.attributes || {}) as Record<string, string>).map(([k, x]) => `${k}: ${x}`).join(', ')} Rs ${v.price}`)
+        .join('\n');
+      return `#${idx + 1} ${p.name}${p.brand ? ` (${p.brand})` : ''}${p.category ? ` | ${p.category}` : ''} | Rs ${p.basePrice} | ${p.stockQuantity > 0 ? 'in stock' : 'out of stock'}${p.description ? ` | ${p.description.slice(0, 150)}` : ''}${vars ? '\n' + vars : ''}`;
+    })
+    .join('\n');
+
+  const system = `You are the WhatsApp assistant of "${storeName}". Customers ask about products. Answer ONLY from the PRODUCTS below.
+
+RULES:
+- Never invent products, specs, prices or stock. If it is not listed, say so and suggest the closest listed items.
+- Prices are in Indian Rupees as listed. Recommend at most 3-4 best matches with key details and price.
+- Reply in the customer's language. Plain text, short, use line breaks and "•". No markdown. Max 130 words.
+- If the customer wants to buy, visit or talk to someone: set handoff=true and say the store team will contact them shortly; ask for their name if not given.
+- showItems: numbers (#) of recommended products whose photo should be sent (max 3).${info?.aiCustomInstructions ? `\n\nSTORE RULES:\n${info.aiCustomInstructions}` : ''}
+
+PRODUCTS:
+${catalog}`;
+
+  const openai = new OpenAI({ apiKey });
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    temperature: 0.2,
+    max_tokens: 450,
+    messages: [
+      { role: 'system', content: system },
+      ...args.history.map((h) => ({ role: h.role, content: h.content })),
+      { role: 'user', content: args.text },
+    ],
+    tools: [tool],
+    tool_choice: { type: 'function', function: { name: 'store_reply' } },
+  });
+  const call = completion.choices[0]?.message?.tool_calls?.[0] as { function: { arguments: string } } | undefined;
+  if (!call?.function?.arguments) return null;
+  const p = JSON.parse(call.function.arguments);
+  const reply = String(p.reply || '').trim().slice(0, 1000);
+  if (!reply) return null;
+
+  const images = (Array.isArray(p.showItems) ? p.showItems : [])
+    .slice(0, 3)
+    .map((n: number) => products[Number(n) - 1])
+    .filter(Boolean)
+    .map((pr: (typeof products)[number]) => ({ url: ((pr.images as string[]) || [])[0], caption: `${pr.name} - Rs ${pr.basePrice}` }))
+    .filter((i: { url: string }) => !!i.url);
+
+  return { reply, images, handoff: !!p.handoff, handoffNote: String(p.handoffNote || args.text) };
+}

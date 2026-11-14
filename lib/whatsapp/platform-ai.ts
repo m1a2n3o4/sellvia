@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { SITE } from '@/lib/site';
 import { PLATFORM_SYSTEM_PROMPT } from './platform-kb';
 import { platformAutoReply, sendPlatformImage } from './platform';
-import { findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore } from './demo-ai';
+import { findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore, answerFromTenantProducts } from './demo-ai';
 
 /** Cost / abuse limits for the platform number. Tune here. */
 export const PLATFORM_LIMITS = {
@@ -146,6 +146,23 @@ export async function handlePlatformMessage(input: {
         // Photos are sent after the text reply by the caller via this deferred hook
         pendingImages.set(phone, ans.images);
         return ans.reply;
+      }
+    }
+
+    // --- Tenant store products (dashboard catalog) ---------------------------
+    if (!active && globalCount < PLATFORM_LIMITS.maxGlobalAiRepliesPerDay && apiKey) {
+      try {
+        const tAns = await answerFromTenantProducts({ history: [], text });
+        if (tAns) {
+          await prisma.platformMessage.create({ data: { phone, role: 'assistant', content: tAns.reply } });
+          if (tAns.handoff) {
+            await createHandoff(phone, name, tAns.handoffNote, 'Store').catch(() => {});
+          }
+          pendingImages.set(phone, tAns.images);
+          return tAns.reply;
+        }
+      } catch (e) {
+        console.error('[PlatformAI] Tenant product answer failed, using normal assistant:', e);
       }
     }
 
