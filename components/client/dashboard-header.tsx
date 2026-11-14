@@ -14,7 +14,7 @@ import {
 export function DashboardHeader() {
   const { selectedBranch, branches, loading } = useBranch();
   const brand = useBrand();
-  const shell = 'relative overflow-hidden flex items-center justify-between gap-3 mb-5 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 text-white shadow-lg';
+  const shell = 'relative shrink-0 overflow-hidden flex items-center justify-between gap-3 mb-5 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 text-white shadow-lg';
   const shellStyle = { background: `linear-gradient(120deg, ${shade(brand.theme, -0.4)}, ${brand.theme} 60%, ${shade(brand.accent, -0.05)} 140%)` };
   const mark = brand.logo ? (
     <img src={brand.logo} alt={brand.name} className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover bg-white ring-2 ring-white/80 shadow-md flex-shrink-0" />

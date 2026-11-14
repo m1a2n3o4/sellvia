@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true, businessName: true, mobile: true, isPlatformAgent: true, createdAt: true,
         businessInfo: { select: { storeSlug: true, shareOwnerPhone: true } },
-        stores: { select: { enabled: true, slug: true }, take: 1 },
+        stores: { select: { enabled: true, slug: true, logo: true, themeColor: true, accentColor: true }, take: 1 },
+        products: { where: { status: 'active' }, select: { name: true, basePrice: true }, orderBy: { createdAt: 'asc' }, take: 3 },
         _count: { select: { products: true } },
       },
     });
@@ -38,6 +39,10 @@ export async function GET(request: NextRequest) {
           isPlatformAgent: t.isPlatformAgent,
           testOrders: ordMap.get(t.id) || 0,
           pageViews: viewMap.get(`/store/${slug}`) || 0,
+          logo: t.stores[0]?.logo || null,
+          themeColor: t.stores[0]?.themeColor || '#2563eb',
+          accentColor: t.stores[0]?.accentColor || '#f59e0b',
+          sample: t.products.map((p) => ({ name: p.name, price: Number(p.basePrice) })),
           createdAt: t.createdAt,
         };
       }),

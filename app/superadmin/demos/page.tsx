@@ -1,27 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { buildMessage, drawPoster } from '@/lib/demo/outreach';
 
 interface Demo {
   id: string; businessName: string; mobile: string; slug: string; products: number; enabled: boolean;
   whatsappOrders: boolean; isPlatformAgent: boolean; testOrders: number; pageViews: number; createdAt: string;
-}
-
-const SITE = 'https://www.satyasell.com';
-
-function outreach(d: Demo, ownerName?: string) {
-  return `Hi${ownerName ? ' ' + ownerName : ''}, this is Manohar from SatyaSell 👋
-
-I came across ${d.businessName} on Instagram and loved your products. We're building a tool for Instagram sellers, and I made a FREE demo for your business using your public Instagram/WhatsApp catalogue - nothing is live for your customers.
-
-🛍️ Your demo store: ${SITE}/store/${d.slug}
-📊 Your dashboard (orders, products, customers): ${SITE}/client/login
-   Login: ${d.mobile}  |  PIN: <PIN>
-
-You can try placing a test order and editing products. If you like it, we can set it up properly (no setup cost - we only take 1% on orders you receive through it). If not, just reply "remove" and I'll delete everything immediately. Your data stays private and is never shared.
-
-Would you take 2 minutes to look?`;
+  logo: string | null; themeColor: string; accentColor: string; sample: { name: string; price: number }[];
 }
 
 export default function DemosPage() {
@@ -47,6 +33,28 @@ export default function DemosPage() {
   const setAgent = async (id: string, enabled: boolean) => {
     await fetch(`/api/superadmin/clients/${id}/agent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
     load();
+  };
+
+  // The WhatsApp test chat answers for ONE business only - make sure it is this one before sending.
+  const ensureAgent = async (d: Demo) => {
+    if (d.isPlatformAgent) return true;
+    const other = demos.find((x) => x.isPlatformAgent);
+    const ok = confirm(`The SatyaSell WhatsApp AI currently answers for ${other ? other.businessName : 'the default store'}.\n\nSwitch it to ${d.businessName} so ${d.businessName}'s owner can test it?`);
+    if (ok) await setAgent(d.id, true);
+    return ok;
+  };
+
+  const [posterFor, setPosterFor] = useState<Demo | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (posterFor && canvasRef.current) drawPoster(canvasRef.current, posterFor).catch(() => setMsg('Could not draw poster'));
+  }, [posterFor]);
+  const downloadPoster = async () => {
+    const c = canvasRef.current;
+    if (!c || !posterFor) return;
+    const save = (url: string) => { const a = document.createElement('a'); a.href = url; a.download = `${posterFor.slug}-poster.png`; a.click(); };
+    try { save(c.toDataURL('image/png')); }
+    catch { await drawPoster(c, { ...posterFor, logo: null }); save(c.toDataURL('image/png')); setMsg('Logo could not be embedded - downloaded without it'); }
   };
 
   const remove = async (d: Demo) => {
@@ -91,8 +99,9 @@ export default function DemosPage() {
                   <div>WhatsApp orders: {d.whatsappOrders ? 'on' : 'off'}</div>
                 </td>
                 <td className="px-4 py-3 space-x-3 space-y-1">
-                  <button className="text-blue-600" onClick={() => copy(outreach(d), 'Message copied - replace <PIN> (use Reset PIN)')}>Copy message</button>
-                  <button className="text-blue-600" onClick={async () => { const r = await patch(d.id, { action: 'resetPin' }); if (r) { await copy(outreach(d).replace('<PIN>', r.pin), `New PIN ${r.pin} - full message copied`); } }}>Reset PIN + copy message</button>
+                  <button className="text-blue-600" onClick={async () => { if (await ensureAgent(d)) copy(buildMessage(d), 'Message copied - replace <PIN> (or use Reset PIN + copy)'); }}>Copy message</button>
+                  <button className="text-pink-600" onClick={() => setPosterFor(d)}>Poster</button>
+                  <button className="text-blue-600" onClick={async () => { if (!(await ensureAgent(d))) return; const r = await patch(d.id, { action: 'resetPin' }); if (r) { await copy(buildMessage(d).replace('<PIN>', r.pin), `New PIN ${r.pin} - full message copied`); } }}>Reset PIN + copy message</button>
                   <button className="text-blue-600" onClick={() => patch(d.id, { action: 'whatsappOrders', enabled: !d.whatsappOrders })}>{d.whatsappOrders ? 'WhatsApp orders off' : 'WhatsApp orders on'}</button>
                   <button className="text-purple-600" onClick={() => setAgent(d.id, !d.isPlatformAgent)}>{d.isPlatformAgent ? 'Remove AI agent' : 'Make AI agent'}</button>
                   <button className="text-orange-600" onClick={() => patch(d.id, { action: d.enabled ? 'takedown' : 'restore' })}>{d.enabled ? 'Take down' : 'Restore'}</button>
@@ -104,6 +113,19 @@ export default function DemosPage() {
           </tbody>
         </table>
       </div>
+
+      {posterFor && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setPosterFor(null)}>
+          <div className="bg-white rounded-xl p-4 max-w-md w-full max-h-[95vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <canvas ref={canvasRef} className="w-full h-auto rounded-lg border" />
+            <div className="flex gap-3 mt-3">
+              <button onClick={downloadPoster} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium">Download PNG</button>
+              <button onClick={() => setPosterFor(null)} className="px-4 py-2 border rounded-md text-sm text-gray-800">Close</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Send this image on WhatsApp together with the message.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
