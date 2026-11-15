@@ -18,6 +18,19 @@ export const PLATFORM_LIMITS = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Test numbers exempt from the per-sender daily limit.
+ * Set PLATFORM_LIMIT_EXEMPT to a comma-separated list (10-digit or with country code).
+ */
+function isLimitExempt(phone: string): boolean {
+  const list = (process.env.PLATFORM_LIMIT_EXEMPT || '')
+    .split(',')
+    .map((n) => n.replace(/\D/g, ''))
+    .filter(Boolean)
+    .map((n) => (n.length === 10 ? `91${n}` : n));
+  return list.includes(phone);
+}
+
 /** Photos to send right after the text reply (consumed by sendPendingImages). */
 const pendingImages = new Map<string, { url: string; caption: string }[]>();
 export async function sendPendingImages(from: string) {
@@ -97,7 +110,7 @@ export async function handlePlatformMessage(input: {
       where: { phone, role: 'user', createdAt: { gte: since } },
     });
     await prisma.platformMessage.create({ data: { phone, role: 'user', content: text } });
-    if (userCount >= PLATFORM_LIMITS.maxUserMessagesPerDay) {
+    if (userCount >= PLATFORM_LIMITS.maxUserMessagesPerDay && !isLimitExempt(phone)) {
       return userCount === PLATFORM_LIMITS.maxUserMessagesPerDay ? LIMIT_REACHED_MSG : null;
     }
 
