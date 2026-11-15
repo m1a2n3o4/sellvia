@@ -55,6 +55,16 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connectedPhone, setConnectedPhone] = useState('');
+  const [waStatus, setWaStatus] = useState<{
+    phoneNumber?: string | null;
+    verifiedName?: string | null;
+    businessName?: string | null;
+    status?: string | null;
+    quality?: string | null;
+    wabaId?: string | null;
+    phoneNumberId?: string | null;
+    error?: string;
+  } | null>(null);
   const [showManualSetup, setShowManualSetup] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -277,6 +287,19 @@ export default function SettingsPage() {
 
   const isWhatsAppConnected = !!(form.whatsappPhoneNumberId && form.whatsappToken);
 
+  useEffect(() => {
+    if (!isWhatsAppConnected) {
+      setWaStatus(null);
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/client/whatsapp-status')
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.connected) setWaStatus(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isWhatsAppConnected, form.whatsappPhoneNumberId]);
+
   if (loading) {
     return (
       <div className="space-y-4 max-w-2xl">
@@ -468,12 +491,26 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
                     WhatsApp Connected
+                    {waStatus?.status && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-green-600 text-white rounded-full px-2 py-0.5">
+                        {waStatus.status}
+                      </span>
+                    )}
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-400">
-                    {connectedPhone || `Phone ID: ${form.whatsappPhoneNumberId}`}
+                  <p className="text-xs text-green-700 dark:text-green-400">
+                    {waStatus?.phoneNumber || connectedPhone || `Phone ID: ${form.whatsappPhoneNumberId}`}
                   </p>
+                  {(waStatus?.businessName || waStatus?.verifiedName) && (
+                    <p className="text-xs text-green-700 dark:text-green-400">
+                      Business: {waStatus.businessName || waStatus.verifiedName}
+                      {waStatus.quality ? ` · Quality: ${waStatus.quality}` : ''}
+                    </p>
+                  )}
+                  {waStatus?.error && (
+                    <p className="text-xs text-red-600 dark:text-red-400">Status check failed: {waStatus.error}</p>
+                  )}
                 </div>
                 <Button
                   variant="outline"
