@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/client';
+import { resolveTenantSender } from '@/lib/whatsapp/platform-mirror';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,8 @@ export async function POST(
       where: { tenantId },
     });
 
-    if (!businessInfo?.whatsappToken || !businessInfo?.whatsappPhoneNumberId) {
+    const send = await resolveTenantSender(tenantId, businessInfo);
+    if (!send) {
       return NextResponse.json(
         { error: 'WhatsApp not configured. Go to Settings to set up.' },
         { status: 400 }
@@ -40,19 +41,14 @@ export async function POST(
     }
 
     // Send via WhatsApp
-    const sendResult = await sendWhatsAppMessage({
-      phoneNumberId: businessInfo.whatsappPhoneNumberId,
-      accessToken: businessInfo.whatsappToken,
-      to: chat.customerPhone,
-      message: message.trim(),
-    });
+    const sendResult = await send(chat.customerPhone, message.trim());
 
     // Save message
     const savedMessage = await prisma.whatsAppMessage.create({
       data: {
         tenantId,
         chatId: chat.id,
-        waMessageId: sendResult.messageId,
+        waMessageId: sendResult.messageId ?? null,
         sender: 'business',
         content: message.trim(),
         messageType: 'text',

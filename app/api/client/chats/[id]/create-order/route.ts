@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
 import { createOrderFromWhatsApp } from '@/lib/whatsapp/order-service';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/client';
+import { resolveTenantSender } from '@/lib/whatsapp/platform-mirror';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,19 +46,15 @@ export async function POST(
       where: { tenantId },
     });
 
-    if (businessInfo?.whatsappToken && businessInfo?.whatsappPhoneNumberId) {
+    const send = await resolveTenantSender(tenantId, businessInfo);
+    if (send) {
       const itemsSummary = items
         .map((i: { productName: string; quantity: number; price: number }) => `${i.productName} x${i.quantity} - ₹${i.price * i.quantity}`)
         .join('\n');
 
       const confirmMsg = `Order Confirmed!\n\nOrder: ${order.orderNumber}\n${itemsSummary}\nTotal: ₹${order.total}\n${deliveryAddress ? `\nDelivery: ${deliveryAddress}` : ''}\n\nThank you for your order!`;
 
-      await sendWhatsAppMessage({
-        phoneNumberId: businessInfo.whatsappPhoneNumberId,
-        accessToken: businessInfo.whatsappToken,
-        to: chat.customerPhone,
-        message: confirmMsg,
-      });
+      const sendResult = await send(chat.customerPhone, confirmMsg);
 
       // Save confirmation message
       await prisma.whatsAppMessage.create({
@@ -68,7 +64,7 @@ export async function POST(
           sender: 'business',
           content: confirmMsg,
           messageType: 'text',
-          status: 'sent',
+          status: sendResult.success ? 'sent' : 'failed',
           metadata: {
             orderId: order.id,
             orderNumber: order.orderNumber,

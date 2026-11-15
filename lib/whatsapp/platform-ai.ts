@@ -3,7 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { SITE } from '@/lib/site';
 import { PLATFORM_SYSTEM_PROMPT } from './platform-kb';
 import { platformAutoReply, sendPlatformImage } from './platform';
-import { findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore, answerFromTenantProducts, greetingWithCategories } from './demo-ai';
+import { mirrorToAgentChat } from './platform-mirror';
+import { resolveAgentTenantId, findStoreByTrigger, getActiveStore, setActiveStore, clearActiveStore, answerAsStore, answerFromTenantProducts, greetingWithCategories } from './demo-ai';
 
 /** Cost / abuse limits for the platform number. Tune here. */
 export const PLATFORM_LIMITS = {
@@ -156,6 +157,12 @@ export async function handlePlatformMessage(input: {
         const greet = await greetingWithCategories();
         if (greet) {
           await prisma.platformMessage.create({ data: { phone, role: 'assistant', content: greet } });
+          try {
+            const tid = await resolveAgentTenantId();
+            if (tid) await mirrorToAgentChat({ tenantId: tid, phone, customerName: name, customerText: text, replyText: greet });
+          } catch (e) {
+            console.error('[PlatformAI] Chat mirror failed:', e);
+          }
           return greet;
         }
       } catch (e) {
@@ -187,6 +194,12 @@ export async function handlePlatformMessage(input: {
             await createHandoff(phone, name, tAns.handoffNote, 'Store').catch(() => {});
           }
           pendingImages.set(phone, tAns.images);
+          try {
+            const tid = await resolveAgentTenantId();
+            if (tid) await mirrorToAgentChat({ tenantId: tid, phone, customerName: name, customerText: text, replyText: tAns.reply });
+          } catch (e) {
+            console.error('[PlatformAI] Chat mirror failed:', e);
+          }
           return tAns.reply;
         }
       } catch (e) {
