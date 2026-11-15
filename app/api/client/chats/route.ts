@@ -39,3 +39,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+// Bulk delete: ?olderThanDays=N deletes chats with no activity in the last N days (0 = all chats).
+export async function DELETE(request: NextRequest) {
+  try {
+    const tenantId = await getTenantId(request);
+    const { searchParams } = new URL(request.url);
+    const days = Number(searchParams.get('olderThanDays'));
+    if (!Number.isFinite(days) || days < 0) {
+      return NextResponse.json({ error: 'olderThanDays is required' }, { status: 400 });
+    }
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const result = await prisma.whatsAppChat.deleteMany({
+      where: {
+        tenantId,
+        ...(days > 0 ? { OR: [{ lastMessageAt: { lt: cutoff } }, { lastMessageAt: null, createdAt: { lt: cutoff } }] } : {}),
+      },
+    });
+    return NextResponse.json({ success: true, deleted: result.count });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    if (message.includes('Authentication') || message.includes('token')) {
+      return NextResponse.json({ error: message }, { status: 401 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

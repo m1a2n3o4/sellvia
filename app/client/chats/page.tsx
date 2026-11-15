@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Send, Bot, User, Building2, RefreshCw, Check, CheckCheck, Image as ImageIcon, Package, ArrowLeft } from 'lucide-react';
+import { Search, Send, Bot, User, Building2, RefreshCw, Check, CheckCheck, Image as ImageIcon, Package, ArrowLeft, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Chat {
@@ -49,7 +49,8 @@ export default function ChatsPage() {
   const [search, setSearch] = useState('');
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const lastScrolled = useRef<string>('');
 
   const fetchChats = useCallback(async () => {
     try {
@@ -99,9 +100,49 @@ export default function ChatsPage() {
     return () => clearInterval(interval);
   }, [selectedChat?.id]);
 
+  // Scroll to the newest message only when the chat is opened or a new message arrives
+  // (not on every 5s refresh, which would yank the view while the user reads/scrolls).
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedChat?.messages]);
+    if (!selectedChat) { lastScrolled.current = ''; return; }
+    const last = selectedChat.messages[selectedChat.messages.length - 1];
+    const key = `${selectedChat.id}:${last?.id ?? ''}`;
+    if (key === lastScrolled.current) return;
+    lastScrolled.current = key;
+    const el = messagesRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [selectedChat]);
+
+  const deleteChat = async (chatId: string) => {
+    if (!window.confirm('Delete this conversation and all its messages? This cannot be undone. Orders created from it are kept.')) return;
+    try {
+      const res = await fetch(`/api/client/chats/${chatId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setChats((prev) => prev.filter((c) => c.id !== chatId));
+        setSelectedChat((cur) => (cur?.id === chatId ? null : cur));
+      }
+    } catch {
+      console.error('Failed to delete chat');
+    }
+  };
+
+  const deleteOldChats = async () => {
+    const input = window.prompt('Delete all conversations with no activity in the last how many days?\n(Enter 0 to delete ALL conversations)', '7');
+    if (input === null) return;
+    const days = Number(input);
+    if (!Number.isFinite(days) || days < 0) return;
+    if (!window.confirm(days === 0 ? 'Delete ALL conversations? This cannot be undone.' : `Delete all conversations inactive for ${days}+ days? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/client/chats?olderThanDays=${days}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedChat(null);
+        fetchChats();
+        window.alert(`Deleted ${data.deleted} conversation(s).`);
+      }
+    } catch {
+      console.error('Failed to delete chats');
+    }
+  };
 
   const handleSendReply = async () => {
     if (!replyText.trim() || !selectedChat || sending) return;
@@ -179,9 +220,14 @@ export default function ChatsPage() {
       <div className="p-4 border-b border-neutral-300 dark:border-neutral-700">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">Live Chat</h1>
-          <Button variant="ghost" size="icon" onClick={fetchChats} className="h-8 w-8">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={deleteOldChats} className="h-8 w-8" title="Delete old chats">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={fetchChats} className="h-8 w-8" title="Refresh">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
@@ -275,10 +321,17 @@ export default function ChatsPage() {
               <p className="text-xs text-gray-700">{formatPhone(selectedChat.customerPhone)}</p>
             </div>
             <Badge variant="outline" className="text-xs flex-shrink-0">WhatsApp</Badge>
+            <button
+              onClick={() => deleteChat(selectedChat.id)}
+              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
+              title="Delete conversation"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-3">
+          <div ref={messagesRef} className="flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-3">
             {loadingChat ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -379,7 +432,6 @@ export default function ChatsPage() {
                 );
               })
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Reply Input */}
@@ -423,7 +475,7 @@ export default function ChatsPage() {
         selectedChat ? 'hidden md:flex' : 'flex'
       )}>
         <div className="flex-1 flex flex-col">
-          <ChatList />
+          {ChatList()}
         </div>
       </div>
 
@@ -431,7 +483,7 @@ export default function ChatsPage() {
         'flex-1 md:flex flex-col',
         selectedChat ? 'flex' : 'hidden md:flex'
       )}>
-        <ChatMessages />
+        {ChatMessages()}
       </div>
     </div>
   );
