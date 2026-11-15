@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,7 @@ declare global {
       init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void;
       login: (
         callback: (response: { authResponse?: { code?: string }; status?: string }) => void,
-        params: { config_id: string; response_type: string; override_default_response_type: boolean; extras: { setup: Record<string, unknown>; featureType: string; sessionInfoVersion: number } }
+        params: { config_id: string; response_type: string; override_default_response_type: boolean; extras: { setup: Record<string, unknown>; sessionInfoVersion: string } }
       ) => void;
     };
   }
@@ -182,6 +182,101 @@ export default function SettingsPage() {
     });
   }, []);
 
+  // --- WhatsApp Embedded Signup -------------------------------------------------
+  // Two things arrive separately: the FB.login authorization code, and the
+  // WA_EMBEDDED_SIGNUP message event (phone_number_id, waba_id, business_id).
+  // We only call the server once BOTH are here.
+  const pendingCode = useRef<string | null>(null);
+  const pendingSignup = useRef<{ phone_number_id: string; waba_id: string; business_id?: string } | null>(null);
+  const signupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetSignup = useCallback(() => {
+    pendingCode.current = null;
+    pendingSignup.current = null;
+    if (signupTimer.current) clearTimeout(signupTimer.current);
+    signupTimer.current = null;
+  }, []);
+
+  const submitConnect = useCallback(
+    async (extra?: Record<string, unknown>) => {
+      const signup = pendingSignup.current;
+      const code = pendingCode.current;
+      if (!signup || (!code && !extra?.mock)) return; // wait until both have arrived
+      if (signupTimer.current) clearTimeout(signupTimer.current);
+      try {
+        const res = await fetch('/api/whatsapp/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, ...signup, ...extra }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.error || 'Failed to connect WhatsApp');
+
+        setForm((prev) => ({
+          ...prev,
+          whatsappPhoneNumberId: data.phoneNumberId || '',
+          whatsappBusinessId: data.wabaId || '',
+          whatsappToken: '••••••••••••••••',
+          whatsappAppSecret: '',
+        }));
+        setConnectedPhone(data.phoneNumber || 'Connected');
+        setWaStatus(null);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to connect WhatsApp');
+      } finally {
+        resetSignup();
+        setConnecting(false);
+      }
+    },
+    [resetSignup]
+  );
+
+  // Listen for Meta's signup result. Only accept messages from facebook.com.
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      let origin: string;
+      try {
+        origin = new URL(event.origin).hostname;
+      } catch {
+        return;
+      }
+      if (origin !== 'facebook.com' && !origin.endsWith('.facebook.com')) return;
+
+      let payload: { type?: string; event?: string; data?: Record<string, string> };
+      try {
+        payload = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+      if (payload?.type !== 'WA_EMBEDDED_SIGNUP') return;
+
+      if (payload.event === 'FINISH' || payload.event === 'FINISH_ONLY_WABA' || payload.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+        const d = payload.data || {};
+        if (!d.phone_number_id || !d.waba_id) {
+          setError('WhatsApp signup finished without a phone number. Please try again and select a number.');
+          resetSignup();
+          setConnecting(false);
+          return;
+        }
+        pendingSignup.current = { phone_number_id: d.phone_number_id, waba_id: d.waba_id, business_id: d.business_id };
+        submitConnect();
+      } else if (payload.event === 'CANCEL') {
+        const step = payload.data?.current_step;
+        setError(step ? `WhatsApp signup was cancelled at the "${step}" step. You can try again any time.` : 'WhatsApp signup was cancelled.');
+        resetSignup();
+        setConnecting(false);
+      } else if (payload.event === 'ERROR') {
+        setError(payload.data?.error_message || 'WhatsApp signup failed. Please try again.');
+        resetSignup();
+        setConnecting(false);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [submitConnect, resetSignup]);
+
   const handleConnectWhatsApp = async () => {
     const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID;
     if (!configId) {
@@ -191,6 +286,7 @@ export default function SettingsPage() {
 
     setConnecting(true);
     setError('');
+    resetSignup();
 
     try {
       await loadFacebookSDK();
@@ -198,60 +294,44 @@ export default function SettingsPage() {
       window.FB!.login(
         (response) => {
           if (response.authResponse?.code) {
-            // Exchange code for token via our API
-            exchangeCode(response.authResponse.code);
+            pendingCode.current = response.authResponse.code;
+            // The signup event normally arrives around the same time; don't wait forever for it
+            signupTimer.current = setTimeout(() => {
+              if (!pendingSignup.current) {
+                setError('WhatsApp signup did not finish. Please try connecting again.');
+                resetSignup();
+                setConnecting(false);
+              }
+            }, 20000);
+            submitConnect();
           } else {
+            // Cancel/error events set their own message; this covers closing the popup
             setConnecting(false);
-            setError('WhatsApp signup was cancelled or failed. Please try again.');
+            resetSignup();
+            setError((prev) => prev || 'WhatsApp signup was cancelled or failed. Please try again.');
           }
         },
         {
           config_id: configId,
           response_type: 'code',
           override_default_response_type: true,
-          extras: {
-            setup: {},
-            featureType: '',
-            sessionInfoVersion: 2,
-          },
+          extras: { setup: {}, sessionInfoVersion: '3' },
         }
       );
     } catch {
       setConnecting(false);
+      resetSignup();
       setError('Failed to load Facebook SDK. Please try again.');
     }
   };
 
-  const exchangeCode = async (code: string) => {
-    try {
-      const res = await fetch('/api/client/whatsapp-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to connect WhatsApp');
-      }
-
-      // Update form with new credentials
-      setForm((prev) => ({
-        ...prev,
-        whatsappPhoneNumberId: data.phoneNumberId || '',
-        whatsappBusinessId: data.wabaId || '',
-        whatsappToken: '••••••••••••••••',
-        whatsappAppSecret: '••••••••••••••••',
-      }));
-      setConnectedPhone(data.phoneNumber || 'Connected');
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to connect WhatsApp');
-    } finally {
-      setConnecting(false);
-    }
+  // Dev-only: exercise the save route without the real Meta popup (needs WHATSAPP_CONNECT_MOCK=1 on a non-production deploy)
+  const showMockConnect = process.env.NEXT_PUBLIC_WHATSAPP_CONNECT_MOCK === '1';
+  const handleMockConnect = async () => {
+    setConnecting(true);
+    setError('');
+    pendingSignup.current = { phone_number_id: '100000000000001', waba_id: '100000000000002', business_id: '100000000000003' };
+    await submitConnect({ mock: true });
   };
 
   const handleDisconnect = async () => {
@@ -263,7 +343,7 @@ export default function SettingsPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/client/whatsapp-signup', { method: 'DELETE' });
+      const res = await fetch('/api/whatsapp/connect', { method: 'DELETE' });
 
       if (!res.ok) {
         const data = await res.json();
@@ -557,6 +637,16 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-400 text-center">
                 Opens Facebook login — verify your phone number and SatyaSell handles the rest
               </p>
+              {showMockConnect && (
+                <button
+                  type="button"
+                  onClick={handleMockConnect}
+                  disabled={connecting}
+                  className="w-full text-xs border border-dashed border-amber-500 text-amber-700 rounded-lg py-2"
+                >
+                  DEV ONLY: test save route with a mock payload
+                </button>
+              )}
             </div>
           )}
 

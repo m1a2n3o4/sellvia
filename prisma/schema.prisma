@@ -372,7 +372,7 @@ model BusinessInfo {
   locationUrl           String?  @map("location_url")
   policies              String?
   greeting              String?
-  whatsappPhoneNumberId String?  @map("whatsapp_phone_number_id")
+  whatsappPhoneNumberId String?  @unique @map("whatsapp_phone_number_id")
   whatsappBusinessId    String?  @map("whatsapp_business_id")
   whatsappToken         String?  @map("whatsapp_token")
   openaiKey             String?  @map("openai_key")
@@ -384,6 +384,13 @@ model BusinessInfo {
   paymentGateway        String?  @default("none") @map("payment_gateway")
   platformFeePercent    Float?   @default(0) @map("platform_fee_percent")
   whatsappAppSecret     String?  @map("whatsapp_app_secret")
+  // Embedded Signup connection metadata (token + PIN are AES-256-GCM encrypted, see lib/crypto/secrets.ts)
+  whatsappBusinessPortfolioId String?   @map("whatsapp_business_portfolio_id")
+  whatsappDisplayPhone        String?   @map("whatsapp_display_phone")
+  whatsappTokenExpiresAt      DateTime? @map("whatsapp_token_expires_at")
+  whatsappStatus              String?   @map("whatsapp_status")
+  whatsappConnectedAt         DateTime? @map("whatsapp_connected_at")
+  whatsappRegisterPin         String?   @map("whatsapp_register_pin")
   ownerPhone            String?  @map("owner_phone")
   shareOwnerPhone       Boolean  @default(false) @map("share_owner_phone")
   aiCustomInstructions  String?  @map("ai_custom_instructions")
@@ -634,4 +641,13 @@ model DemoItem {
 
   @@index([storeId])
   @@map("demo_items")
+}
+
+// WhatsApp message ids already handled by the webhook (dedupe retries / batches)
+model WebhookMessageSeen {
+  messageId String   @id @map("message_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("webhook_messages_seen")
 }

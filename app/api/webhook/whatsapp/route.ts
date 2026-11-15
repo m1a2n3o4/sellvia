@@ -9,6 +9,7 @@ import { getActiveCartForChat, formatCartMessage } from '@/lib/cart/cart-service
 import { downloadWhatsAppMedia, transcribeAudio } from '@/lib/whatsapp/media';
 import { getPlatformPhoneNumberId, sendPlatformText } from '@/lib/whatsapp/platform';
 import { handlePlatformMessage, sendPendingImages } from '@/lib/whatsapp/platform-ai';
+import { getTenantToken } from '@/lib/whatsapp/tenant-token';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Allow up to 30 seconds on Vercel Pro
@@ -42,36 +43,69 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'ok' });
   }
 
-  const entry = body.entry?.[0];
-  const changes = entry?.changes?.[0];
-  const value = changes?.value;
+  const signature = request.headers.get('x-hub-signature-256');
+  // Signature check against the Meta app secret (covers every number connected through our app)
+  const appSecret = process.env.META_APP_SECRET || '';
+  const sigOk = !!appSecret && verifyMetaWebhookSignature(rawBody, signature, appSecret);
 
-  // Handle message status updates (fire-and-forget)
-  if (value?.statuses?.[0]) {
-    waitUntil(handleStatusUpdate(value.statuses[0]));
-    return NextResponse.json({ status: 'ok' });
+  const incoming: IncomingMessage[] = [];
+
+  // Meta can batch several entries / changes / messages / statuses in one request: handle all of them
+  for (const entry of body.entry || []) {
+    for (const change of entry.changes || []) {
+      const value = change?.value;
+      if (!value) continue;
+
+      // Message status updates (fire-and-forget)
+      for (const status of value.statuses || []) {
+        waitUntil(handleStatusUpdate(status));
+      }
+
+      for (const message of value.messages || []) {
+        const parsed = extractMessage(message);
+        const phoneNumberId = value.metadata?.phone_number_id;
+        if (!parsed || !parsed.messageContent || !phoneNumberId) continue;
+        incoming.push({
+          phoneNumberId,
+          customerPhone: message.from,
+          customerName: value.contacts?.find((c: any) => c.wa_id === message.from)?.profile?.name || value.contacts?.[0]?.profile?.name || null,
+          waMessageId: message.id,
+          rawBody,
+          signature,
+          sigOk,
+          ...parsed,
+        });
+      }
+    }
   }
 
-  if (!value?.messages?.[0]) {
-    return NextResponse.json({ status: 'ok' });
+  if (incoming.length) {
+    // Return 200 to Meta IMMEDIATELY and process in the background, in order.
+    // Meta retries slow/failed deliveries, so every message id is claimed once (dedupe) before it is handled.
+    waitUntil(
+      (async () => {
+        for (const msg of incoming) {
+          try {
+            await processIncomingMessage(msg);
+          } catch (error) {
+            console.error('[Webhook] Background processing error:', error);
+          }
+        }
+      })()
+    );
   }
 
-  const message = value.messages[0];
-  const contact = value.contacts?.[0];
-  const metadata = value.metadata;
-  const customerPhone = message.from;
-  const customerName = contact?.profile?.name || null;
-  const phoneNumberId = metadata?.phone_number_id;
-  const waMessageId = message.id;
+  return NextResponse.json({ status: 'ok' });
+}
 
+function extractMessage(message: any): { messageContent: string; messageType: string; mediaId: string | null } | null {
   let messageContent = '';
-  let messageType: string = 'text';
+  let messageType = 'text';
   let mediaId: string | null = null;
 
-  switch (message.type) {
+  switch (message?.type) {
     case 'text':
       messageContent = message.text?.body || '';
-      messageType = 'text';
       break;
     case 'image':
       messageContent = message.image?.caption || '[Image received]';
@@ -105,30 +139,26 @@ export async function POST(request: NextRequest) {
     default:
       messageContent = '[Unsupported message type]';
   }
+  return { messageContent, messageType, mediaId };
+}
 
-  if (!messageContent || !phoneNumberId) {
-    return NextResponse.json({ status: 'ok' });
+/** Claim a message id exactly once (atomic insert). Returns false if it was already handled. */
+async function claimMessage(waMessageId: string): Promise<boolean> {
+  if (!waMessageId) return true;
+  try {
+    await prisma.webhookMessageSeen.create({ data: { messageId: waMessageId } });
+    if (Math.random() < 0.01) {
+      // housekeeping: forget ids older than 7 days
+      prisma.webhookMessageSeen
+        .deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } })
+        .catch(() => {});
+    }
+    return true;
+  } catch (e: any) {
+    if (e?.code === 'P2002') return false; // already processed: skip (no duplicate reply)
+    console.error('[Webhook] Dedupe check failed, processing anyway:', e?.code || e?.message);
+    return true; // never drop a customer message because of a dedupe-table problem
   }
-
-  // Return 200 to Meta IMMEDIATELY — process message in background
-  // This prevents Meta from retrying and keeps the webhook fast
-  waitUntil(
-    processIncomingMessage({
-      phoneNumberId,
-      customerPhone,
-      customerName,
-      waMessageId,
-      messageContent,
-      messageType,
-      mediaId,
-      rawBody,
-      signature: request.headers.get('x-hub-signature-256'),
-    }).catch((error) => {
-      console.error('[Webhook] Background processing error:', error);
-    })
-  );
-
-  return NextResponse.json({ status: 'ok' });
 }
 
 // ============================================
@@ -145,14 +175,27 @@ interface IncomingMessage {
   mediaId: string | null;
   rawBody: string;
   signature: string | null;
+  sigOk: boolean; // signature valid for META_APP_SECRET
 }
 
 async function processIncomingMessage(msg: IncomingMessage) {
   const { phoneNumberId, customerPhone, customerName, waMessageId, messageType, mediaId } = msg;
   let { messageContent } = msg;
 
+  // Same message id delivered twice (Meta retry / batch overlap): handle it only once
+  if (!(await claimMessage(waMessageId))) {
+    console.log('[Webhook] Duplicate message skipped:', waMessageId);
+    return;
+  }
+
   // Messages sent to SatyaSell's own platform number are not tenant chats
   if (phoneNumberId && phoneNumberId === getPlatformPhoneNumberId()) {
+    // Demo number: signature is checked but NOT enforced yet (log-only) so the demo keeps working
+    if (!msg.sigOk) {
+      const platformSecret = process.env.PLATFORM_APP_SECRET || '';
+      const okWithPlatformSecret = !!platformSecret && verifyMetaWebhookSignature(msg.rawBody, msg.signature, platformSecret);
+      if (!okWithPlatformSecret) console.warn('[Webhook] Platform number: signature not verified (log-only, not rejected)');
+    }
     console.log('[Webhook] Inbound on platform number from', customerPhone);
     // Blue ticks + "typing..." (one Meta call does both; shows until we reply, max ~25s)
     const platformToken = process.env.PLATFORM_WHATSAPP_TOKEN;
@@ -176,25 +219,29 @@ async function processIncomingMessage(msg: IncomingMessage) {
     return;
   }
 
-  // Find tenant by WhatsApp phone number ID
-  const businessInfo = await prisma.businessInfo.findFirst({
+  // Find the store that owns this WhatsApp number
+  const storedInfo = await prisma.businessInfo.findFirst({
     where: { whatsappPhoneNumberId: phoneNumberId },
   });
 
-  if (!businessInfo) {
-    console.error('[Webhook] No tenant found for phone number ID:', phoneNumberId);
+  if (!storedInfo) {
+    // Unknown number: acknowledge (already 200) and log
+    console.warn('[Webhook] Message for unknown phone number ID, ignored:', phoneNumberId);
     return;
   }
 
+  // From here on, businessInfo.whatsappToken is the DECRYPTED token of the store that owns this number
+  const businessInfo = { ...storedInfo, whatsappToken: getTenantToken(storedInfo) };
   const tenantId = businessInfo.tenantId;
 
-  // Verify Meta webhook signature
-  if (businessInfo.whatsappAppSecret) {
-    const isValid = verifyMetaWebhookSignature(msg.rawBody, msg.signature, businessInfo.whatsappAppSecret);
-    if (!isValid) {
-      console.error('[Webhook] Invalid Meta signature');
-      return;
-    }
+  // Verify the Meta signature: META_APP_SECRET (our app), or a legacy per-store secret (manual setups)
+  const validForStore =
+    msg.sigOk ||
+    (!!storedInfo.whatsappAppSecret &&
+      verifyMetaWebhookSignature(msg.rawBody, msg.signature, storedInfo.whatsappAppSecret));
+  if (!validForStore) {
+    console.error('[Webhook] Invalid or missing Meta signature for phone number ID:', phoneNumberId);
+    return;
   }
 
   // Run chat lookup + typing indicator in PARALLEL

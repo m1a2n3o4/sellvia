@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { getTenantToken } from './tenant-token';
 import { sendWhatsAppMessage, sendWhatsAppImage, sendWhatsAppInteractiveMessage } from './client';
 import { createOrderFromWhatsApp } from './order-service';
 import { createPaymentLink } from './razorpay';
@@ -1002,7 +1003,8 @@ export async function handlePaymentComplete(orderId: string) {
     where: { tenantId: order.tenantId },
   });
 
-  if (!businessInfo?.whatsappToken || !businessInfo?.whatsappPhoneNumberId) return;
+  const waToken = getTenantToken(businessInfo);
+  if (!waToken || !businessInfo?.whatsappPhoneNumberId) return;
 
   // Get the chat to find customer phone
   const chat = await prisma.whatsAppChat.findUnique({
@@ -1017,7 +1019,7 @@ export async function handlePaymentComplete(orderId: string) {
 
   await sendWhatsAppMessage({
     phoneNumberId: businessInfo.whatsappPhoneNumberId,
-    accessToken: businessInfo.whatsappToken,
+    accessToken: waToken,
     to: chat.customerPhone,
     message: confirmMsg,
   });

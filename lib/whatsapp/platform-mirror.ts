@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { resolveAgentTenantId } from './demo-ai';
 import { isPlatformWhatsAppConfigured, sendPlatformText } from './platform';
 import { sendWhatsAppMessage } from './client';
+import { getTenantToken } from './tenant-token';
 
 /**
  * The business served through the shared SatyaSell number has no WhatsApp
@@ -55,9 +56,10 @@ export async function resolveTenantSender(
   tenantId: string,
   info: { whatsappToken?: string | null; whatsappPhoneNumberId?: string | null } | null
 ): Promise<((to: string, message: string) => Promise<{ success: boolean; messageId?: string; error?: string }>) | null> {
-  if (info?.whatsappToken && info?.whatsappPhoneNumberId) {
-    const { whatsappToken, whatsappPhoneNumberId } = info;
-    return (to, message) => sendWhatsAppMessage({ phoneNumberId: whatsappPhoneNumberId, accessToken: whatsappToken, to, message });
+  const ownToken = getTenantToken(info);
+  if (ownToken && info?.whatsappPhoneNumberId) {
+    const phoneNumberId = info.whatsappPhoneNumberId;
+    return (to, message) => sendWhatsAppMessage({ phoneNumberId, accessToken: ownToken, to, message });
   }
   if (isPlatformWhatsAppConfigured() && (await resolveAgentTenantId()) === tenantId) {
     return async (to, message) => sendPlatformText(to, message);

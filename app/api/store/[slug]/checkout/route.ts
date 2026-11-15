@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTenantToken } from '@/lib/whatsapp/tenant-token';
 import { prisma } from '@/lib/db/prisma';
 import { checkoutSchema } from '@/lib/validations/checkout';
 import { createOrder } from '@/lib/whatsapp/order-service';
@@ -242,7 +243,8 @@ export async function POST(
     }
 
     // Send WhatsApp confirmation to customer (fire-and-forget)
-    if (businessInfo?.whatsappToken && businessInfo?.whatsappPhoneNumberId) {
+    const waToken = getTenantToken(businessInfo);
+    if (waToken && businessInfo?.whatsappPhoneNumberId) {
       const itemsSummary = orderItems.map((i) => `${i.productName} x${i.quantity}`).join(', ');
       const msg = paymentLinkUrl
         ? `Order Placed! 🛒\n\nOrder: ${order.orderNumber}\nItems: ${itemsSummary}\nTotal: Rs.${totalAmount}\n\nComplete payment here:\n${paymentLinkUrl}`
@@ -250,7 +252,7 @@ export async function POST(
 
       sendWhatsAppMessage({
         phoneNumberId: businessInfo.whatsappPhoneNumberId,
-        accessToken: businessInfo.whatsappToken,
+        accessToken: waToken,
         to: data.customerPhone,
         message: msg,
       }).catch((err) => console.error('[Store Checkout] WhatsApp notification failed:', err));

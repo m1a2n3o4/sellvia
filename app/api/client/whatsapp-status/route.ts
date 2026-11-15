@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
+import { getTenantToken } from '@/lib/whatsapp/tenant-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,11 +12,10 @@ export async function GET(request: NextRequest) {
     const tenantId = await getTenantId(request);
     const info = await prisma.businessInfo.findUnique({ where: { tenantId } });
 
-    if (!info?.whatsappToken || !info.whatsappPhoneNumberId) {
+    const token = getTenantToken(info);
+    if (!info || !token || !info.whatsappPhoneNumberId) {
       return NextResponse.json({ connected: false });
     }
-
-    const token = info.whatsappToken;
     const fields = 'display_phone_number,verified_name,quality_rating,status,name_status,code_verification_status';
     const [phoneRes, wabaRes] = await Promise.all([
       fetch(`https://graph.facebook.com/v21.0/${info.whatsappPhoneNumberId}?fields=${fields}`, {

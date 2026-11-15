@@ -1,8 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getTenantId } from '@/lib/auth/middleware';
+import { encryptSecret, isMasked, maskSecret } from '@/lib/crypto/secrets';
 
 export const dynamic = 'force-dynamic';
+
+type BusinessInfoRow = NonNullable<Awaited<ReturnType<typeof prisma.businessInfo.findUnique>>>;
+
+/** Never send secrets to the browser: mask them, and drop the register PIN entirely. */
+function sanitize(row: BusinessInfoRow) {
+  const { whatsappRegisterPin: _pin, ...rest } = row;
+  void _pin;
+  return {
+    ...rest,
+    whatsappToken: maskSecret(row.whatsappToken),
+    whatsappAppSecret: maskSecret(row.whatsappAppSecret),
+    openaiKey: maskSecret(row.openaiKey),
+    razorpayKeySecret: maskSecret(row.razorpayKeySecret),
+    cashfreeSecretKey: maskSecret(row.cashfreeSecretKey),
+  };
+}
+
+/** Encrypt a manually entered WhatsApp token at rest (falls back to plaintext only if no key is configured). */
+function storeToken(value: string): string {
+  try {
+    return encryptSecret(value);
+  } catch {
+    console.warn('[BusinessInfo] ENCRYPTION_KEY missing: storing manual WhatsApp token unencrypted');
+    return value;
+  }
+}
+
+/** Secret fields from the UI: undefined/masked = leave unchanged, '' = clear, otherwise new value. */
+function secretUpdate(value: unknown, transform: (v: string) => string = (v) => v): { set: boolean; value: string | null } {
+  if (value === undefined || value === null || isMasked(value)) return { set: false, value: null };
+  const str = String(value).trim();
+  return { set: true, value: str ? transform(str) : null };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +58,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(businessInfo);
+    return NextResponse.json(sanitize(businessInfo));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message.includes('Authentication') || message.includes('token')) {
@@ -64,6 +98,23 @@ export async function PUT(request: NextRequest) {
       // Storefront fields are now managed via /api/client/stores/[storeId]
     } = body;
 
+    // A WhatsApp number can only belong to one account
+    if (whatsappPhoneNumberId) {
+      const owner = await prisma.businessInfo.findFirst({
+        where: { whatsappPhoneNumberId: String(whatsappPhoneNumberId), NOT: { tenantId } },
+        select: { tenantId: true },
+      });
+      if (owner) {
+        return NextResponse.json({ error: 'This WhatsApp number is already connected to another account.' }, { status: 409 });
+      }
+    }
+
+    const tok = secretUpdate(whatsappToken, storeToken);
+    const oai = secretUpdate(openaiKey);
+    const rzp = secretUpdate(razorpayKeySecret);
+    const cf = secretUpdate(cashfreeSecretKey);
+    const wsec = secretUpdate(whatsappAppSecret);
+
     const businessInfo = await prisma.businessInfo.upsert({
       where: { tenantId },
       update: {
@@ -76,15 +127,15 @@ export async function PUT(request: NextRequest) {
         ...(greeting !== undefined && { greeting }),
         ...(whatsappPhoneNumberId !== undefined && { whatsappPhoneNumberId }),
         ...(whatsappBusinessId !== undefined && { whatsappBusinessId }),
-        ...(whatsappToken !== undefined && { whatsappToken }),
-        ...(openaiKey !== undefined && { openaiKey }),
+        ...(tok.set && { whatsappToken: tok.value }),
+        ...(oai.set && { openaiKey: oai.value }),
         ...(aiEnabled !== undefined && { aiEnabled }),
         ...(razorpayKeyId !== undefined && { razorpayKeyId }),
-        ...(razorpayKeySecret !== undefined && { razorpayKeySecret }),
+        ...(rzp.set && { razorpayKeySecret: rzp.value }),
         ...(cashfreeAppId !== undefined && { cashfreeAppId }),
-        ...(cashfreeSecretKey !== undefined && { cashfreeSecretKey }),
+        ...(cf.set && { cashfreeSecretKey: cf.value }),
         ...(paymentGateway !== undefined && { paymentGateway }),
-        ...(whatsappAppSecret !== undefined && { whatsappAppSecret }),
+        ...(wsec.set && { whatsappAppSecret: wsec.value }),
         ...(ownerPhone !== undefined && { ownerPhone }),
         ...(shareOwnerPhone !== undefined && { shareOwnerPhone }),
         ...(aiCustomInstructions !== undefined && { aiCustomInstructions }),
@@ -100,22 +151,22 @@ export async function PUT(request: NextRequest) {
         greeting,
         whatsappPhoneNumberId,
         whatsappBusinessId,
-        whatsappToken,
-        openaiKey,
+        whatsappToken: tok.value,
+        openaiKey: oai.value,
         aiEnabled: aiEnabled ?? true,
         razorpayKeyId,
-        razorpayKeySecret,
+        razorpayKeySecret: rzp.value,
         cashfreeAppId,
-        cashfreeSecretKey,
+        cashfreeSecretKey: cf.value,
         paymentGateway: paymentGateway || 'none',
-        whatsappAppSecret,
+        whatsappAppSecret: wsec.value,
         ownerPhone,
         shareOwnerPhone: shareOwnerPhone ?? false,
         aiCustomInstructions,
       },
     });
 
-    return NextResponse.json(businessInfo);
+    return NextResponse.json(sanitize(businessInfo));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message.includes('Authentication') || message.includes('token')) {
