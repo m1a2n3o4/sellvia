@@ -22,7 +22,10 @@ export function DashboardHeader() {
     <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/90 flex items-center justify-center font-extrabold text-2xl flex-shrink-0" style={{ color: brand.theme }}>{(brand.name || 'B').charAt(0).toUpperCase()}</div>
   );
 
-  if (loading) return null;
+  if (loading || !brand.loaded) {
+    // Wait for the business's own branding so the generic/default store name never flashes
+    return <div className={shell} style={{ background: '#e5e7eb', minHeight: 88 }} aria-busy="true" />;
+  }
 
   // Specific store selected
   if (selectedBranch) {
