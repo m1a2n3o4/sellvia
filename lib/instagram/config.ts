@@ -22,4 +22,4 @@ export function getIgConfig(): { ok: true; cfg: IgConfig } | { ok: false; missin
   return missing.length ? { ok: false, missing } : { ok: true, cfg };
 }
 
-export const getVerifyToken = () => process.env.IG_VERIFY_TOKEN || '';
+export const getVerifyToken = () => (process.env.IG_VERIFY_TOKEN || '').trim();

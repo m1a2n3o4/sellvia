@@ -11,9 +11,12 @@ export const maxDuration = 30;
 export async function GET(request: NextRequest) {
   const p = request.nextUrl.searchParams;
   const token = getVerifyToken();
-  if (token && p.get('hub.mode') === 'subscribe' && p.get('hub.verify_token') === token) {
+  const given = (p.get('hub.verify_token') || '').trim();
+  if (token && p.get('hub.mode') === 'subscribe' && given === token) {
     return new NextResponse(p.get('hub.challenge') || '', { status: 200, headers: { 'content-type': 'text/plain' } });
   }
+  // Diagnostics only (never the token itself): why did verification fail?
+  console.warn('[Instagram] webhook verify rejected', { mode: p.get('hub.mode'), tokenConfigured: !!token, configuredLength: token.length, givenLength: given.length });
   return new NextResponse('Forbidden', { status: 403 });
 }
 
