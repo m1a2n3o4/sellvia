@@ -651,3 +651,40 @@ model WebhookMessageSeen {
   @@index([createdAt])
   @@map("webhook_messages_seen")
 }
+
+// ============================================
+// INSTAGRAM (Unified login) - additive tables, not used by /client
+// ============================================
+
+model InstagramAccount {
+  igAccountId String   @id @map("ig_account_id") // Instagram account id = webhook entry.id
+  tenantId    String   @map("tenant_id")
+  username    String?
+  metaUserId  String?  @map("meta_user_id") // best-effort id used to match deauthorize / deletion requests
+  tokenEnc    String   @map("token_enc") // AES-256-GCM (lib/crypto/secrets)
+  status      String   @default("active") // active | disconnected
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  messages InstagramMessage[]
+
+  @@index([tenantId])
+  @@index([metaUserId])
+  @@map("instagram_accounts")
+}
+
+model InstagramMessage {
+  mid         String   @id // message id, de-duplicates webhook retries
+  tenantId    String   @map("tenant_id")
+  igAccountId String   @map("ig_account_id")
+  senderId    String   @map("sender_id") // customer's Instagram-scoped id
+  text        String?
+  raw         Json?
+  receivedAt  DateTime @default(now()) @map("received_at")
+
+  account InstagramAccount @relation(fields: [igAccountId], references: [igAccountId], onDelete: Cascade)
+
+  @@index([igAccountId, senderId, receivedAt])
+  @@index([tenantId])
+  @@map("instagram_messages")
+}
