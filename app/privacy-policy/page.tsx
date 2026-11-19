@@ -4,18 +4,18 @@ import { SITE } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | SatyaSell',
-  description: 'How SatyaSell collects, uses, stores and protects personal data, including data processed through WhatsApp.',
+  description: 'How SatyaSell collects, uses, stores and protects personal data, including data processed through WhatsApp and Instagram.',
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalLayout title="Privacy Policy">
+    <LegalLayout title="Privacy Policy" updated="20 November 2026">
       <p>
         SatyaSell (&quot;SatyaSell&quot;, &quot;we&quot;, &quot;us&quot;) provides a software platform that helps
-        small businesses and sellers (&quot;Sellers&quot;) take and manage orders from their customers through WhatsApp.
+        small businesses and sellers (&quot;Sellers&quot;) take and manage orders from their customers through WhatsApp and Instagram.
         This policy explains what personal data we collect, why, how we protect it, and the choices you have. It applies
         to our website <a href={SITE.url}>{SITE.url}</a>, the seller dashboard, seller storefronts, and our WhatsApp
-        ordering service.
+        and Instagram messaging services.
       </p>
 
       <h2>1. Who is responsible for your data</h2>
@@ -37,7 +37,8 @@ export default function PrivacyPolicyPage() {
       <h3>From Sellers&apos; customers</h3>
       <ul>
         <li>WhatsApp phone number and profile name.</li>
-        <li>The content of messages sent to a Seller&apos;s business number, including text, voice notes and images shared to place or enquire about an order.</li>
+        <li>Instagram: the Instagram-scoped ID of a person who sends a message to a Seller&apos;s connected Instagram account, their Instagram username or name where Instagram provides it, and the content and time of those messages and of the replies the Seller sends.</li>
+        <li>The content of messages sent to a Seller&apos;s business number, including text, voice notes and images shared to place or enquire about an order (and, for Instagram, the text of direct messages).</li>
         <li>Delivery name, address and order details (items, quantity, amount, status).</li>
         <li>Verification codes (OTP) used to confirm a phone number at checkout.</li>
       </ul>
@@ -50,6 +51,7 @@ export default function PrivacyPolicyPage() {
       <h2>3. How we use information</h2>
       <ul>
         <li>To operate the ordering service: show products, take orders, collect addresses, and generate payment links.</li>
+        <li>To show a Seller the Instagram messages sent to their business account and let the Seller reply from the SatyaSell Inbox.</li>
         <li>To send order-related WhatsApp messages (order confirmations, payment and delivery updates) and replies to customer enquiries.</li>
         <li>To generate automated replies using AI so Sellers can respond to customers faster.</li>
         <li>To authenticate users, prevent fraud and abuse, and secure the platform.</li>
@@ -58,7 +60,7 @@ export default function PrivacyPolicyPage() {
       </ul>
       <p>We do <strong>not</strong> sell personal data, and we do not use customer data for advertising.</p>
 
-      <h2>4. WhatsApp and Meta</h2>
+      <h2>4. WhatsApp, Instagram and Meta</h2>
       <p>
         Messages are sent and received through the WhatsApp Business Platform (Cloud API) provided by Meta Platforms,
         Inc. Messages are processed by Meta under its own terms and privacy policy. We only message people who have
@@ -67,10 +69,36 @@ export default function PrivacyPolicyPage() {
         &quot;STOP&quot; or by contacting us.
       </p>
 
+      <h3>Instagram (Meta)</h3>
+      <p>
+        A Seller can connect their Instagram professional (Business or Creator) account to SatyaSell by signing in on
+        Meta&apos;s own login page. We never see or store the Seller&apos;s Instagram password. After the Seller
+        approves, we receive an access token, which we store encrypted, and we use it only to:
+      </p>
+      <ul>
+        <li>read the connected account&apos;s name and ID;</li>
+        <li>receive the direct messages that people send to that account, and show them to the Seller in the SatyaSell Inbox;</li>
+        <li>send a reply that the Seller writes, to a person who has messaged the account, within the 24-hour window Instagram allows.</li>
+      </ul>
+      <p>
+        We do not access the Seller&apos;s followers list, other people&apos;s private data, or content unrelated to the
+        messages above, and we do not post to the account. Instagram messages are stored for the Seller, are not shared
+        with other Sellers, and are not sold or used for advertising. Instagram messages are currently only stored and
+        shown to the Seller; if we later offer automated (AI) replies on Instagram, we will update this policy before
+        switching that on.
+      </p>
+      <p>
+        A Seller can disconnect Instagram at any time from the Instagram page in the SatyaSell dashboard: this deletes
+        our access token and we stop saving new messages, and the Seller can choose to delete the stored messages at the
+        same time. A Seller or any person can also remove SatyaSell in Instagram&apos;s settings (Apps and websites), or
+        ask us to delete data using the steps on our <a href="/data-deletion">Data Deletion</a> page. Removing the app
+        in Instagram triggers automatic deletion of the data we hold for that connection.
+      </p>
+
       <h2>5. Service providers we share data with</h2>
       <p>We share data only with providers needed to run the service, under appropriate safeguards:</p>
       <ul>
-        <li><strong>Meta (WhatsApp Business Platform)</strong> &ndash; message delivery.</li>
+        <li><strong>Meta (WhatsApp Business Platform and Instagram)</strong> &ndash; message delivery and receipt.</li>
         <li><strong>OpenAI</strong> &ndash; to generate automated replies and analyse product images or voice notes. Content sent for this purpose is limited to what is needed for the request.</li>
         <li><strong>Supabase</strong> &ndash; database and file storage.</li>
         <li><strong>Vercel</strong> &ndash; website hosting and delivery.</li>
