@@ -5,7 +5,7 @@ export class GraphError extends Error {
 }
 
 /** Graph call. The token goes in the Authorization header (never in the URL) and is never logged. */
-export async function graph<T = any>(path: string, opts: { token?: string; method?: 'GET' | 'POST'; params?: Record<string, string>; json?: unknown } = {}): Promise<T> {
+export async function graph<T = any>(path: string, opts: { token?: string; method?: 'GET' | 'POST' | 'DELETE'; params?: Record<string, string>; json?: unknown } = {}): Promise<T> {
   const url = new URL(`${IG_GRAPH}/${path}`);
   Object.entries(opts.params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
   const headers: Record<string, string> = {};

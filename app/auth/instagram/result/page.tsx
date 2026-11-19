@@ -18,7 +18,7 @@ export default function Result({ searchParams }: { searchParams: { status?: stri
     <main style={{ fontFamily: 'system-ui,sans-serif', maxWidth: '32rem', margin: '15vh auto', padding: '0 1.5rem', lineHeight: 1.5 }}>
       <h1 style={{ fontSize: '1.4rem' }}>{title}</h1>
       <p>{body}</p>
-      <p><Link href="/client">Back to your dashboard</Link></p>
+      <p>{searchParams.status === 'connected' && <><Link href="/app/channels/instagram">Open your Instagram settings</Link> · </>}<Link href="/client">Back to your dashboard</Link></p>
     </main>
   );
 }
