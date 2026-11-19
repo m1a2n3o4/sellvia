@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 // Events. The signature is checked over the raw body, so read text() before parsing.
 export async function POST(request: NextRequest) {
   const conf = getIgConfig();
-  const secret = conf.ok ? conf.cfg.appSecret : (process.env.IG_APP_SECRET || process.env.META_APP_SECRET || '');
+  const secret = conf.ok ? conf.cfg.appSecret : (process.env.IG_APP_SECRET || '');
   const raw = await request.text();
   if (!verifyWebhookSignature(raw, request.headers.get('x-hub-signature-256'), secret)) {
     return new NextResponse('Invalid signature', { status: 401 });
