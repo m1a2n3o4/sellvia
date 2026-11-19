@@ -7,6 +7,7 @@ export async function handleInstagramEvents(payload: { entry?: Entry[] }): Promi
   for (const entry of payload.entry || []) {
     if (!entry.id) continue;
     const acct = await prisma.instagramAccount.findFirst({ where: { igAccountId: entry.id, status: 'active' }, select: { tenantId: true } });
+    console.log('[Instagram] entry', { matchedTenant: !!acct, messaging: entry.messaging?.length ?? 0, changes: entry.changes?.length ?? 0 });
     if (!acct) continue; // not one of ours, or disconnected
 
     for (const m of entry.messaging || []) {

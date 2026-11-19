@@ -26,10 +26,12 @@ export async function POST(request: NextRequest) {
   const secret = conf.ok ? conf.cfg.appSecret : (process.env.IG_APP_SECRET || '');
   const raw = await request.text();
   if (!verifyWebhookSignature(raw, request.headers.get('x-hub-signature-256'), secret)) {
+    console.warn('[Instagram] webhook POST rejected: bad or missing signature', { hasHeader: !!request.headers.get('x-hub-signature-256'), secretConfigured: !!secret, bodyLength: raw.length });
     return new NextResponse('Invalid signature', { status: 401 });
   }
   let payload: any;
   try { payload = JSON.parse(raw); } catch { return new NextResponse('Bad request', { status: 400 }); }
+  console.log('[Instagram] webhook POST received', { object: payload?.object, entries: payload?.entry?.length ?? 0 });
   try {
     await handleInstagramEvents(payload);
   } catch (e) {
