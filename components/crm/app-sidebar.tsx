@@ -8,7 +8,7 @@ import { getActiveKey } from '@/lib/crm/nav';
 import { useCrm } from './crm-context';
 
 export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const { nav, workspace } = useCrm();
+  const { nav, workspace, reviewer } = useCrm();
   const pathname = usePathname();
   const activeKey = getActiveKey(pathname, nav);
 
@@ -20,13 +20,13 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
     >
       {/* Brand */}
       <div className={cn('flex h-[72px] shrink-0 items-center px-5', collapsed && 'justify-center px-2')}>
-        <Link href="/app" className="flex min-w-0 items-center gap-3" aria-label="SatyaSell dashboard">
+        <Link href={reviewer ? '/app/channels/instagram' : '/app'} className="flex min-w-0 items-center gap-3" aria-label="SatyaSell dashboard">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-brand shadow-[0_8px_18px_-8px_rgba(11,12,17,0.6)]">S</span>
           {!collapsed && (
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-1.5">
                 <span className="text-[20px] font-bold leading-tight tracking-tight text-ink">Satya<span className="text-ink/45">Sell</span></span>
-                <span className="rounded-full bg-secondary px-2 text-[10px] font-bold tracking-wide text-ink">{workspace.plan}</span>
+                {!reviewer && <span className="rounded-full bg-secondary px-2 text-[10px] font-bold tracking-wide text-ink">{workspace.plan}</span>}
               </span>
               <span className="truncate text-[11px] leading-tight text-muted-foreground">{workspace.name}</span>
             </span>
@@ -79,7 +79,7 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
 
       {/* Footer: AI usage + collapse */}
       <div className={cn('shrink-0 space-y-2 p-3', collapsed && 'px-2')}>
-        {!collapsed && (
+        {!collapsed && !reviewer && (
           <div className="rounded-2xl bg-secondary p-3" aria-label="AI usage">
             <div className="flex items-center justify-between text-[11px] font-semibold">
               <span className="text-muted-foreground">AI Usage</span>

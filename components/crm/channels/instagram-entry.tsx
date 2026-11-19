@@ -11,7 +11,7 @@ import type { IgPost, MOCK_IG } from '@/lib/crm/mock/instagram';
 
 /** Chooses between the "connect" page and the connected dashboard. Simulated until the backend exists. */
 export function InstagramEntry({ profile, posts }: { profile: typeof MOCK_IG; posts: IgPost[] }) {
-  const { workspace, simulated } = useCrm();
+  const { workspace, simulated, reviewer } = useCrm();
   const [override, setOverride] = useState<{ ws: string; connected: boolean } | null>(null);
   const connected = override && override.ws === workspace.id ? override.connected : workspace.instagramConnected;
   const set = (v: boolean) => setOverride({ ws: workspace.id, connected: v });
@@ -23,12 +23,12 @@ export function InstagramEntry({ profile, posts }: { profile: typeof MOCK_IG; po
   return (
     <div className="space-y-6">
       <InstagramRealCard onState={setReal} />
-      {loggedIn && !showSample ? (
+      {loggedIn && !showSample ? (reviewer ? null : (
         <div className="text-center">
           <button onClick={() => setShowSample(true)} className={btn.ghost}>See a sample of the connected dashboard</button>
           <p className="t-small text-muted-foreground">Sample data only. Comment tracking, product import and order attribution are not live yet.</p>
         </div>
-      ) : (
+      )) : (
     <div>
       {loggedIn && <p className="mb-4 rounded-2xl bg-brand/15 px-4 py-2 text-xs text-ink">Sample preview with invented data. Nothing below is from your account.</p>}
       {simulated && (

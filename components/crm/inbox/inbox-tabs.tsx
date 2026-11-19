@@ -5,10 +5,13 @@ import { cn } from '@/lib/utils';
 import type { Thread } from '@/lib/crm/mock/inbox';
 import { InboxView } from './inbox-view';
 import { InstagramLive } from './instagram-live';
+import { useCrm } from '../crm-context';
 
 /** Live Instagram DMs (real) and the demo conversations (simulated) side by side. */
 export function InboxTabs({ threads }: { threads: Thread[] }) {
   const [tab, setTab] = useState<'live' | 'demo'>('live');
+  const { reviewer } = useCrm();
+  if (reviewer) return <InstagramLive />; // reviewers only see real data
   return (
     <div className="space-y-4">
       <div className="flex gap-1.5" role="tablist" aria-label="Inbox source">

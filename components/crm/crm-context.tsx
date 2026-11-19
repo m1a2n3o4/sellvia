@@ -14,6 +14,8 @@ interface CrmContextValue {
   simulated: boolean;
   background: BgKey;
   setBackground: (b: BgKey) => void;
+  /** True for the clean reviewer view (only Inbox + Instagram, real business name, no sample content). */
+  reviewer: boolean;
 }
 
 export type BgKey = 'aurora' | 'sunset' | 'ocean' | 'mist';
@@ -28,8 +30,13 @@ const BG_KEY = 'crm.background';
 const CrmContext = createContext<CrmContextValue | null>(null);
 
 export function CrmProvider({
-  user, workspaces, simulated, fontClass, children,
-}: { user: CrmUser; workspaces: Workspace[]; simulated: boolean; fontClass: string; children: ReactNode }) {
+  user: userProp, workspaces: workspacesProp, simulated, fontClass, reviewer: reviewerProp, children,
+}: { user: CrmUser; workspaces: Workspace[]; simulated: boolean; fontClass: string; reviewer?: { businessName: string } | null; children: ReactNode }) {
+  const reviewer = !!reviewerProp;
+  const user: CrmUser = reviewerProp ? { name: reviewerProp.businessName, initials: reviewerProp.businessName.slice(0, 2).toUpperCase(), role: 'owner' } : userProp;
+  const workspaces: Workspace[] = reviewerProp
+    ? [{ id: 'reviewer', name: reviewerProp.businessName, branch: reviewerProp.businessName, industry: '', websiteUrl: '', templates: [], branches: [], plan: 'FREE', aiUsagePct: 0, instagramConnected: false, badges: {}, notifications: [] }]
+    : workspacesProp;
   const [workspaceId, setWorkspaceId] = useState(workspaces[0].id);
   const [background, setBackgroundState] = useState<BgKey>('aurora');
   const workspace = workspaces.find((w) => w.id === workspaceId) ?? workspaces[0];
@@ -55,9 +62,12 @@ export function CrmProvider({
 
   const value = useMemo<CrmContextValue>(() => ({
     user, workspaces, workspace, setWorkspaceId, simulated, background, setBackground,
-    nav: getVisibleNav(workspace.templates),
-    quickActions: visibleQuickActions(workspace.templates),
-  }), [user, workspaces, workspace, simulated, background]);
+    nav: reviewer
+      ? getVisibleNav(workspace.templates).map((sec) => ({ ...sec, items: sec.items.filter((i) => i.key === 'inbox' || i.key === 'instagram') })).filter((sec) => sec.items.length > 0)
+      : getVisibleNav(workspace.templates),
+    quickActions: reviewer ? [] : visibleQuickActions(workspace.templates),
+    reviewer,
+  }), [user, workspaces, workspace, simulated, background, reviewer]);
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
 }

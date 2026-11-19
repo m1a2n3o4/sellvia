@@ -86,7 +86,7 @@ function GlobalSearch() {
 }
 
 export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) {
-  const { user, workspace, background, setBackground } = useCrm();
+  const { user, workspace, background, setBackground, reviewer } = useCrm();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 4);
@@ -104,15 +104,15 @@ export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) 
       <button onClick={onToggleSidebar} className={cn(iconBtn, 'hidden lg:flex')} aria-label="Toggle sidebar" title="Toggle sidebar">
         <PanelLeft className="h-5 w-5" aria-hidden />
       </button>
-      <Link href="/app" className="flex items-center gap-2 lg:hidden" aria-label="SatyaSell dashboard">
+      <Link href={reviewer ? '/app/channels/instagram' : '/app'} className="flex items-center gap-2 lg:hidden" aria-label="SatyaSell dashboard">
         <span className="flex h-8 w-8 items-center justify-center rounded-[28px] bg-navy text-base font-bold text-brand">S</span>
       </Link>
       <Breadcrumbs />
-      <WorkspaceSwitcher />
-      <div className="mx-2 hidden flex-1 justify-center md:flex"><GlobalSearch /></div>
+      {!reviewer && <WorkspaceSwitcher />}
+      {!reviewer && <div className="mx-2 hidden flex-1 justify-center md:flex"><GlobalSearch /></div>}
 
       <div className="ml-auto flex items-center gap-1.5 md:ml-0">
-        <a
+        {!reviewer && <a
           href={workspace.websiteUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -122,9 +122,9 @@ export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) 
         >
           <Globe className="h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-180" aria-hidden />
           <span className="hidden xl:inline">View my website</span>
-        </a>
-        <QuickCreateMenu />
-        <DropdownMenu>
+        </a>}
+        {!reviewer && <QuickCreateMenu />}
+        {!reviewer && <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className={iconBtn} aria-label={`Notifications (${workspace.notifications.length})`}>
               <Bell className="h-5 w-5" aria-hidden />
@@ -142,7 +142,7 @@ export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) 
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className={cn(iconBtn, 'hidden sm:flex')} aria-label="Help"><HelpCircle className="h-5 w-5" aria-hidden /></button>
@@ -167,9 +167,9 @@ export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) 
               <span className="block text-xs font-normal capitalize text-muted-foreground">{user.role}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link href="/app/settings">Settings</Link></DropdownMenuItem>
+            {!reviewer && <DropdownMenuItem asChild><Link href="/app/settings">Settings</Link></DropdownMenuItem>}
             <DropdownMenuItem asChild><Link href="/client">Current dashboard</Link></DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {!reviewer && <><DropdownMenuSeparator />
             <div className="px-2 py-2">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Background</p>
               <div className="flex gap-2" role="group" aria-label="Background colour">
@@ -178,7 +178,7 @@ export function AppHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) 
                     className={cn('h-8 w-8 rounded-full border-2 transition-all hover:scale-110', background === b.key ? 'border-ink' : 'border-white shadow')} style={{ background: b.swatch }} />
                 ))}
               </div>
-            </div>
+            </div></>}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -20,11 +20,11 @@ export function useModule(key: ModuleKey) {
  * Page wrapper for template-driven modules. Title comes from the template label ("Guests", "Rooms"...),
  * and a business whose templates do not include the module sees a clear notice instead of the screen.
  */
-export function ModulePage({ module, description, actions, children }: {
-  module: ModuleKey; description?: string; actions?: ReactNode; children: ReactNode;
+export function ModulePage({ module, description, reviewerDescription, actions, children }: {
+  module: ModuleKey; description?: string; reviewerDescription?: string; actions?: ReactNode; children: ReactNode;
 }) {
   const { enabled, label } = useModule(module);
-  const { workspace, workspaces, setWorkspaceId } = useCrm();
+  const { workspace, workspaces, setWorkspaceId, reviewer } = useCrm();
   if (!enabled) {
     const options = workspaces.filter((w) => resolveModules(w.templates).has(module));
     return (
@@ -39,5 +39,5 @@ export function ModulePage({ module, description, actions, children }: {
       </>
     );
   }
-  return (<><PageHeader title={label} description={description} actions={actions} />{children}</>);
+  return (<><PageHeader title={label} description={reviewer && reviewerDescription ? reviewerDescription : description} actions={actions} />{children}</>);
 }
