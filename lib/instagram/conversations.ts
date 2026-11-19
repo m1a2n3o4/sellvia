@@ -12,6 +12,8 @@ const isOut = (raw: unknown) => !!raw && typeof raw === 'object' && (raw as { di
 export interface ConversationSummary {
   senderId: string; igAccountId: string; lastText: string | null; lastAt: string; lastDirection: 'in' | 'out';
   lastInboundAt: string | null; windowOpen: boolean; windowExpiresAt: string | null; messageCount: number;
+  /** Filled in best-effort by attachProfiles(). */
+  username?: string; name?: string;
 }
 export interface ThreadMessage { mid: string; direction: 'in' | 'out'; text: string | null; at: string }
 

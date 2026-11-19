@@ -37,7 +37,7 @@ export function InboxView({ threads: initial }: { threads: Thread[] }) {
   const Icon = (c: Channel) => (c === 'WhatsApp' ? MessageCircle : Instagram);
 
   return (
-    <div className="crm-card grid h-[calc(100vh-14rem)] min-h-[560px] grid-cols-1 overflow-hidden p-0 lg:grid-cols-[22rem_1fr]">
+    <div className="crm-card grid h-[calc(100vh-14rem)] min-h-[560px] grid-cols-1 overflow-hidden p-0 lg:grid-cols-[22rem_minmax(0,1fr)]">
       <div className={cn('flex min-h-0 flex-col border-white/80 lg:border-r', open && 'hidden lg:flex')}>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between"><h2 className="t-h3">Conversations</h2>{needs > 0 && <StatusBadge tone="danger">{needs} need you</StatusBadge>}</div>
@@ -69,7 +69,7 @@ export function InboxView({ threads: initial }: { threads: Thread[] }) {
         </ul>
       </div>
 
-      <div className={cn('flex min-h-0 flex-col', !open && 'hidden lg:flex')}>
+      <div className={cn('flex min-h-0 min-w-0 flex-col', !open && 'hidden lg:flex')}>
         {!open ? (
           <div className="m-auto text-center text-muted-foreground"><MessageCircle className="mx-auto mb-2 h-8 w-8" aria-hidden /><p className="t-body">Pick a conversation to read it.</p></div>
         ) : (<>

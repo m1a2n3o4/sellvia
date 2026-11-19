@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils';
 import { StatusBadge } from '../status-badge';
 import { btn } from '../button-styles';
 
-interface Conv { senderId: string; lastText: string | null; lastAt: string; lastDirection: 'in' | 'out'; windowOpen: boolean; windowExpiresAt: string | null; messageCount: number }
+interface Conv { username?: string; name?: string; senderId: string; lastText: string | null; lastAt: string; lastDirection: 'in' | 'out'; windowOpen: boolean; windowExpiresAt: string | null; messageCount: number }
 interface Msg { mid: string; direction: 'in' | 'out'; text: string | null; at: string }
 interface Thread { messages: Msg[]; windowOpen: boolean; windowExpiresAt: string | null }
 
+const label = (c: { senderId: string; username?: string; name?: string }) => (c.username ? `@${c.username}` : c.name ?? `Customer …${c.senderId.slice(-4)}`);
 const when = (iso: string) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const left = (iso: string | null) => {
   if (!iso) return '';
@@ -63,7 +64,7 @@ export function InstagramLive() {
 
   const open = thread?.windowOpen ?? false;
   return (
-    <div className="crm-card grid h-[calc(100vh-17rem)] min-h-[520px] grid-cols-1 overflow-hidden p-0 lg:grid-cols-[22rem_1fr]">
+    <div className="crm-card grid h-[calc(100vh-17rem)] min-h-[520px] grid-cols-1 overflow-hidden p-0 lg:grid-cols-[22rem_minmax(0,1fr)]">
       <div className={cn('flex min-h-0 flex-col border-white/80 lg:border-r', openId && 'hidden lg:flex')}>
         <div className="flex items-center justify-between p-4"><h2 className="t-h3">Instagram DMs</h2><StatusBadge tone="success">Live</StatusBadge></div>
         <ul className="crm-scroll min-h-0 flex-1 overflow-y-auto">
@@ -74,7 +75,7 @@ export function InstagramLive() {
               <button onClick={() => { setOpenId(c.senderId); setErr(null); }} className={cn('flex w-full items-start gap-3 border-b border-white/60 px-4 py-3 text-left hover:bg-white/60', c.senderId === openId && 'bg-white/80')}>
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary"><Instagram className="h-4 w-4" aria-hidden /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-2"><span className="truncate text-sm font-semibold text-ink">Customer …{c.senderId.slice(-4)}</span><span className="t-small shrink-0 text-muted-foreground">{when(c.lastAt)}</span></span>
+                  <span className="flex items-center justify-between gap-2"><span className="truncate text-sm font-semibold text-ink">{label(c)}</span><span className="t-small shrink-0 text-muted-foreground">{when(c.lastAt)}</span></span>
                   <span className="t-small block truncate text-muted-foreground">{c.lastDirection === 'out' ? 'You: ' : ''}{c.lastText}</span>
                   <span className="mt-1 block"><StatusBadge tone={c.windowOpen ? 'success' : 'neutral'}>{c.windowOpen ? `Reply open · ${left(c.windowExpiresAt)} left` : 'Reply window closed'}</StatusBadge></span>
                 </span>
@@ -83,11 +84,11 @@ export function InstagramLive() {
         </ul>
       </div>
 
-      <div className={cn('flex min-h-0 flex-col', !openId && 'hidden lg:flex')}>
+      <div className={cn('flex min-h-0 min-w-0 flex-col', !openId && 'hidden lg:flex')}>
         {!openId ? <div className="m-auto text-center text-muted-foreground"><Instagram className="mx-auto mb-2 h-8 w-8" aria-hidden /><p className="t-body">Pick a conversation.</p></div> : (<>
           <div className="flex items-center gap-3 border-b border-white/80 p-4">
             <button onClick={() => setOpenId(null)} className="rounded-full px-2 py-1 text-sm hover:bg-white/70 lg:hidden" aria-label="Back">←</button>
-            <div className="min-w-0 flex-1"><p className="truncate font-semibold text-ink">Customer …{openId.slice(-4)}</p><p className="t-small text-muted-foreground">Instagram · ID {openId}</p></div>
+            <div className="min-w-0 flex-1"><p className="truncate font-semibold text-ink">{label(convs?.find((c) => c.senderId === openId) ?? { senderId: openId })}</p><p className="t-small text-muted-foreground">Instagram · ID {openId}</p></div>
           </div>
           <div className="crm-scroll flex-1 space-y-3 overflow-y-auto p-4">
             {thread?.messages.map((m) => (
@@ -101,10 +102,10 @@ export function InstagramLive() {
               <p role="status" className="rounded-2xl bg-secondary px-4 py-3 text-sm text-ink"><Lock className="mr-1.5 inline h-4 w-4" aria-hidden />The 24-hour reply window has closed. Instagram only lets you reply within 24 hours of the customer&apos;s last message. You can reply again when they message you.</p>
             ) : (<>
               {err && <p role="alert" className="mb-2 rounded-2xl bg-danger/10 px-3 py-2 text-[13px] font-semibold text-danger">{err}</p>}
-              <div className="flex gap-2">
+              <div className="flex min-w-0 gap-2">
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} maxLength={1000} placeholder="Reply on Instagram" aria-label="Reply"
-                  className="h-11 flex-1 rounded-full border border-white/90 bg-white/80 px-4 text-sm focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(11,12,17,0.12)]" />
-                <button onClick={send} disabled={busy || !draft.trim()} aria-label="Send reply" className={cn(btn.brand, '!w-11 !px-0')}><Send className="h-4 w-4" aria-hidden /></button>
+                  className="h-11 min-w-0 flex-1 rounded-full border border-white/90 bg-white/80 px-4 text-sm focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(11,12,17,0.12)]" />
+                <button onClick={send} disabled={busy || !draft.trim()} aria-label="Send reply" className={cn(btn.brand, 'shrink-0 !w-11 !px-0')}><Send className="h-4 w-4" aria-hidden /></button>
               </div>
               <p className="t-small mt-1.5 text-muted-foreground">Sends a real Instagram message. You can reply for {left(thread?.windowExpiresAt ?? null)} more.</p>
             </>)}
