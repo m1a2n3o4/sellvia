@@ -44,8 +44,9 @@ export default function DataDeletionPage() {
         </li>
         <li>
           <strong>Remove the app in Instagram:</strong> in Instagram go to Settings &gt; Apps and websites (or Website
-          permissions), find SatyaSell and remove it. Instagram then notifies us and we automatically delete the Instagram
-          connection and the messages stored for it. We return a confirmation code, and you can check progress on this page.
+          permissions), find SatyaSell and remove it. Instagram then tells us, and we delete our access token and stop saving
+          new messages. If you also ask Instagram/Meta to delete your data held by SatyaSell when you remove the app, we automatically
+          delete the Instagram connection and all messages stored for it, and return a confirmation code to Meta.
         </li>
         <li>
           <strong>Ask us:</strong> email <a href={`mailto:${SITE.email}?subject=Instagram%20Data%20Deletion%20Request`}>{SITE.email}</a> with

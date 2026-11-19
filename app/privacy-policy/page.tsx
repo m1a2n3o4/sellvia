@@ -92,7 +92,8 @@ export default function PrivacyPolicyPage() {
         our access token and we stop saving new messages, and the Seller can choose to delete the stored messages at the
         same time. A Seller or any person can also remove SatyaSell in Instagram&apos;s settings (Apps and websites), or
         ask us to delete data using the steps on our <a href="/data-deletion">Data Deletion</a> page. Removing the app
-        in Instagram triggers automatic deletion of the data we hold for that connection.
+        in Instagram ends our access, and if a deletion of data is also requested through Instagram/Meta, we delete the
+        connection and the messages we hold for it automatically.
       </p>
 
       <h2>5. Service providers we share data with</h2>
