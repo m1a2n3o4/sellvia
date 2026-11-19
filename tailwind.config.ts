@@ -26,7 +26,14 @@ const config: Config = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          hover: 'hsl(var(--primary-hover))',
         },
+        success: 'hsl(var(--success) / <alpha-value>)',
+        warning: 'hsl(var(--warning) / <alpha-value>)',
+        danger: 'hsl(var(--danger) / <alpha-value>)',
+        ink: 'hsl(var(--ink) / <alpha-value>)',
+        navy: { DEFAULT: 'hsl(var(--primary) / <alpha-value>)', deep: 'hsl(var(--primary-hover) / <alpha-value>)' },
+        brand: { DEFAULT: 'hsl(var(--brand) / <alpha-value>)', hover: 'hsl(var(--brand-hover) / <alpha-value>)' },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',

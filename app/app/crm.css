@@ -1,0 +1,124 @@
+/* SatyaSell CRM design system: "Soft Pill" look (from the SugarCRM-style reference).
+   Very rounded cards, pale blue-grey backdrop, black pill actions, circular icon buttons, geometric Urbanist type.
+   Scoped to .crm-root so /client/* and the rest of the site are unaffected.
+   Same variable names as the shared shadcn tokens so components/ui pieces pick up this palette inside the CRM. */
+.crm-root {
+  --background: 226 33% 93%;
+  --foreground: 228 20% 12%;
+  --ink: 228 25% 6%;                /* near-black: headlines, primary actions */
+  --card: 0 0% 100%;
+  --card-foreground: 228 20% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 228 20% 12%;
+  --primary: 228 25% 6%;            /* black pill */
+  --primary-hover: 228 15% 17%;
+  --primary-foreground: 0 0% 100%;
+  --brand: 46 100% 50%;             /* #FFC300 accent, used sparingly */
+  --brand-hover: 49 100% 52%;
+  --secondary: 226 40% 96%;
+  --secondary-foreground: 228 25% 6%;
+  --muted: 226 30% 95%;
+  --muted-foreground: 226 8% 44%;
+  --accent: 226 40% 96%;
+  --accent-foreground: 228 25% 6%;
+  --border: 226 25% 90%;
+  --input: 226 25% 90%;
+  --ring: 228 25% 6%;
+  --destructive: 4 80% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --danger: 4 80% 58%;
+  --success: 142 64% 34%;
+  --warning: 39 100% 24%;
+  --radius: 1rem;
+  --sidebar-w: 17rem;
+  --sidebar-w-collapsed: 5rem;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-rest: 0 1px 2px rgba(40, 50, 90, 0.05);
+  --shadow-soft: 0 14px 34px -16px rgba(60, 72, 120, 0.28), 0 2px 6px rgba(60, 72, 120, 0.05);
+  --shadow-lift: 0 22px 44px -16px rgba(60, 72, 120, 0.34);
+  font-family: var(--font-crm), 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  background: transparent;
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+/* Page backdrop: soft multi-colour gradient mesh (also behind overscroll). Presets via <html data-crm-bg="..."> */
+html:has(.crm-root) {
+  --crm-bg:
+    radial-gradient(60rem 42rem at 0% 0%, #cdc4ff 0%, transparent 60%),
+    radial-gradient(50rem 40rem at 100% 8%, #ffe0ad 0%, transparent 55%),
+    radial-gradient(64rem 46rem at 72% 100%, #b4d6ff 0%, transparent 60%),
+    linear-gradient(160deg, #e4e7f7, #f3f2fb);
+  background: var(--crm-bg) fixed; background-color: #eceef9; scroll-behavior: smooth; scroll-padding-top: 6rem;
+}
+html[data-crm-bg='sunset']:has(.crm-root) { --crm-bg: radial-gradient(60rem 42rem at 0% 0%, #ffc9b5 0%, transparent 60%), radial-gradient(50rem 40rem at 100% 8%, #ffb6d6 0%, transparent 55%), radial-gradient(64rem 46rem at 70% 100%, #ffe7a3 0%, transparent 60%), linear-gradient(160deg, #fbe7e3, #fdf3ea); background-color: #fbeae6; }
+html[data-crm-bg='ocean']:has(.crm-root)  { --crm-bg: radial-gradient(60rem 42rem at 0% 0%, #aee2ff 0%, transparent 60%), radial-gradient(50rem 40rem at 100% 8%, #bff0e0 0%, transparent 55%), radial-gradient(64rem 46rem at 70% 100%, #c6d0ff 0%, transparent 60%), linear-gradient(160deg, #dfeefb, #eaf6f6); background-color: #e3f0fa; }
+html[data-crm-bg='mist']:has(.crm-root)   { --crm-bg: linear-gradient(160deg, #d6dae7 0%, #e5e8f3 42%, #eff1f8 100%); background-color: #e5e8f3; }
+html.crm-root body { font-family: var(--font-crm), 'Inter', system-ui, sans-serif; font-weight: 500; background: transparent; }
+
+/* Typography: bold geometric headlines, tight tracking */
+.crm-root .t-display  { font-size: 44px; line-height: 50px; font-weight: 700; letter-spacing: -0.035em; color: hsl(var(--ink)); }
+.crm-root .t-h1       { font-size: 36px; line-height: 42px; font-weight: 700; letter-spacing: -0.03em; color: hsl(var(--ink)); }
+.crm-root .t-h2       { font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.025em; color: hsl(var(--ink)); }
+.crm-root .t-h3       { font-size: 19px; line-height: 26px; font-weight: 650; letter-spacing: -0.015em; color: hsl(var(--ink)); }
+.crm-root .t-body-lg  { font-size: 16px; line-height: 24px; letter-spacing: -0.005em; }
+.crm-root .t-body     { font-size: 14px; line-height: 21px; }
+.crm-root .t-small    { font-size: 12px; line-height: 17px; }
+.crm-root .t-label    { font-size: 13px; line-height: 18px; font-weight: 600; letter-spacing: 0.005em; }
+.crm-root .t-micro    { font-size: 11px; line-height: 16px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+.crm-root .num        { font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .crm-root .t-display { font-size: 32px; line-height: 38px; }
+  .crm-root .t-h1      { font-size: 28px; line-height: 34px; }
+}
+
+.crm-root :focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(11, 12, 17, 0.14); }
+
+/* Cards: big radius, white glass, soft shadow, almost no border */
+.crm-root .crm-card {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 28px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.crm-root .crm-card-hover { transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease); }
+.crm-root .crm-card-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.crm-root .crm-soft { background: rgba(255, 255, 255, 0.7); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset; }
+
+/* Slim scrollbars */
+.crm-root .crm-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; overscroll-behavior: contain; }
+.crm-root .crm-scroll:hover { scrollbar-color: #c3c9db transparent; }
+.crm-root .crm-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.crm-root .crm-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 9999px; }
+.crm-root .crm-scroll:hover::-webkit-scrollbar-thumb { background: #c3c9db; }
+
+/* Motion */
+@keyframes crm-rise { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
+@keyframes crm-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes crm-flow { from { background-position: 0 0; } to { background-position: 24px 0; } }
+@keyframes crm-globe { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+@keyframes crm-glow { 0%, 100% { box-shadow: 0 10px 28px -6px rgba(255, 170, 0, 0.55), 0 0 0 0 rgba(255, 195, 0, 0.45); } 50% { box-shadow: 0 14px 34px -6px rgba(255, 150, 0, 0.7), 0 0 0 10px rgba(255, 195, 0, 0); } }
+@keyframes crm-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes crm-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.crm-root .crm-page { animation: crm-rise 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.crm-root .crm-stagger > * { animation: crm-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.crm-root .crm-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.crm-root .crm-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.crm-root .crm-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.crm-root .crm-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.crm-root .crm-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.crm-root .crm-blink { animation: crm-blink 1.4s ease-in-out infinite; }
+.crm-root .crm-flow { background-image: linear-gradient(90deg, #c3c9db 50%, transparent 50%); background-size: 12px 2px; animation: crm-flow 1s linear infinite; }
+.crm-root .crm-globe { animation: crm-globe 4s linear infinite; transform-style: preserve-3d; }
+.crm-root .crm-glow { animation: crm-glow 2.4s ease-in-out infinite; }
+.crm-root .crm-bar  { transform-origin: bottom; animation: crm-grow 0.6s var(--ease) both; }
+.crm-root .crm-fill { transform-origin: left; animation: crm-fill 0.8s var(--ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.crm-root) { scroll-behavior: auto; }
+  .crm-root .crm-blink, .crm-root .crm-flow, .crm-root .crm-globe, .crm-root .crm-glow { animation: none !important; }
+  .crm-root *, .crm-root *::before, .crm-root *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; }
+}
