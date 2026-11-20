@@ -4,3 +4,7 @@
 export const splitIds = (v?: string) => (v || '').split(',').map((t) => t.trim()).filter(Boolean);
 export const reviewTenantIds = () => splitIds(process.env.CRM_REVIEW_TENANTS);
 export const isReviewTenant = (tenantId: string | null) => !!tenantId && reviewTenantIds().includes(tenantId);
+
+/** Should this business see the "Instagram" shortcut in the existing client dashboard? Only if explicitly listed. */
+export const canSeeCrmLink = (tenantId: string | null) =>
+  process.env.CRM_ENABLED === 'true' && !!tenantId && (splitIds(process.env.CRM_ALLOWED_TENANTS).includes(tenantId) || isReviewTenant(tenantId));

@@ -28,6 +28,7 @@ import { rgba } from '@/lib/store/colors';
 import { BranchPicker } from '@/components/client/branch-picker';
 import { StoreSelectorWrapper } from '@/components/client/store-selector-wrapper';
 import { DashboardHeader } from '@/components/client/dashboard-header';
+import { InstagramSidebarLink } from '@/components/client/instagram-sidebar-link';
 
 export default function ClientLayout({
   children,
@@ -221,6 +222,7 @@ export default function ClientLayout({
               {links.map((link, idx) => (
                 <SidebarLink key={idx} link={link} />
               ))}
+              <InstagramSidebarLink />
             </div>
           </div>
           <div>
