@@ -70,8 +70,8 @@ export default function ClientLayout({
     setLoggingOut(true);
     try {
       await fetch('/api/client/logout', { method: 'POST' });
-      router.push('/client/login');
-      router.refresh();
+      // Full-page redirect: router.push() followed by router.refresh() could cancel the push and leave "Logging out..." stuck.
+      window.location.assign('/client/login');
     } catch (error) {
       console.error('Logout failed:', error);
       setLoggingOut(false);
