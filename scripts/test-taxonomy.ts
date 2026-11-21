@@ -152,3 +152,20 @@ test('server config schema accepts the seed and rejects junk', () => {
   assert.equal(configSchema.safeParse({ ...SEED, taxonomy: [{ id: '', parentId: null, level: 9 }] }).success, false);
   assert.equal(configSchema.safeParse({ ...SEED, fields: [{ ...SEED.fields[0], type: 'script' }] }).success, false);
 });
+
+import { checkAgainstSchema } from '../lib/products/service';
+test('product body: core columns vs attributes, server-side rules', () => {
+  const s = resolveFormSchema('pickles');
+  const ok = checkAgainstSchema(s, 'pickles', 1, { values: { name: 'Mango pickle', price: '199', ingredients: 'Mango, oil', spice_level: 'hot', shelf_life: { value: 6, unit: 'months' }, sku: 'MP-1' },
+    variants: [{ options: { pack_size: '250g' }, price: 99, stock: 5 }, { options: { pack_size: '500g' }, price: 180, stock: '3' }] });
+  assert.ok(ok.ok, JSON.stringify(ok));
+  if (ok.ok) {
+    assert.equal(ok.input.columns.name, 'Mango pickle'); assert.equal(ok.input.columns.basePrice, 199); assert.equal(ok.input.columns.stockQuantity, 8); // variants decide stock
+    assert.deepEqual(Object.keys(ok.input.attributes).sort(), ['homemade', 'ingredients', 'shelf_life', 'spice_level']); assert.ok(!('name' in ok.input.attributes));
+  }
+  const bad = checkAgainstSchema(s, 'pickles', 1, { values: { name: 'x', price: -5, evil: 1 }, variants: [{ options: { pack_size: '1kg' }, price: 10 }, { options: { pack_size: '1kg' }, price: 12 }, { options: { pack_size: '9kg' }, price: 5 }] });
+  assert.equal(bad.ok, false);
+  if (!bad.ok) { for (const k of ['name', 'price', 'evil', 'ingredients', 'variants']) assert.ok(bad.fields?.[k], k); assert.equal(bad.status, 422); }
+  const noVar = checkAgainstSchema(resolveFormSchema('salon'), 'salon', 1, { values: { name: 'Haircut', price: 300, duration_minutes: 30 }, variants: [{ options: { size: 's' }, price: 1 }] });
+  assert.equal(noVar.ok, false); if (!noVar.ok) assert.ok(noVar.fields?.variants);
+});

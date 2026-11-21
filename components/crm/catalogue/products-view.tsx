@@ -9,10 +9,18 @@ import type { Product, ProductStatus } from '@/lib/crm/mock/catalogue';
 import { StatusBadge } from '../status-badge';
 import { btn } from '../button-styles';
 import { useModule } from '../module-page';
+import { useCrm } from '../crm-context';
+import { RealProducts } from './real-products';
 
 const ST: Record<ProductStatus, [React.ComponentProps<typeof StatusBadge>['tone'], string]> = { live: ['success', 'Live'], draft: ['neutral', 'Draft'], out_of_stock: ['danger', 'Out of stock'] };
 
 export function ProductsView({ products }: { products: Product[] }) {
+  const { workspace } = useCrm();
+  if (workspace.real) return <RealProducts />;
+  return <SampleProducts products={products} />;
+}
+
+function SampleProducts({ products }: { products: Product[] }) {
   const { label } = useModule('products');
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('All');

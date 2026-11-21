@@ -10,8 +10,8 @@ import { useCrm } from '../crm-context';
 /** Live Instagram DMs (real) and the demo conversations (simulated) side by side. */
 export function InboxTabs({ threads }: { threads: Thread[] }) {
   const [tab, setTab] = useState<'live' | 'demo'>('live');
-  const { reviewer } = useCrm();
-  if (reviewer) return <InstagramLive />; // reviewers only see real data
+  const { reviewer, workspace } = useCrm();
+  if (reviewer || workspace.real) return <InstagramLive />; // reviewers and real owners only see real data
   return (
     <div className="space-y-4">
       <div className="flex gap-1.5" role="tablist" aria-label="Inbox source">

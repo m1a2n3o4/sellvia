@@ -741,3 +741,18 @@ model TenantBusinessConfig {
 
   @@map("tenant_business_configs")
 }
+
+/// Extra, configurable fields of a product (T5). Kept beside `products` so existing /client product code is untouched.
+/// `attributes` holds only values defined by the owner's business type (validated on the server).
+model ProductExtra {
+  productId      String   @id @map("product_id")
+  tenantId       String   @map("tenant_id")
+  businessTypeId String   @map("business_type_id")
+  configVersion  Int      @map("config_version")
+  attributes     Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("product_extras")
+}

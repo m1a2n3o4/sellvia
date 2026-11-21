@@ -34,10 +34,10 @@ function Field({ f, v, set }: { f: FieldDef; v: Val; set: (v: Val) => void }) {
   }
 }
 
-export function ProductForm() {
+export function ProductForm({ productId }: { productId?: string } = {}) {
   const { workspace } = useCrm();
   // Businesses with taxonomy business types get the dynamic form; legacy clients keep the original one.
-  if (workspace.businessTypes?.length) return <DynamicProductForm businessTypes={workspace.businessTypes} />;
+  if (workspace.businessTypes?.length) return <DynamicProductForm businessTypes={workspace.businessTypes} productId={productId} />;
   return <LegacyProductForm />;
 }
 

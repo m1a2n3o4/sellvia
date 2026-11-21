@@ -11,7 +11,8 @@ import type { IgPost, MOCK_IG } from '@/lib/crm/mock/instagram';
 
 /** Chooses between the "connect" page and the connected dashboard. Simulated until the backend exists. */
 export function InstagramEntry({ profile, posts }: { profile: typeof MOCK_IG; posts: IgPost[] }) {
-  const { workspace, simulated, reviewer } = useCrm();
+  const { workspace, simulated, reviewer: isReviewer } = useCrm();
+  const reviewer = isReviewer || !!workspace.real; // real owners, like reviewers, never see the sample dashboard
   const [override, setOverride] = useState<{ ws: string; connected: boolean } | null>(null);
   const connected = override && override.ws === workspace.id ? override.connected : workspace.instagramConnected;
   const set = (v: boolean) => setOverride({ ws: workspace.id, connected: v });
