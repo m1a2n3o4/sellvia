@@ -7,13 +7,18 @@ import { AppHeader } from './app-header';
 import { AppSidebar } from './app-sidebar';
 import { MobileNavigation } from './mobile-nav';
 import { WebsiteButton } from './website-button';
+import { SetupPrompt } from './onboarding/setup-prompt';
+import { findNavByPath } from '@/lib/crm/nav';
 
 const KEY = 'crm.sidebar.collapsed';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { reviewer } = useCrm();
+  const { reviewer, needsSetup } = useCrm();
+  // Until the owner chooses a business, data screens show "What is your business?" (channels, inbox and settings stay usable).
+  const open = ['/app/onboarding', '/app/channels', '/app/inbox', '/app/settings'];
+  const gated = needsSetup && !open.some((p) => pathname.startsWith(p));
   // Reviewer view only has Inbox and Instagram; anything else goes to Instagram.
   const allowed = !reviewer || pathname.startsWith('/app/channels/instagram') || pathname.startsWith('/app/inbox');
   const [collapsed, setCollapsed] = useState(false);
@@ -33,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader onToggleSidebar={toggle} />
         <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 pb-28 lg:px-8 lg:pb-10">
-          <div key={pathname} className="crm-page">{allowed ? children : null}</div>
+          <div key={pathname} className="crm-page">{!allowed ? null : gated ? <SetupPrompt title={findNavByPath(pathname)?.title ?? 'Welcome'} dashboard={pathname === '/app'} /> : children}</div>
         </main>
       </div>
       {!reviewer && <WebsiteButton />}

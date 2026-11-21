@@ -131,3 +131,24 @@ test('menu validation: empty or long labels and unknown keys are errors', () => 
   assert.match(m, /1 to 32/); assert.match(m, /unknown menu item/);
   assert.deepEqual(validateConfig(SEED).filter((i) => i.level === 'error'), []);
 });
+
+import { searchBusinessTypes } from '../lib/crm/config/taxonomy/recognise';
+import { capabilitiesFor } from '../lib/crm/config/taxonomy/capabilities';
+test('typeahead: typos, prefixes, categories, keywords', () => {
+  const top = (q: string) => searchBusinessTypes(q)[0]?.nodeId;
+  assert.equal(top('pickel'), 'pickles'); assert.equal(top('pick'), 'pickles'); assert.equal(top('men'), 'mens-clothing');
+  assert.equal(top('resort'), 'resort'); assert.equal(top('cake'), 'bakery-cakes'); assert.equal(top('achar'), 'pickles');
+  assert.ok(searchBusinessTypes('fashion').length >= 3); assert.equal(searchBusinessTypes('x').length, 0); assert.equal(searchBusinessTypes('qqqzzz').length, 0);
+  assert.deepEqual(searchBusinessTypes('pickles')[0].path, ['Retail & E-commerce', 'Food & Beverages', 'Pickles']);
+});
+test('capabilities: highlights when set, derived otherwise', () => {
+  assert.ok(capabilitiesFor('resort').some((c) => /rooms/i.test(c)));
+  const derived = capabilitiesFor('snacks'); assert.ok(derived.length >= 2 && derived.some((c) => /Orders/.test(c)));
+});
+
+import { configSchema } from '../lib/config/schema';
+test('server config schema accepts the seed and rejects junk', () => {
+  assert.equal(configSchema.safeParse(JSON.parse(JSON.stringify(SEED))).success, true);
+  assert.equal(configSchema.safeParse({ ...SEED, taxonomy: [{ id: '', parentId: null, level: 9 }] }).success, false);
+  assert.equal(configSchema.safeParse({ ...SEED, fields: [{ ...SEED.fields[0], type: 'script' }] }).success, false);
+});

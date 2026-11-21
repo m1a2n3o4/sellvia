@@ -37,6 +37,10 @@ export const MOCK_WORKSPACES: Workspace[] = [
     templates: ['retail_shop'], businessTypes: ['bakery-cakes'], branches: ['Jubilee Hills'], plan: 'PRO', aiUsagePct: 35.0, instagramConnected: false, badges: {}, notifications: [],
   },
   {
+    id: 'ws-new', websiteUrl: '', name: 'New Signup (no business chosen yet)', branch: 'Main', industry: '',
+    templates: ['legacy_retail'], needsSetup: true, branches: ['Main'], plan: 'FREE', aiUsagePct: 0, instagramConnected: false, badges: {}, notifications: [],
+  },
+  {
     id: 'ws-legacy', websiteUrl: 'https://www.satyasell.com/store/sharma-garments', name: 'Sharma Garments (existing client)', branch: 'Main store', industry: 'Retail',
     templates: ['legacy_retail'], branches: ['Main store'], plan: 'PRO', aiUsagePct: 30.0, instagramConnected: false, badges: {}, notifications: [],
   },

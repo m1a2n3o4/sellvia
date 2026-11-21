@@ -17,6 +17,8 @@ export interface TaxonomyNode {
   defaultTemplates: TemplateKey[];
   /** Words used by business recognition (Instagram bio, manual entry). Edited in Studio. */
   keywords?: string[];
+  /** Plain-language bullets shown to owners choosing this business type ("What you can do"). Optional; derived from the menu if empty. */
+  highlights?: string[];
   active: boolean;
 }
 

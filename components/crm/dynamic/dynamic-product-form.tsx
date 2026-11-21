@@ -11,9 +11,9 @@ import { DynamicField, inputCls } from './dynamic-field';
 import { getNode, resolveFormSchema, validateValues, buildVariantCombos, variantKey } from '@/lib/crm/config/taxonomy/resolve-form';
 
 export function DynamicProductForm({ businessTypes }: { businessTypes: string[] }) {
-  const { workspace } = useCrm();
+  const { workspace, config } = useCrm();
   const [typeId, setTypeId] = useState(businessTypes[0]);
-  const schema = useMemo(() => { try { return resolveFormSchema(typeId); } catch { return null; } }, [typeId]);
+  const schema = useMemo(() => { try { return resolveFormSchema(typeId, config); } catch { return null; } }, [typeId, config]);
   const [vals, setVals] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [axisSel, setAxisSel] = useState<Record<string, string[]>>({});
@@ -46,11 +46,11 @@ export function DynamicProductForm({ businessTypes }: { businessTypes: string[] 
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="space-y-5" noValidate>
       <div className="crm-card flex flex-wrap items-center gap-3 p-4">
-        <p className="t-small flex-1 text-muted-foreground">Fields come from the business type <strong className="text-ink">{getNode(typeId)?.name}</strong> and the levels above it.</p>
+        <p className="t-small flex-1 text-muted-foreground">Fields come from the business type <strong className="text-ink">{getNode(typeId, config)?.name}</strong> and the levels above it.</p>
         {businessTypes.length > 1 && (
           <label className="flex items-center gap-2 text-sm font-semibold">Business type
             <select value={typeId} onChange={(e) => switchType(e.target.value)} className={cn(inputCls, '!h-10 w-52')}>
-              {businessTypes.map((b) => <option key={b} value={b}>{getNode(b)?.name}</option>)}
+              {businessTypes.map((b) => <option key={b} value={b}>{getNode(b, config)?.name}</option>)}
             </select>
           </label>
         )}

@@ -688,3 +688,56 @@ model InstagramMessage {
   @@index([tenantId])
   @@map("instagram_messages")
 }
+
+// ============================================
+// BUSINESS CONFIGURATION (Studio releases + owner business type). Additive only.
+// ============================================
+
+/// Working copy edited in /superadmin/studio. One row (id = 'main'); `revision` guards concurrent edits.
+model ConfigDraft {
+  id        String   @id @default("main")
+  revision  Int      @default(1)
+  snapshot  Json
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("config_draft")
+}
+
+/// Immutable published versions. Owners always run the highest version.
+model ConfigRelease {
+  version     Int      @id
+  label       String
+  snapshot    Json
+  publishedBy String?  @map("published_by")
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  @@map("config_releases")
+}
+
+model ConfigAudit {
+  id        String   @id @default(uuid())
+  action    String
+  version   Int?
+  actor     String?
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("config_audit")
+}
+
+/// Which business type(s) an owner chose. No row (or empty list) = the original menu for existing clients.
+/// `self_serve` marks owners who registered themselves on the website.
+model TenantBusinessConfig {
+  tenantId         String    @id @map("tenant_id")
+  businessTypes    Json      @default("[]") @map("business_types")
+  onboardingSource String?   @map("onboarding_source")
+  configVersion    Int?      @map("config_version")
+  selfServe        Boolean   @default(false) @map("self_serve")
+  confirmedAt      DateTime? @map("confirmed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("tenant_business_configs")
+}

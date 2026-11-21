@@ -23,6 +23,10 @@ export interface Workspace {
   templates: TemplateKey[];
   /** Taxonomy business types (subcategory ids), primary first. Absent = legacy form (no dynamic fields). */
   businessTypes?: string[];
+  /** A real signed-in owner (not a sample business). Their business types are saved on the server. */
+  real?: boolean;
+  /** Registered but has not chosen a business yet: original menu, "What is your business?" screens. */
+  needsSetup?: boolean;
   /** Branches / locations inside the tenant (not separate tenants). */
   branches: string[];
   plan: 'FREE' | 'PRO';

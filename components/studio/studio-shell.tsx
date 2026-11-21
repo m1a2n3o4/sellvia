@@ -24,7 +24,7 @@ const NAV: { label: string; items: Item[] }[] = [
 
 export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { dirty, live, ready } = useStudio();
+  const { dirty, live, ready, saveState, saveError, loadError } = useStudio();
   const flat = NAV.flatMap((s) => s.items);
   const active = flat.filter((i) => (i.exact ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/'))).sort((a, b) => b.href.length - a.href.length)[0];
 
@@ -56,13 +56,20 @@ export function StudioShell({ children }: { children: ReactNode }) {
           <Link href="/superadmin" className="text-ink lg:hidden" aria-label="Back to Super Admin"><ArrowLeft className="h-5 w-5" /></Link>
           <span className="text-sm font-bold text-ink">{active?.label ?? 'Studio'}</span>
           <span className="ml-auto hidden items-center gap-2 text-xs font-semibold text-muted-foreground sm:flex"><Sparkles className="h-3.5 w-3.5" aria-hidden />Live release v{live.version}</span>
+          {saveState === 'saving' && <span className="t-small text-muted-foreground">Saving…</span>}
+          {saveState === 'saved' && <span className="t-small text-success">Saved</span>}
+          {saveState === 'error' && <span className="t-small font-semibold text-danger">Not saved</span>}
           {ready && dirty && <span className="rounded-full bg-brand px-2.5 py-1 text-[11px] font-bold text-ink">Unpublished changes</span>}
           <Link href={`${B}/release`} className={cn(btn.brand, '!h-9')}>Publish</Link>
         </header>
         <nav className="mx-3 mt-3 flex gap-1.5 overflow-x-auto lg:hidden" aria-label="Studio sections">
           {flat.map((i) => <Link key={i.href} href={i.href} className={cn('shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold', i === active ? 'border border-primary bg-primary text-white' : 'border border-ink/70 bg-white text-ink/70')}>{i.label}</Link>)}
         </nav>
-        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 pb-16 lg:px-8"><div key={pathname} className="crm-page">{children}</div></main>
+        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 pb-16 lg:px-8">
+          {loadError && <div role="alert" className="mb-5 rounded-2xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger">{loadError}</div>}
+          {saveError && <div role="alert" className="mb-5 rounded-2xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger">{saveError}</div>}
+          {!ready ? <p className="t-body text-muted-foreground">Loading configuration…</p> : loadError ? null : <div key={pathname} className="crm-page">{children}</div>}
+        </main>
       </div>
     </div>
   );

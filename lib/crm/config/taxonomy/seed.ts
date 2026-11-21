@@ -186,7 +186,14 @@ export const VARIANT_AXES: Record<string, VariantAxis[]> = {
   computers: [{ key: 'storage', label: 'Storage', options: o('256GB', '512GB', '1TB') }],
 };
 
-export const TAXONOMY: TaxonomyNode[] = BASE.map((t) => (KEYWORDS[t.id] ? { ...t, keywords: KEYWORDS[t.id] } : t));
+const HIGHLIGHTS: Record<string, string[]> = {
+  pickles: ['Add products with pack sizes and prices', 'Manage orders and track delivery', 'Keep stock and shelf life under control', 'Take orders from Instagram and WhatsApp'],
+  'bakery-cakes': ['Add cakes with flavours, weights and egg or eggless', 'Manage cake orders and delivery dates', 'Reply to customers from one inbox'],
+  resort: ['Add rooms with prices and amenities', 'Manage bookings by date and availability', 'Handle enquiries from guests', 'Run a restaurant and events from the same place'],
+  hotel: ['Add rooms with prices and amenities', 'Manage reservations by date and availability', 'Reply to guest enquiries'],
+  'mens-clothing': ['Add products with sizes and colours', 'Manage orders, shipping and returns', 'Track stock by size and colour'],
+};
+export const TAXONOMY: TaxonomyNode[] = BASE.map((t) => ({ ...t, ...(KEYWORDS[t.id] ? { keywords: KEYWORDS[t.id] } : {}), ...(HIGHLIGHTS[t.id] ? { highlights: HIGHLIGHTS[t.id] } : {}) }));
 
 /** Menu overrides per node (SIMULATED seed). Everything else comes from the default templates. */
 export const MENUS: Record<string, MenuConfig> = {

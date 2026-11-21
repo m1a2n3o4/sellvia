@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getVisibleNav, visibleQuickActions, type VisibleSection } from '@/lib/crm/nav';
 import type { CrmUser, Workspace } from '@/lib/crm/types';
-import { resolveMenu } from '@/lib/crm/config/taxonomy/menu';
+import { resolveMenu, templatesFor } from '@/lib/crm/config/taxonomy/menu';
 import { SEED, type ConfigSource } from '@/lib/crm/config/taxonomy/resolve-form';
 import { loadLiveConfig } from '@/lib/studio/live-config';
 
@@ -19,6 +19,13 @@ interface CrmContextValue {
   setBackground: (b: BgKey) => void;
   /** True for the clean reviewer view (only Inbox + Instagram, real business name, no sample content). */
   reviewer: boolean;
+  /** Published configuration the menu, forms and suggestions run on. */
+  config: ConfigSource;
+  configVersion: number;
+  /** Registered but no business chosen yet. */
+  needsSetup: boolean;
+  /** Save the owner's chosen business types (server for real owners, in-page for sample businesses). */
+  applyBusinessTypes: (types: string[], businessName?: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export type BgKey = 'aurora' | 'sunset' | 'ocean' | 'mist';
@@ -33,19 +40,23 @@ const BG_KEY = 'crm.background';
 const CrmContext = createContext<CrmContextValue | null>(null);
 
 export function CrmProvider({
-  user: userProp, workspaces: workspacesProp, simulated, fontClass, reviewer: reviewerProp, children,
-}: { user: CrmUser; workspaces: Workspace[]; simulated: boolean; fontClass: string; reviewer?: { businessName: string } | null; children: ReactNode }) {
+  user: userProp, workspaces: workspacesProp, simulated, fontClass, reviewer: reviewerProp, serverConfig, children,
+}: { user: CrmUser; workspaces: Workspace[]; simulated: boolean; fontClass: string; reviewer?: { businessName: string } | null; serverConfig?: { version: number; config: ConfigSource } | null; children: ReactNode }) {
   const reviewer = !!reviewerProp;
   const user: CrmUser = reviewerProp ? { name: reviewerProp.businessName, initials: reviewerProp.businessName.slice(0, 2).toUpperCase(), role: 'owner' } : userProp;
   const workspaces: Workspace[] = reviewerProp
     ? [{ id: 'reviewer', name: reviewerProp.businessName, branch: reviewerProp.businessName, industry: '', websiteUrl: '', templates: [], branches: [], plan: 'FREE', aiUsagePct: 0, instagramConnected: false, badges: {}, notifications: [] }]
     : workspacesProp;
   const [workspaceId, setWorkspaceId] = useState(workspaces[0].id);
-  const [background, setBackgroundState] = useState<BgKey>('aurora');
-  // Published configuration (menu names, items). Prototype: from the Studio release in this browser.
+  // Published configuration. Real owners get it from the server; sample businesses use the Studio release in this browser.
   const [liveCfg, setLiveCfg] = useState<ConfigSource>(SEED);
-  useEffect(() => setLiveCfg(loadLiveConfig().cfg), []);
-  const workspace = workspaces.find((w) => w.id === workspaceId) ?? workspaces[0];
+  useEffect(() => { if (!serverConfig) setLiveCfg(loadLiveConfig().cfg); }, [serverConfig]);
+  const [background, setBackgroundState] = useState<BgKey>('aurora');
+  const [typeOverride, setTypeOverride] = useState<Record<string, string[]>>({});
+  const base = workspaces.find((w) => w.id === workspaceId) ?? workspaces[0];
+  const cfgForTemplates = serverConfig?.config ?? liveCfg;
+  const chosen = typeOverride[base.id];
+  const workspace: Workspace = chosen ? { ...base, businessTypes: chosen, needsSetup: false, templates: templatesFor(chosen, cfgForTemplates) } : base;
 
   // Radix menus render in a portal outside the wrapper; mirror the token class onto <html>.
   useEffect(() => {
@@ -66,14 +77,30 @@ export function CrmProvider({
     try { localStorage.setItem(BG_KEY, b); } catch { /* storage unavailable */ }
   };
 
+  const applyBusinessTypes = async (types: string[], businessName?: string) => {
+    if (base.real) {
+      try {
+        const r = await fetch('/api/app/onboarding/confirm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ businessTypes: types, businessName }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) return { ok: false, error: j.error ?? 'Could not save' };
+        return { ok: true };
+      } catch { return { ok: false, error: 'Could not reach the server' }; }
+    }
+    setTypeOverride((o) => ({ ...o, [base.id]: types }));
+    return { ok: true };
+  };
+
   const value = useMemo<CrmContextValue>(() => ({
     user, workspaces, workspace, setWorkspaceId, simulated, background, setBackground,
     nav: reviewer
       ? getVisibleNav(workspace.templates).map((sec) => ({ ...sec, items: sec.items.filter((i) => i.key === 'inbox' || i.key === 'instagram') })).filter((sec) => sec.items.length > 0)
-      : workspace.businessTypes?.length ? resolveMenu(workspace.businessTypes, liveCfg) : getVisibleNav(workspace.templates),
+      : workspace.businessTypes?.length ? resolveMenu(workspace.businessTypes, serverConfig?.config ?? liveCfg) : getVisibleNav(workspace.templates),
     quickActions: reviewer ? [] : visibleQuickActions(workspace.templates),
     reviewer,
-  }), [user, workspaces, workspace, simulated, background, reviewer, liveCfg]);
+    config: serverConfig?.config ?? liveCfg, configVersion: serverConfig?.version ?? 1, needsSetup: !!workspace.needsSetup,
+    applyBusinessTypes,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [user, workspaces, workspace, simulated, background, reviewer, liveCfg, serverConfig, typeOverride]);
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
 }

@@ -48,7 +48,7 @@ export default function StudioHome() {
             <Link key={c.href} href={`/superadmin/studio/${c.href}`} className="crm-card crm-card-hover flex items-start gap-3 p-5"><c.icon className="mt-0.5 h-5 w-5 text-ink" aria-hidden />
               <span><span className="t-h3 block !text-[16px]">{c.t}</span><span className="t-small text-muted-foreground">{c.d}</span></span></Link>))}
         </div></section>
-      <p className="t-small text-muted-foreground">Prototype note: drafts and releases are saved in this browser only. The shared, database-backed version comes with the backend stage.</p>
+      <p className="t-small text-muted-foreground">Drafts save automatically to the database. Owners only see a change after you publish a release.</p>
     </div>
   );
 }

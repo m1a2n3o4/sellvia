@@ -20,6 +20,7 @@ function NodeEditor({ node, parent, onClose }: { node?: TaxonomyNode; parent: Ta
   const [model, setModel] = useState<TaxonomyModel>(node?.businessModel ?? parent?.businessModel ?? 'product');
   const [tpls, setTpls] = useState<TemplateKey[]>(node?.defaultTemplates ?? []);
   const [kw, setKw] = useState((node?.keywords ?? []).join(', '));
+  const [hl, setHl] = useState((node?.highlights ?? []).join('\n'));
   const [active, setActive] = useState(node?.active ?? true);
   const [err, setErr] = useState('');
 
@@ -29,7 +30,7 @@ function NodeEditor({ node, parent, onClose }: { node?: TaxonomyNode; parent: Ta
     if (draft.taxonomy.some((x) => x.id !== node?.id && x.parentId === (node?.parentId ?? parent?.id ?? null) && x.name.toLowerCase() === nm.toLowerCase())) return setErr('That name already exists here.');
     let id = node?.id ?? kebab(nm);
     if (!node) { let n = 2; const base = id; while (draft.taxonomy.some((x) => x.id === id)) id = `${base}-${n++}`; }
-    upsertNode({ id, parentId: node?.parentId ?? parent?.id ?? null, level, name: nm, businessModel: model, defaultTemplates: tpls, keywords: kw.split(',').map((k) => k.trim().toLowerCase()).filter(Boolean), active, description: node?.description });
+    upsertNode({ id, parentId: node?.parentId ?? parent?.id ?? null, level, name: nm, businessModel: model, defaultTemplates: tpls, keywords: kw.split(',').map((k) => k.trim().toLowerCase()).filter(Boolean), highlights: hl.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 12), active, description: node?.description });
     onClose();
   };
   return (
@@ -44,7 +45,9 @@ function NodeEditor({ node, parent, onClose }: { node?: TaxonomyNode; parent: Ta
               <button key={k} type="button" aria-pressed={on} onClick={() => setTpls(on ? tpls.filter((x) => x !== k) : [...tpls, k])} className={cn('rounded-full px-3.5 py-1.5 text-[13px] font-semibold', on ? 'border border-primary bg-primary text-white' : 'border border-ink/70 bg-white text-ink/70 hover:text-ink')}>{TEMPLATES[k].name}</button>); })}</div>
             <p className="t-small mt-1 text-muted-foreground">The first one chosen is the main template (it names shared menu items).</p></div>
           <div><Label htmlFor="n-kw" hint="comma separated; used to recognise this business from a bio or name">Recognition keywords</Label>
-            <textarea id="n-kw" rows={3} className={cn(inputCls, 'h-auto py-3')} value={kw} onChange={(e) => setKw(e.target.value)} placeholder="pickle, achar, homemade pickles" /></div></>}
+            <textarea id="n-kw" rows={3} className={cn(inputCls, 'h-auto py-3')} value={kw} onChange={(e) => setKw(e.target.value)} placeholder="pickle, achar, homemade pickles" /></div>
+          <div><Label htmlFor="n-hl" hint="one per line; shown to owners as 'What you can do'">What owners can do</Label>
+            <textarea id="n-hl" rows={4} className={cn(inputCls, 'h-auto py-3')} value={hl} onChange={(e) => setHl(e.target.value)} placeholder={'Add products with pack sizes and prices\nManage orders and track delivery'} /></div></>}
         <div className="flex items-center gap-3"><Switch on={active} onChange={setActive} label="Active" /><span className="t-label">Active</span><span className="t-small text-muted-foreground">Inactive entries are hidden from new businesses; nothing is deleted.</span></div>
         {err && <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger">{err}</p>}
         <div className="flex justify-end gap-2 pt-2"><button onClick={onClose} className={btn.outline}>Cancel</button><button onClick={save} className={btn.brand}>Save</button></div>
