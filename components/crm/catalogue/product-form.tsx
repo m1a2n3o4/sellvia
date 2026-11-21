@@ -8,9 +8,10 @@ import type { FieldDef } from '@/lib/crm/config/types';
 import { resolveFields } from '@/lib/crm/config/resolve';
 import { btn } from '../button-styles';
 import { useCrm } from '../crm-context';
+import { DynamicProductForm } from '../dynamic/dynamic-product-form';
 
 type Val = string | string[];
-const input = 'h-11 w-full rounded-2xl border border-white/90 bg-white/80 px-4 text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(11,12,17,0.12)]';
+const input = 'h-11 w-full rounded-2xl border border-ink/70 bg-white px-4 text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(11,12,17,0.12)]';
 
 function Field({ f, v, set }: { f: FieldDef; v: Val; set: (v: Val) => void }) {
   const id = `f-${f.key}`;
@@ -25,7 +26,7 @@ function Field({ f, v, set }: { f: FieldDef; v: Val; set: (v: Val) => void }) {
       const sel = Array.isArray(v) ? v : [];
       return <div className="flex flex-wrap gap-1.5" role="group" aria-label={f.label}>{(f.options ?? []).map((o) => (
         <button key={o} type="button" aria-pressed={sel.includes(o)} onClick={() => set(sel.includes(o) ? sel.filter((x) => x !== o) : [...sel, o])}
-          className={cn('rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-all', sel.includes(o) ? 'bg-primary text-white' : 'bg-white/80 text-muted-foreground hover:text-ink')}>{o}</button>))}</div>;
+          className={cn('rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-all', sel.includes(o) ? 'border border-primary bg-primary text-white' : 'border border-ink/70 bg-white text-ink/70 hover:text-ink')}>{o}</button>))}</div>;
     }
     case 'images': return <div className="rounded-2xl border border-dashed border-[#c3c9db] bg-white/50 p-6 text-center text-sm text-muted-foreground">Image upload arrives with the backend. (Simulated)</div>;
     case 'toggle': return <input id={id} type="checkbox" checked={s === 'true'} onChange={(e) => set(String(e.target.checked))} className="h-5 w-5" />;
@@ -34,6 +35,13 @@ function Field({ f, v, set }: { f: FieldDef; v: Val; set: (v: Val) => void }) {
 }
 
 export function ProductForm() {
+  const { workspace } = useCrm();
+  // Businesses with taxonomy business types get the dynamic form; legacy clients keep the original one.
+  if (workspace.businessTypes?.length) return <DynamicProductForm businessTypes={workspace.businessTypes} />;
+  return <LegacyProductForm />;
+}
+
+function LegacyProductForm() {
   const { workspace } = useCrm();
   const { fields, label, fromTemplate } = resolveFields(workspace.templates, 'products');
   const [vals, setVals] = useState<Record<string, Val>>({});

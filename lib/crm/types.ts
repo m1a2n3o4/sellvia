@@ -21,6 +21,8 @@ export interface Workspace {
   websiteUrl: string;
   /** Active business templates (first is the primary). One tenant can run several. */
   templates: TemplateKey[];
+  /** Taxonomy business types (subcategory ids), primary first. Absent = legacy form (no dynamic fields). */
+  businessTypes?: string[];
   /** Branches / locations inside the tenant (not separate tenants). */
   branches: string[];
   plan: 'FREE' | 'PRO';

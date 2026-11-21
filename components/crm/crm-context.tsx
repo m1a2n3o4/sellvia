@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getVisibleNav, visibleQuickActions, type VisibleSection } from '@/lib/crm/nav';
 import type { CrmUser, Workspace } from '@/lib/crm/types';
+import { resolveMenu } from '@/lib/crm/config/taxonomy/menu';
+import { SEED, type ConfigSource } from '@/lib/crm/config/taxonomy/resolve-form';
+import { loadLiveConfig } from '@/lib/studio/live-config';
 
 interface CrmContextValue {
   user: CrmUser;
@@ -39,6 +42,9 @@ export function CrmProvider({
     : workspacesProp;
   const [workspaceId, setWorkspaceId] = useState(workspaces[0].id);
   const [background, setBackgroundState] = useState<BgKey>('aurora');
+  // Published configuration (menu names, items). Prototype: from the Studio release in this browser.
+  const [liveCfg, setLiveCfg] = useState<ConfigSource>(SEED);
+  useEffect(() => setLiveCfg(loadLiveConfig().cfg), []);
   const workspace = workspaces.find((w) => w.id === workspaceId) ?? workspaces[0];
 
   // Radix menus render in a portal outside the wrapper; mirror the token class onto <html>.
@@ -64,10 +70,10 @@ export function CrmProvider({
     user, workspaces, workspace, setWorkspaceId, simulated, background, setBackground,
     nav: reviewer
       ? getVisibleNav(workspace.templates).map((sec) => ({ ...sec, items: sec.items.filter((i) => i.key === 'inbox' || i.key === 'instagram') })).filter((sec) => sec.items.length > 0)
-      : getVisibleNav(workspace.templates),
+      : workspace.businessTypes?.length ? resolveMenu(workspace.businessTypes, liveCfg) : getVisibleNav(workspace.templates),
     quickActions: reviewer ? [] : visibleQuickActions(workspace.templates),
     reviewer,
-  }), [user, workspaces, workspace, simulated, background, reviewer]);
+  }), [user, workspaces, workspace, simulated, background, reviewer, liveCfg]);
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
 }

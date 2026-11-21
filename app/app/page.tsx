@@ -15,6 +15,10 @@ export default async function CrmHome() {
 
   return (
     <div className="space-y-8">
+      <div className="crm-card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="t-h3">Welcome to SatyaSell</h2><p className="t-body text-muted-foreground">Set up your business so your menu, product forms and fields match what you do.</p></div>
+        <Link href="/app/onboarding" className={btn.brand}>Set up your business</Link>
+      </div>
       <PageHeader
         eyebrow={
           <>

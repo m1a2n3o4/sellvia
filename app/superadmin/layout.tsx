@@ -25,7 +25,8 @@ export default function SuperAdminLayout({
   };
 
   // Don't show nav on login page
-  if (pathname === '/superadmin/login') {
+  // The Business Studio brings its own shell.
+  if (pathname === '/superadmin/login' || pathname.startsWith('/superadmin/studio')) {
     return <>{children}</>;
   }
 
@@ -51,6 +52,12 @@ export default function SuperAdminLayout({
                 }`}
               >
                 Clients
+              </Link>
+              <Link
+                href="/superadmin/studio"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                Business Studio
               </Link>
               <Link
                 href="/superadmin/enquiries"

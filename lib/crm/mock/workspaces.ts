@@ -4,7 +4,7 @@ import type { CrmUser, Workspace } from '../types';
 export const MOCK_WORKSPACES: Workspace[] = [
   {
     id: 'ws-jewels', websiteUrl: 'https://www.satyasell.com/store/aura-jewels-mumbai', name: 'Aura Jewels Mumbai', branch: 'Mumbai Flagship', industry: 'Jewellery',
-    templates: ['retail_shop', 'appointments'], branches: ['Mumbai Flagship', 'Bandra Showroom'], plan: 'PRO', aiUsagePct: 96.4, instagramConnected: true, badges: { whatsapp: '3' },
+    templates: ['retail_shop', 'appointments'], businessTypes: ['fine-jewellery'], branches: ['Mumbai Flagship', 'Bandra Showroom'], plan: 'PRO', aiUsagePct: 96.4, instagramConnected: true, badges: { whatsapp: '3' },
     notifications: [
       { id: 'n1', title: 'New WhatsApp quote request from Pooja Rathore', time: '2m ago' },
       { id: 'n2', title: 'UPI payment confirmed for order #ORD-8942-IN', time: '14m ago' },
@@ -13,12 +13,12 @@ export const MOCK_WORKSPACES: Workspace[] = [
   },
   {
     id: 'ws-resort', websiteUrl: 'https://www.satyasell.com/store/palm-valley-resort', name: 'Palm Valley Resort', branch: 'Main Property', industry: 'Hospitality',
-    templates: ['resort_hotel', 'restaurant', 'events', 'retail_shop'], branches: ['Main Property', 'Beach Villas'], plan: 'PRO', aiUsagePct: 41.2, instagramConnected: false, badges: { whatsapp: '7' },
+    templates: ['resort_hotel', 'restaurant', 'events', 'retail_shop'], businessTypes: ['resort', 'restaurant'], branches: ['Main Property', 'Beach Villas'], plan: 'PRO', aiUsagePct: 41.2, instagramConnected: false, badges: { whatsapp: '7' },
     notifications: [{ id: 'n1', title: 'New booking request for 3 rooms', time: '5m ago' }],
   },
   {
     id: 'ws-salon', websiteUrl: 'https://www.satyasell.com/store/glow-salon', name: 'Glow Salon', branch: 'Indiranagar', industry: 'Appointments',
-    templates: ['appointments'], branches: ['Indiranagar'], plan: 'FREE', aiUsagePct: 12.8, instagramConnected: false, badges: {}, notifications: [],
+    templates: ['appointments'], businessTypes: ['salon'], branches: ['Indiranagar'], plan: 'FREE', aiUsagePct: 12.8, instagramConnected: false, badges: {}, notifications: [],
   },
   {
     id: 'ws-realty', websiteUrl: 'https://www.satyasell.com/store/sri-homes', name: 'Sri Homes', branch: 'Hyderabad', industry: 'Real estate',
@@ -26,7 +26,15 @@ export const MOCK_WORKSPACES: Workspace[] = [
   },
   {
     id: 'ws-clothing', websiteUrl: 'https://www.satyasell.com/store/urban-threads', name: 'Urban Threads', branch: 'Online store', industry: 'Fashion',
-    templates: ['clothing'], branches: ['Online store'], plan: 'PRO', aiUsagePct: 55.0, instagramConnected: true, badges: { whatsapp: '4' }, notifications: [],
+    templates: ['clothing'], businessTypes: ['mens-clothing', 'womens-clothing'], branches: ['Online store'], plan: 'PRO', aiUsagePct: 55.0, instagramConnected: true, badges: { whatsapp: '4' }, notifications: [],
+  },
+  {
+    id: 'ws-pickles', websiteUrl: 'https://www.satyasell.com/store/amma-pickles', name: "Amma's Pickles", branch: 'Kitchen', industry: 'Food & Beverages',
+    templates: ['retail_shop'], businessTypes: ['pickles', 'snacks'], branches: ['Kitchen'], plan: 'FREE', aiUsagePct: 20.0, instagramConnected: false, badges: {}, notifications: [],
+  },
+  {
+    id: 'ws-bakery', websiteUrl: 'https://www.satyasell.com/store/sweet-crumbs', name: 'Sweet Crumbs Bakery', branch: 'Jubilee Hills', industry: 'Food & Beverages',
+    templates: ['retail_shop'], businessTypes: ['bakery-cakes'], branches: ['Jubilee Hills'], plan: 'PRO', aiUsagePct: 35.0, instagramConnected: false, badges: {}, notifications: [],
   },
   {
     id: 'ws-legacy', websiteUrl: 'https://www.satyasell.com/store/sharma-garments', name: 'Sharma Garments (existing client)', branch: 'Main store', industry: 'Retail',
